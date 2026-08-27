@@ -5,7 +5,7 @@
  * ข้อมูลถูกโหลดใน useEffect (ไม่ใช่ตอน render) เพื่อไม่ให้ hydration ของ Next.js ไม่ตรงกัน
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { AUTH_KEY, DEFAULT_SETTINGS, emptyState, gcImages, imgDel, loadState, saveState } from '@/lib/storage';
+import { AUTH_KEY, DEFAULT_SETTINGS, emptyState, gcImages, imgDel, loadState, migrateSession, saveState } from '@/lib/storage';
 import { avgMonthlySpend, dueList, sortDesc } from '@/lib/calc';
 import { uid } from '@/lib/format';
 
@@ -170,7 +170,7 @@ export function StoreProvider({ children }) {
   const replaceAll = useCallback((next) => {
     setData({
       cars: next.cars || [],
-      sessions: next.sessions || [],
+      sessions: (next.sessions || []).map(migrateSession),
       costs: next.costs || [],
       alerts: next.alerts || [],
       settings: { ...DEFAULT_SETTINGS, ...(next.settings || {}) },

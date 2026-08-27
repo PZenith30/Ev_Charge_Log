@@ -7,8 +7,8 @@ import { useStore } from '@/components/store';
 import { Stat, EmptyState } from '@/components/ui';
 import { BarChart, DonutChart, LineChart } from '@/components/Charts';
 import { AlertBanner, BudgetBanner, SessionDetail, SessionRow } from '@/components/SessionViews';
-import { monthlyTotals, sDist, sEff, sKwh100, sTotal, summarize } from '@/lib/calc';
-import { fmt, fmt0, fmt1, isNum, money, money0, n, thDate, thMonth, thMonthLong } from '@/lib/format';
+import { monthlyTotals, sDashReading, sDist, sEff, sKwh100, sTotal, summarize } from '@/lib/calc';
+import { fmt, fmt0, fmt1, fmtDist, money, money0, n, thDate, thMonth, thMonthLong } from '@/lib/format';
 
 export default function DashboardPage() {
   const { sessions, costs, due, budgetOver, setEditingId } = useStore();
@@ -40,7 +40,7 @@ export default function DashboardPage() {
         <b>{thDate(s.date, 'long')}</b>
         <br />
         {s.type === 'DC' ? 'DC' : 'AC'} · {fmt1(n(s.kwh))} kWh · {money(sTotal(s))}
-        {sDist(s) !== null ? (<><br />{fmt0(sDist(s))} km · {fmt(sEff(s), 2)} km/kWh</>) : null}
+        {sDist(s) !== null ? (<><br />{fmtDist(sDist(s))} km · {fmt(sEff(s), 2)} km/kWh</>) : null}
         {s.station ? (<><br />{s.station}</>) : null}
       </>
     );
@@ -76,8 +76,8 @@ export default function DashboardPage() {
           detail={sum.count ? `AC ${sum.ac} · DC ${sum.dc}` : null} />
         <Stat icon="battery" label="พลังงานสะสม" value={fmt1(sum.kwh)} unit="kWh"
           detail={sum.count ? `เฉลี่ย ${fmt1(sum.kwh / sum.count)} kWh/ครั้ง` : null} />
-        <Stat icon="road" label="ระยะทางสะสม" value={fmt0(sum.dist)} unit="km"
-          detail={sum.count ? `เฉลี่ย ${fmt0(sum.dist / sum.count)} km/ครั้ง` : null} />
+        <Stat icon="road" label="ระยะทางสะสม" value={fmtDist(sum.dist)} unit="km"
+          detail={sum.count ? `เฉลี่ย ${fmtDist(sum.dist / sum.count)} km/ครั้ง` : null} />
         <Stat icon="coin" label="ค่าชาร์จสะสม" value={money0(sum.cost)}
           detail={`+ ต้นทุนอื่น ${money0(otherCost)} = ${money0(sum.cost + otherCost)}`} />
         <Stat icon="gauge" label="Efficiency เฉลี่ย"
@@ -216,12 +216,15 @@ export default function DashboardPage() {
               empty="ต้องมีเลขไมล์ก่อน/หลังชาร์จอย่างน้อย 2 ครั้ง จึงจะคำนวณแนวโน้มได้"
               tip={(i) => {
                 const s = effPoints[i];
+                const dash = sDashReading(s);
                 return (
                   <>
                     <b>{thDate(s.date, 'long')}</b><br />
                     {fmt(sEff(s), 2)} km/kWh · {fmt(sKwh100(s), 1)} kWh/100km<br />
-                    {fmt0(sDist(s))} km / {fmt1(n(s.kwh))} kWh
-                    {isNum(s.dashEff) ? (<><br />หน้าปัด {fmt(Number(s.dashEff), 2)} km/kWh</>) : null}
+                    {fmtDist(sDist(s))} km / {fmt1(n(s.kwh))} kWh
+                    {dash ? (
+                      <><br />หน้าปัด {fmt(dash.value, dash.unit === 'km/kWh' ? 2 : 0)} {dash.unit}</>
+                    ) : null}
                   </>
                 );
               }}

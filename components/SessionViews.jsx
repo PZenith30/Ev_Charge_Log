@@ -2,8 +2,8 @@
 /** ชิ้นส่วนที่ใช้ร่วมกันระหว่างแดชบอร์ดกับหน้าประวัติ — แถวรายการชาร์จ, รายละเอียด, แถบแจ้งเตือน */
 import { useEffect, useState } from 'react';
 import { ALERT_TYPES } from '@/lib/data';
-import { fmt, fmt0, fmt1, money0, money, thDate, n, isNum } from '@/lib/format';
-import { sBahtKm, sDist, sEff, sEff100, sKwh100, sPricePerKwh, sSoc, sTotal } from '@/lib/calc';
+import { fmt, fmt0, fmt1, fmtDist, fmtDuration, money0, money, thDate, n, isNum } from '@/lib/format';
+import { sBahtKm, sDashReading, sDist, sEff, sEff100, sKwh100, sPricePerKwh, sSoc, sTotal } from '@/lib/calc';
 import { imgMany } from '@/lib/storage';
 import Icon from './Icon';
 import { Modal } from './ui';
@@ -16,7 +16,7 @@ export function SessionRow({ session: s, onClick }) {
   const detail = [
     thDate(s.date) + (s.time ? ` · ${s.time} น.` : ''),
     `${fmt1(n(s.kwh))} kWh`,
-    dist !== null ? `${fmt0(dist)} km` : null,
+    dist !== null ? `${fmtDist(dist)} km` : null,
     eff !== null ? `${fmt(eff, 2)} km/kWh` : null,
   ].filter(Boolean).join(' · ');
 
@@ -101,6 +101,7 @@ export function SessionDetail({ session: s, onClose, onEdit }) {
 
   const dist = sDist(s);
   const soc = sSoc(s);
+  const dash = sDashReading(s);
 
   return (
     <Modal
@@ -135,11 +136,13 @@ export function SessionDetail({ session: s, onClose, onEdit }) {
           <Row k="วันที่ / เวลา">{thDate(s.date, 'long')}{s.time ? ` · ${s.time} น.` : ''}</Row>
           <Row k="ประเภท">{s.type === 'DC' ? 'DC (ชาร์จเร็ว)' : 'AC (ชาร์จปกติ)'}</Row>
           <Row k="สถานี / สถานที่">{s.station || '—'}</Row>
-          <Row k="เวลาที่ใช้ชาร์จ">{isNum(s.duration) ? `${fmt0(n(s.duration))} นาที` : '—'}</Row>
+          <Row k="เวลาที่ใช้ในการชาร์จ">{fmtDuration(Number(s.durationSec))}</Row>
           <Row k="เลขไมล์ก่อน → หลัง">
-            {isNum(s.odoBefore) && isNum(s.odoAfter) ? `${fmt0(n(s.odoBefore))} → ${fmt0(n(s.odoAfter))} km` : '—'}
+            {isNum(s.odoBefore) && isNum(s.odoAfter)
+              ? `${fmtDist(n(s.odoBefore))} → ${fmtDist(n(s.odoAfter))} km`
+              : '—'}
           </Row>
-          <Row k="ระยะทางที่วิ่งได้">{dist !== null ? `${fmt0(dist)} km` : '—'}</Row>
+          <Row k="ระยะทางที่วิ่งได้">{dist !== null ? `${fmtDist(dist)} km` : '—'}</Row>
           <Row k="SOC ก่อน → หลัง">
             {soc !== null ? `${n(s.socBefore)}% → ${n(s.socAfter)}% (+${soc}%)` : '—'}
           </Row>
@@ -158,7 +161,12 @@ export function SessionDetail({ session: s, onClose, onEdit }) {
           </Row>
           <Row k="อัตราสิ้นเปลือง">{sKwh100(s) !== null ? `${fmt(sKwh100(s), 2)} kWh/100km` : '—'}</Row>
           <Row k="ค่าใช้จ่ายต่อระยะทาง">{sBahtKm(s) !== null ? `${fmt(sBahtKm(s), 2)} ฿/km` : '—'}</Row>
-          <Row k="อ่านจากหน้าปัด">{isNum(s.dashEff) ? `${fmt(Number(s.dashEff), 2)} km/kWh` : '—'}</Row>
+          <Row k="อ่านจากหน้าปัด">
+            {dash
+              ? `${fmt(dash.value, dash.unit === 'km/kWh' ? 2 : 0)} ${dash.unit}` +
+                (dash.unit === 'km/kWh' ? '' : ` (${fmt(dash.base, 2)} km/kWh)`)
+              : '—'}
+          </Row>
         </dl>
       </div>
 

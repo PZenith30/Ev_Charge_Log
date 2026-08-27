@@ -6,7 +6,7 @@ import { EmptyState, Field } from '@/components/ui';
 import CarModal from '@/components/CarModal';
 import Icon from '@/components/Icon';
 import { lastOdo, summarize } from '@/lib/calc';
-import { fmt0, fmt1, isNum, money0 } from '@/lib/format';
+import { fmt0, fmt1, fmtDist, isNum, money0 } from '@/lib/format';
 import { exportBackup, readBackup, restoreImages } from '@/lib/exporters';
 import { imgAll } from '@/lib/storage';
 import { buildDemoState } from '@/lib/demo';
@@ -124,7 +124,7 @@ export default function AccountPage() {
                   <div className="t2">{spec}</div>
                 </div>
                 <div className="r">
-                  <div className="a">{odo !== null ? `${fmt0(odo)} km` : '—'}</div>
+                  <div className="a">{odo !== null ? `${fmtDist(odo)} km` : '—'}</div>
                   <div className="b">{s.count} ครั้ง · {money0(s.cost)}</div>
                 </div>
               </button>

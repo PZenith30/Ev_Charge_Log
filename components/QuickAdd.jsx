@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Field, Modal, TypeToggle } from './ui';
 import { useStore } from './store';
-import { isNum, n, nOrNull, todayISO, nowHM, fmt, fmt0, money } from '@/lib/format';
+import { isNum, n, nOrNull, todayISO, fmt, fmtDist, money } from '@/lib/format';
 import { lastOdo, sBahtKm, sDist, sEff, sTotal } from '@/lib/calc';
 
 export default function QuickAdd() {
@@ -53,9 +53,9 @@ export default function QuickAdd() {
     saveSession({
       carId,
       date,
-      time: nowHM(),
+      time: '',
       type,
-      duration: null,
+      durationSec: null,
       station: '',
       odoBefore,
       odoAfter: nOrNull(odo),
@@ -129,7 +129,7 @@ export default function QuickAdd() {
         </Field>
         <Field
           label="เลขไมล์ปัจจุบัน (km)"
-          help={odoBefore !== null ? `ครั้งก่อน ${fmt0(odoBefore)} km` : 'ยังไม่มีเลขไมล์ตั้งต้น'}
+          help={odoBefore !== null ? `ครั้งก่อน ${fmtDist(odoBefore)} km` : 'ยังไม่มีเลขไมล์ตั้งต้น'}
         >
           <input type="number" min="0" step="0.1" inputMode="decimal"
             value={odo} onChange={(e) => setOdo(e.target.value)} />
@@ -146,7 +146,7 @@ export default function QuickAdd() {
 
       <div className="live" style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', marginTop: 14, padding: '12px 14px' }}>
         <div><div className="k">ค่าใช้จ่ายรวม</div><div className="v">{money(total)}</div></div>
-        <div><div className="k">ระยะทาง</div><div className="v">{dist !== null ? `${fmt0(dist)} km` : '—'}</div></div>
+        <div><div className="k">ระยะทาง</div><div className="v">{dist !== null ? `${fmtDist(dist)} km` : '—'}</div></div>
         <div><div className="k">km/kWh</div><div className="v">{eff !== null ? fmt(eff, 2) : '—'}</div></div>
         <div><div className="k">บาท/km</div><div className="v">{bahtKm !== null ? fmt(bahtKm, 2) : '—'}</div></div>
       </div>

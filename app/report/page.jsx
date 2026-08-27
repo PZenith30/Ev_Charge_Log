@@ -7,7 +7,7 @@ import { BarChart, DonutChart } from '@/components/Charts';
 import Icon from '@/components/Icon';
 import { COST_CATS } from '@/lib/data';
 import { monthlyTotals, sBahtKm, sDist, sEff, sPricePerKwh, sTotal, sMonth, sYear, summarize } from '@/lib/calc';
-import { fmt, fmt0, fmt1, money, money0, n, shortNum, thDate, thMonthLong, thYear, todayISO } from '@/lib/format';
+import { fmt, fmt0, fmt1, fmtDist, fmtDuration, money, money0, n, shortNum, thDate, thMonthLong, thYear, todayISO } from '@/lib/format';
 import { download, sessionsToCsv } from '@/lib/exporters';
 
 export default function ReportPage() {
@@ -127,13 +127,13 @@ export default function ReportPage() {
               detail={`AC ${sum.ac} · DC ${sum.dc}`} />
             <Stat icon="battery" label="พลังงาน" value={fmt1(sum.kwh)} unit="kWh"
               detail={sum.avgPrice !== null ? `เฉลี่ย ${fmt(sum.avgPrice, 2)} ฿/kWh` : null} />
-            <Stat icon="road" label="ระยะทาง" value={fmt0(sum.dist)} unit="km"
+            <Stat icon="road" label="ระยะทาง" value={fmtDist(sum.dist)} unit="km"
               detail={sum.eff !== null ? `${fmt(sum.eff, 2)} km/kWh · ${fmt0(sum.eff100)} km/100kWh` : null} />
             <Stat icon="coin" label="ค่าชาร์จ" value={money0(sum.cost)}
               detail={sum.bahtKm !== null ? `${fmt(sum.bahtKm, 2)} ฿/km` : null} />
             <Stat icon="wallet" label="ต้นทุนอื่น" value={money0(otherTotal)} detail={`${cList.length} รายการ`} />
-            <Stat icon="clock" label="เวลาชาร์จรวม" value={fmt0(sum.minutes / 60)} unit="ชม."
-              detail={`${fmt0(sum.minutes)} นาที`} />
+            <Stat icon="clock" label="เวลาชาร์จรวม" value={fmt1(sum.seconds / 3600)} unit="ชม."
+              detail={sum.seconds > 0 ? fmtDuration(sum.seconds) : 'ยังไม่ได้กรอกเวลาที่ใช้ชาร์จ'} />
           </div>
         </div>
       </div>
@@ -156,7 +156,7 @@ export default function ReportPage() {
                     <td>{thMonthLong(k)}</td>
                     <td className="num">{v.count}</td>
                     <td className="num">{fmt1(v.kwh)}</td>
-                    <td className="num">{fmt0(v.dist)}</td>
+                    <td className="num">{fmtDist(v.dist)}</td>
                     <td className="num">{v.kwh > 0 && v.dist > 0 ? fmt(v.dist / v.kwh, 2) : '—'}</td>
                     <td className="num">{fmt(v.charge, 2)}</td>
                     <td className="num">{fmt(v.other, 2)}</td>
@@ -169,7 +169,7 @@ export default function ReportPage() {
                   <td>รวมทั้งปี</td>
                   <td className="num">{sum.count}</td>
                   <td className="num">{fmt1(sum.kwh)}</td>
-                  <td className="num">{fmt0(sum.dist)}</td>
+                  <td className="num">{fmtDist(sum.dist)}</td>
                   <td className="num">{sum.eff !== null ? fmt(sum.eff, 2) : '—'}</td>
                   <td className="num">{fmt(sum.cost, 2)}</td>
                   <td className="num">{fmt(otherTotal, 2)}</td>
@@ -203,7 +203,7 @@ export default function ReportPage() {
                     <td>{s.station || '—'}</td>
                     <td className="num">{fmt(n(s.kwh), 2)}</td>
                     <td className="num">{sPricePerKwh(s) !== null ? fmt(sPricePerKwh(s), 2) : '—'}</td>
-                    <td className="num">{sDist(s) !== null ? fmt0(sDist(s)) : '—'}</td>
+                    <td className="num">{sDist(s) !== null ? fmtDist(sDist(s)) : '—'}</td>
                     <td className="num">{sEff(s) !== null ? fmt(sEff(s), 2) : '—'}</td>
                     <td className="num">{sBahtKm(s) !== null ? fmt(sBahtKm(s), 2) : '—'}</td>
                     <td className="num"><b>{fmt(sTotal(s), 2)}</b></td>
@@ -215,7 +215,7 @@ export default function ReportPage() {
                   <td colSpan={3}>รวม</td>
                   <td className="num">{fmt(sum.kwh, 2)}</td>
                   <td className="num">{sum.avgPrice !== null ? fmt(sum.avgPrice, 2) : '—'}</td>
-                  <td className="num">{fmt0(sum.dist)}</td>
+                  <td className="num">{fmtDist(sum.dist)}</td>
                   <td className="num">{sum.eff !== null ? fmt(sum.eff, 2) : '—'}</td>
                   <td className="num">{sum.bahtKm !== null ? fmt(sum.bahtKm, 2) : '—'}</td>
                   <td className="num">{fmt(sum.cost, 2)}</td>

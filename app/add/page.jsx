@@ -7,18 +7,20 @@ import { useStore } from '@/components/store';
 import { EmptyState, Field, TypeToggle } from '@/components/ui';
 import ImageUploader from '@/components/ImageUploader';
 import Icon from '@/components/Icon';
-import { fmt, fmt0, isNum, money, n, nOrNull, nowHM, todayISO } from '@/lib/format';
+import { fmt, fmt0, fmtDist, isNum, money, n, nOrNull, splitDuration, todayISO } from '@/lib/format';
 import { lastOdo, sBahtKm, sDist, sEff, sEff100, sSoc, sTotal } from '@/lib/calc';
+import { DASH_UNITS, DEFAULT_DASH_UNIT } from '@/lib/data';
 
 const blank = () => ({
-  carId: '', date: todayISO(), time: nowHM(), type: 'AC', duration: '', station: '',
+  carId: '', date: todayISO(), type: 'AC', station: '',
+  durH: '', durM: '', durS: '',
   odoBefore: '', odoAfter: '', socBefore: '', socAfter: '', dashEff: '',
   kwh: '', price: '', fee: '', total: '', note: '', images: [],
 });
 
 export default function AddPage() {
   const {
-    data, cars, activeCar, settings, sessions,
+    data, cars, activeCar, settings, sessions, setSettings,
     saveSession, deleteSession, editingId, setEditingId, toast, confirm,
   } = useStore();
   const router = useRouter();
@@ -26,23 +28,29 @@ export default function AddPage() {
   const editing = editingId ? data.sessions.find((s) => s.id === editingId) : null;
   const [form, setForm] = useState(blank);
   const [odoTouched, setOdoTouched] = useState(false);
+  // หน่วยของอัตราสิ้นเปลืองหน้าปัด — จำค่าที่เลือกไว้ครั้งล่าสุดจาก settings
+  const [dashUnit, setDashUnit] = useState(settings.dashEffUnit || DEFAULT_DASH_UNIT);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   /* โหลดค่าเริ่มต้น: รายการที่กำลังแก้ไข หรือฟอร์มเปล่าพร้อมค่า default */
   useEffect(() => {
     if (editing) {
+      const unit = DASH_UNITS[editing.dashEffUnit] ? editing.dashEffUnit : DEFAULT_DASH_UNIT;
+      const dur = splitDuration(Number(editing.durationSec));
+      setDashUnit(unit);
       setForm({
         ...blank(),
         ...editing,
-        time: editing.time || '',
         station: editing.station || '',
-        duration: editing.duration ?? '',
+        durH: dur.h, durM: dur.m, durS: dur.s,
         odoBefore: editing.odoBefore ?? '',
         odoAfter: editing.odoAfter ?? '',
         socBefore: editing.socBefore ?? '',
         socAfter: editing.socAfter ?? '',
-        dashEff: editing.dashEff ?? '',
+        dashEff: isNum(editing.dashEff)
+          ? String(Number(DASH_UNITS[unit].fromBase(Number(editing.dashEff)).toFixed(4)))
+          : '',
         kwh: editing.kwh ?? '',
         price: editing.price ?? '',
         fee: editing.fee ?? '',
@@ -52,6 +60,7 @@ export default function AddPage() {
       });
       setOdoTouched(true);
     } else {
+      setDashUnit(settings.dashEffUnit || DEFAULT_DASH_UNIT);
       setForm({
         ...blank(),
         carId: activeCar ? activeCar.id : cars[0]?.id || '',
@@ -61,6 +70,17 @@ export default function AddPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingId]);
+
+  /** เปลี่ยนหน่วย: แปลงตัวเลขที่กรอกไว้ตามหน่วยใหม่ แล้วจำหน่วยนี้ไว้ใช้ครั้งถัดไป */
+  function changeDashUnit(next) {
+    setForm((f) => {
+      if (!isNum(f.dashEff)) return f;
+      const base = DASH_UNITS[dashUnit].toBase(Number(f.dashEff));
+      return { ...f, dashEff: String(Number(DASH_UNITS[next].fromBase(base).toFixed(4))) };
+    });
+    setDashUnit(next);
+    setSettings({ dashEffUnit: next });
+  }
 
   /* เติมเลขไมล์ก่อนชาร์จให้อัตโนมัติจากการชาร์จครั้งก่อนของรถคันนั้น */
   const prevOdo = useMemo(
@@ -108,20 +128,24 @@ export default function AddPage() {
     if (!form.date) return toast('กรุณาเลือกวันที่', true);
     if (!isNum(form.kwh) || Number(form.kwh) <= 0) return toast('กรุณากรอกพลังงานที่ชาร์จ (kWh)', true);
 
+    const durationSec = n(form.durH) * 3600 + n(form.durM) * 60 + n(form.durS);
+
     saveSession({
       id: editing?.id,
       created: editing?.created,
       carId: form.carId,
       date: form.date,
-      time: form.time || '',
+      time: editing?.time || '',
       type: form.type,
-      duration: nOrNull(form.duration),
+      durationSec: durationSec > 0 ? durationSec : null,
       station: form.station.trim(),
       odoBefore: nOrNull(form.odoBefore),
       odoAfter: nOrNull(form.odoAfter),
       socBefore: nOrNull(form.socBefore),
       socAfter: nOrNull(form.socAfter),
-      dashEff: nOrNull(form.dashEff),
+      // เก็บเป็น km/kWh เสมอ แล้วจำหน่วยที่กรอกไว้เพื่อแสดงกลับให้ตรงกับที่ผู้ใช้อ่านจากหน้าปัด
+      dashEff: isNum(form.dashEff) ? DASH_UNITS[dashUnit].toBase(Number(form.dashEff)) : null,
+      dashEffUnit: dashUnit,
       kwh: Number(form.kwh),
       price: nOrNull(form.price),
       fee: nOrNull(form.fee),
@@ -156,7 +180,7 @@ export default function AddPage() {
   }
 
   const liveItems = [
-    ['ระยะทางที่วิ่งได้', dist !== null ? `${fmt0(dist)} km` : '—'],
+    ['ระยะทางที่วิ่งได้', dist !== null ? `${fmtDist(dist)} km` : '—'],
     ['SOC ที่เพิ่มขึ้น', socGain !== null ? `+${socGain}%` : '—'],
     ['ค่าใช้จ่ายรวม', money(total)],
     ['Efficiency', eff !== null ? `${fmt(eff, 2)} km/kWh` : '—'],
@@ -190,12 +214,21 @@ export default function AddPage() {
           <Field label="วันที่">
             <input type="date" value={form.date} onChange={(e) => set('date', e.target.value)} required />
           </Field>
-          <Field label="เวลาเริ่มชาร์จ">
-            <input type="time" value={form.time} onChange={(e) => set('time', e.target.value)} />
-          </Field>
-          <Field label="เวลาที่ใช้ในการชาร์จ (นาที)">
-            <input type="number" min="0" step="1" inputMode="numeric" placeholder="45"
-              value={form.duration} onChange={(e) => set('duration', e.target.value)} />
+          <Field label="เวลาที่ใช้ในการชาร์จ" help="ชั่วโมง : นาที : วินาที" style={{ gridColumn: 'span 2' }}>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              {[['durH', 'ชม.'], ['durM', 'นาที'], ['durS', 'วิ']].map(([key, unit], i) => (
+                <div key={key} style={{ display: 'flex', gap: 6, alignItems: 'center', flex: 1, minWidth: 0 }}>
+                  {i > 0 ? <span className="faint" style={{ flex: 'none' }}>:</span> : null}
+                  <input
+                    type="number" min="0" step="1" inputMode="numeric" placeholder="0"
+                    max={key === 'durH' ? undefined : 59}
+                    style={{ flex: 1, minWidth: 0, textAlign: 'right' }}
+                    value={form[key]} onChange={(e) => set(key, e.target.value)}
+                  />
+                  <span className="faint sm" style={{ flex: 'none' }}>{unit}</span>
+                </div>
+              ))}
+            </div>
           </Field>
           <Field label="ประเภทการชาร์จ">
             <TypeToggle value={form.type} onChange={changeType} />
@@ -215,7 +248,7 @@ export default function AddPage() {
         <div className="form-grid">
           <Field
             label="เลขไมล์ก่อนชาร์จ (km)"
-            help={!editing && prevOdo !== null ? `เติมอัตโนมัติจากครั้งก่อน (${fmt0(prevOdo)} km)` : null}
+            help={!editing && prevOdo !== null ? `เติมอัตโนมัติจากครั้งก่อน (${fmtDist(prevOdo)} km)` : null}
           >
             <input type="number" min="0" step="0.1" inputMode="decimal" value={form.odoBefore}
               onChange={(e) => { setOdoTouched(true); set('odoBefore', e.target.value); }} />
@@ -225,7 +258,7 @@ export default function AddPage() {
               value={form.odoAfter} onChange={(e) => set('odoAfter', e.target.value)} />
           </Field>
           <Field label="ระยะทางที่วิ่งได้ (km)">
-            <input type="text" className="calc" readOnly value={dist !== null ? fmt0(dist) : '—'} />
+            <input type="text" className="calc" readOnly value={dist !== null ? fmtDist(dist) : '—'} />
           </Field>
           <Field label="SOC ก่อนชาร์จ (%)">
             <input type="number" min="0" max="100" step="1" inputMode="numeric"
@@ -238,9 +271,29 @@ export default function AddPage() {
           <Field label="SOC ที่เพิ่มขึ้น (%)">
             <input type="text" className="calc" readOnly value={socGain !== null ? `+${socGain}` : '—'} />
           </Field>
-          <Field label="อัตราสิ้นเปลืองจากหน้าปัด" help="ค่าที่รถแสดงบนหน้าปัด (km/kWh)">
-            <input type="number" min="0" step="0.01" inputMode="decimal" placeholder="5.20"
-              value={form.dashEff} onChange={(e) => set('dashEff', e.target.value)} />
+          <Field
+            label="อัตราสิ้นเปลืองจากหน้าปัด"
+            help="ค่าที่รถแสดงบนหน้าปัด · หน่วยที่เลือกจะถูกจำไว้ใช้ครั้งถัดไป"
+            style={{ gridColumn: 'span 2' }}
+          >
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input
+                type="number" min="0" step={DASH_UNITS[dashUnit].step} inputMode="decimal"
+                placeholder={DASH_UNITS[dashUnit].placeholder}
+                style={{ flex: 1, minWidth: 0 }}
+                value={form.dashEff} onChange={(e) => set('dashEff', e.target.value)}
+              />
+              <select
+                value={dashUnit}
+                onChange={(e) => changeDashUnit(e.target.value)}
+                style={{ width: 132, flex: 'none' }}
+                title="หน่วยของค่าที่อ่านจากหน้าปัด"
+              >
+                {Object.keys(DASH_UNITS).map((u) => (
+                  <option key={u} value={u}>{u}</option>
+                ))}
+              </select>
+            </div>
           </Field>
         </div>
       </div>

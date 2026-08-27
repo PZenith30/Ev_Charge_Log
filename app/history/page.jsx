@@ -8,7 +8,7 @@ import { EmptyState, Field, TypePill } from '@/components/ui';
 import { SessionDetail } from '@/components/SessionViews';
 import Icon from '@/components/Icon';
 import { sBahtKm, sDist, sEff, sPricePerKwh, sSoc, sTotal, summarize } from '@/lib/calc';
-import { fmt, fmt0, fmt1, isNum, money0, n, thDate, todayISO } from '@/lib/format';
+import { fmt, fmt0, fmt1, fmtDist, isNum, money0, n, thDate, todayISO } from '@/lib/format';
 import { download, sessionsToCsv } from '@/lib/exporters';
 
 const EMPTY_FILTERS = { q: '', from: '', to: '', type: '', cmin: '', cmax: '', sort: 'date-desc' };
@@ -102,7 +102,7 @@ export default function HistoryPage() {
           <h3>
             {fmt0(list.length)} รายการ
             <span className="hint">
-              {fmt1(sum.kwh)} kWh · {money0(sum.cost)} · {fmt0(sum.dist)} km
+              {fmt1(sum.kwh)} kWh · {money0(sum.cost)} · {fmtDist(sum.dist)} km
             </span>
           </h3>
           <button type="button" className="btn btn-sm btn-ghost" onClick={() => setF(EMPTY_FILTERS)}>
@@ -149,7 +149,7 @@ export default function HistoryPage() {
                       <td className="num">{fmt(n(s.kwh), 2)}</td>
                       <td className="num">{pk !== null ? fmt(pk, 2) : '—'}</td>
                       <td className="num"><b>{fmt(sTotal(s), 2)}</b></td>
-                      <td className="num">{dist !== null ? fmt0(dist) : '—'}</td>
+                      <td className="num">{dist !== null ? fmtDist(dist) : '—'}</td>
                       <td className="num">{soc !== null ? `${n(s.socBefore)}→${n(s.socAfter)}%` : '—'}</td>
                       <td className="num">{eff !== null ? fmt(eff, 2) : '—'}</td>
                       <td className="num">{bk !== null ? fmt(bk, 2) : '—'}</td>
@@ -173,7 +173,7 @@ export default function HistoryPage() {
                   <td className="num">{fmt(sum.kwh, 2)}</td>
                   <td className="num">{sum.avgPrice !== null ? fmt(sum.avgPrice, 2) : '—'}</td>
                   <td className="num">{fmt(sum.cost, 2)}</td>
-                  <td className="num">{fmt0(sum.dist)}</td>
+                  <td className="num">{fmtDist(sum.dist)}</td>
                   <td />
                   <td className="num">{sum.eff !== null ? fmt(sum.eff, 2) : '—'}</td>
                   <td className="num">{sum.bahtKm !== null ? fmt(sum.bahtKm, 2) : '—'}</td>
