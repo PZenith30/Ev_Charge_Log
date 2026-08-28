@@ -54,14 +54,16 @@ Charging History
   - มีdropdownเลือกรุ่นรถยนต์ไฟฟ้าภายใต้ยี่ห้อที่เลือก
   - ระยะทางที่วิ่งได้
   - ความจุแบตเตอรี่
-- Login แบบง่าย ด้วย รหัสแบบ Fixed
-  - Username : Admin
-  - Password : Admin
+- Login ด้วย Supabase Auth (อีเมล + รหัสผ่าน)
+  - สมัครสมาชิกเองจากหน้าเว็ปได้ · ลืมรหัสผ่าน ส่งลิงก์ตั้งใหม่ทางอีเมล
+  - เปลี่ยนรหัสผ่านได้ในหน้าบัญชี
+  - (เดิมเป็นรหัสคงที่ Admin/Admin ฝั่งเบราว์เซอร์ ยกเลิกแล้ว)
 # ธีมสี
 - Minimal
 - มี Dark/Light Mode
 # Deployment
 - ใช้ Vercel + NextJS
+- ฐานข้อมูล Supabase (Anon key + Project URL)
 
 # ─────────────────────────────────────────────────────────
 # บันทึกการพัฒนา (อัปเดต 27 ส.ค. 2569)
@@ -75,19 +77,31 @@ Charging History
 - กราฟทุกตัวเป็น SVG ที่เขียนเอง ไม่มี chart library
 - ทุกหน้าเป็น Client Component เพราะข้อมูลอยู่ในเบราว์เซอร์ทั้งหมด
 
-# การเก็บข้อมูล (ไม่มี backend / ไม่มีฐานข้อมูล)
-- localStorage คีย์ `evlog.v1` — รถ ประวัติการชาร์จ ต้นทุน การเตือน และการตั้งค่า
-- IndexedDB ชื่อ `evlog-images` — รูปแนบ (สลิป / สกรีนช็อต) เพราะเกินโควตา ~5MB ของ localStorage
-- รูปถูกย่อเหลือด้านยาวสุด 1600px และบีบเป็น JPEG คุณภาพ 0.82 ก่อนเก็บ
-- รูปที่ไม่มีรายการไหนอ้างถึงจะถูกลบอัตโนมัติตอนเปิดแอป (garbage collect)
-- ข้อมูลอยู่เฉพาะเบราว์เซอร์เครื่องที่ใช้ — เปิดเครื่องอื่นจะไม่เห็นข้อมูล
-  ทางแก้: ปุ่มสำรอง/กู้คืนเป็นไฟล์ JSON ในหน้าบัญชี (เลือกได้ว่าจะรวมรูปหรือไม่)
+# การเก็บข้อมูล — Supabase (อัปเดต 27 ส.ค. 2569)
+- ฐานข้อมูล Postgres บน Supabase · เข้าถึงจากเบราว์เซอร์ด้วย anon key + Project URL
+- ตาราง: cars, charge_sessions, costs, reminders, settings (สคริปต์อยู่ที่ supabase/schema.sql)
+- ทุกตารางเปิด Row Level Security ผูกกับ auth.uid() ผู้ใช้เห็นเฉพาะข้อมูลของตัวเอง
+  anon key เปิดเผยได้เพราะความปลอดภัยอยู่ที่ RLS ไม่ใช่ที่การซ่อน key
+- รูปแนบเก็บใน Supabase Storage บัคเก็ต `charge-images` (private)
+  path เป็น <user_id>/<uuid>.jpg และ policy ตรวจโฟลเดอร์แรกเทียบกับ auth.uid()
+  แสดงผลผ่าน signed URL อายุ 1 ชม. · ย่อเหลือด้านยาวสุด 1600px บีบ JPEG 0.82 ก่อนอัปโหลด
+- ชื่อคอลัมน์เป็น snake_case แต่โค้ดแอปใช้ camelCase — แปลงกันที่ lib/mappers.js ที่เดียว
+  ทำให้ lib/calc.js และทุกหน้าจอไม่ต้องแก้เลยตอนย้ายมาใช้ Supabase
+- ยังใช้ localStorage เฉพาะค่าที่ผูกกับเครื่อง: ธีม (ให้สคริปต์ตั้งธีมอ่านก่อนหน้าเว็ปวาด)
+  และสถานะ "ดูรถทุกคัน"
+- การเขียนข้อมูลเป็นแบบ optimistic — อัปเดตหน้าจอทันที ถ้าเขียนฐานข้อมูลพลาดจะแจ้งเตือน
+  แล้วดึงข้อมูลจริงกลับมาทับ
+
+# การย้ายข้อมูลจากรุ่นเดิม
+- ผู้ใช้ที่เคยใช้รุ่น localStorage จะเห็นการ์ดในหน้าบัญชีให้กดย้ายขึ้น Supabase
+- ระบบออก uuid ใหม่ให้ทุกแถว ผูก carId กลับให้ถูก อัปโหลดรูปจาก IndexedDB ขึ้น Storage
+  แล้วลบข้อมูลเดิมในเครื่องทิ้ง (lib/legacy.js)
+- ข้อมูลที่เคยเก็บ duration เป็นนาที ถูกแปลงเป็นวินาทีระหว่างย้าย
 
 # ข้อจำกัดที่ต้องรู้
-- Login Admin/Admin ตรวจสอบฝั่งเบราว์เซอร์เท่านั้น เป็นการล็อกหน้าจอ ไม่ใช่การป้องกันข้อมูลจริง
-  ถ้าต้องการความปลอดภัยจริงต้องเพิ่ม backend + ฐานข้อมูล (เช่น Vercel Postgres + NextAuth)
-- ระบบแจ้งเตือนเป็นแบบ in-app (เห็นตอนเปิดเว็ป) ไม่ใช่ push notification เพราะไม่มี server
-- ข้อมูลไม่ sync ข้ามเครื่อง
+- ระบบแจ้งเตือนยังเป็นแบบ in-app (เห็นตอนเปิดเว็ป) ไม่ใช่ push notification
+- ไฟล์ส่งออก JSON มีเฉพาะข้อมูลตัวเลข/ข้อความ ไม่รวมรูป เพราะรูปอยู่ใน Supabase Storage
+- การนำเข้าไฟล์จะ "เพิ่ม" เข้าบัญชีปัจจุบัน ไม่ได้แทนที่ของเดิม (ปลอดภัยกว่า)
 
 # การตัดสินใจที่ตกลงกับผู้ใช้
 - เก็บข้อมูลแบบ localStorage + IndexedDB
@@ -158,6 +172,18 @@ lib/
   exporters.js        CSV และไฟล์สำรอง JSON
   demo.js             ข้อมูลตัวอย่าง
 
+# ขั้นตอนตั้งค่า Supabase (ทำครั้งเดียว)
+1. สร้างโปรเจกต์ที่ supabase.com
+2. SQL Editor > New query > วาง supabase/schema.sql ทั้งไฟล์ > Run
+   (สร้างตาราง, RLS policy, บัคเก็ตรูป และ trigger สร้าง settings ให้ผู้ใช้ใหม่)
+3. Project Settings > Data API คัดลอก Project URL และ anon public key
+4. ใส่เป็น environment variable ชื่อ
+   NEXT_PUBLIC_SUPABASE_URL และ NEXT_PUBLIC_SUPABASE_ANON_KEY
+   - ในเครื่อง: คัดลอก .env.local.example เป็น .env.local
+   - บน Vercel: Project Settings > Environment Variables แล้ว Redeploy
+5. Authentication > URL Configuration ตั้ง Site URL เป็น URL ของเว็ปบน Vercel
+   เพื่อให้ลิงก์ยืนยันอีเมลและลิงก์ตั้งรหัสใหม่เด้งกลับมาถูกที่
+
 # วิธีรัน
   npm install
   npm run dev          เปิด http://localhost:3000
@@ -165,11 +191,11 @@ lib/
 
 # วิธี Deploy บน Vercel
 - push ขึ้น GitHub แล้ว Import Project ใน Vercel — ตรวจเจอ Next.js เองไม่ต้องตั้งค่าอะไร
-- หรือใช้ `npx vercel` จากโฟลเดอร์นี้
-- ไม่ต้องตั้ง environment variable ใดๆ เพราะไม่มี backend
+- ต้องใส่ environment variable สองตัวข้างบน ไม่งั้นเว็ปจะขึ้นหน้าบอกวิธีตั้งค่าแทน
 
 # สิ่งที่ยังไม่ได้ทำ / ต่อยอดได้
-- ยังไม่มี backend จึงยังไม่มี sync ข้ามเครื่อง และไม่มี login จริง
-- ยังไม่มี push notification (ต้องมี server + service worker)
+- ยังไม่มี push notification (ต้องมี service worker + Web Push)
 - ยังไม่ได้ทำ PWA ให้ติดตั้งลงหน้าจอมือถือ
 - ยังไม่มีการนำเข้าข้อมูลจาก CSV (มีแต่ส่งออก)
+- ยังไม่มี realtime sync ระหว่างแท็บ/เครื่อง (Supabase Realtime ทำได้ ถ้าต้องการ)
+- ยังไม่มีการแชร์ข้อมูลรถร่วมกันหลายบัญชี

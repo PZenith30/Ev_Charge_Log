@@ -17,12 +17,14 @@ export const viewport = {
 
 /**
  * ตั้งธีมก่อนเบราว์เซอร์วาดหน้าแรก เพื่อไม่ให้เห็นจอขาววาบตอนใช้ Dark mode
- * อ่านค่าจาก localStorage คีย์เดียวกับที่แอปใช้
+ * ธีมจริงเก็บใน Supabase แต่มิเรอร์ไว้ใน localStorage เพราะสคริปต์นี้ต้องทำงานก่อนโหลดข้อมูล
+ * ('evlog.v1' คือคีย์ของแอปรุ่นก่อน เผื่อผู้ใช้ที่ยังไม่ได้ย้ายข้อมูล)
  */
 const themeBoot = `(function(){try{
-var t='auto',raw=localStorage.getItem('evlog.v1');
-if(raw){var s=(JSON.parse(raw)||{}).settings;if(s&&s.theme)t=s.theme;}
-var d=t==='dark'||(t==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+var t=localStorage.getItem('evlog.theme');
+if(!t){var raw=localStorage.getItem('evlog.v1');
+  if(raw){var s=(JSON.parse(raw)||{}).settings;if(s&&s.theme)t=s.theme;}}
+var d=t==='dark'||((!t||t==='auto')&&window.matchMedia('(prefers-color-scheme: dark)').matches);
 document.documentElement.setAttribute('data-theme',d?'dark':'light');
 }catch(e){}})();`;
 

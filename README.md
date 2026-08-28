@@ -15,6 +15,16 @@
 - **รถหลายคัน** เลือกยี่ห้อ/รุ่นจาก dropdown พร้อมเติมความจุแบตและระยะทางให้อัตโนมัติ
 - **Dark / Light** และรองรับทั้งมือถือและคอมพิวเตอร์
 
+## ตั้งค่า Supabase (ทำครั้งเดียว)
+
+1. สร้างโปรเจกต์ที่ [supabase.com](https://supabase.com)
+2. **SQL Editor → New query** วางไฟล์ [supabase/schema.sql](supabase/schema.sql) ทั้งไฟล์แล้วกด Run
+   สร้างตาราง, Row Level Security, บัคเก็ตรูป และ trigger ให้ครบ (รันซ้ำได้ ไม่พัง)
+3. **Project Settings → Data API** คัดลอก Project URL และ anon public key
+4. คัดลอก `.env.local.example` เป็น `.env.local` แล้วใส่ค่าจริง
+5. **Authentication → URL Configuration** ตั้ง Site URL เป็น URL ของเว็ปจริง
+   เพื่อให้ลิงก์ยืนยันอีเมลและลิงก์ตั้งรหัสใหม่เด้งกลับมาถูกที่
+
 ## เริ่มใช้งาน
 
 ```bash
@@ -22,40 +32,59 @@ npm install
 npm run dev
 ```
 
-เปิด http://localhost:3000 แล้วเข้าสู่ระบบด้วย **Admin / Admin**
+เปิด http://localhost:3000 แล้วกด **สมัครสมาชิก** ด้วยอีเมลของคุณ
 
 ถ้าอยากดูหน้าตาแดชบอร์ดทันที ไปที่ **บัญชี & รถของฉัน → ใส่ข้อมูลตัวอย่าง**
 
 ## Deploy บน Vercel
 
-push ขึ้น GitHub แล้ว import project ใน Vercel — ตรวจเจอ Next.js เองไม่ต้องตั้งค่าอะไร
-หรือรัน `npx vercel` จากโฟลเดอร์นี้ ไม่ต้องใส่ environment variable ใดๆ
+push ขึ้น GitHub แล้ว import project ใน Vercel — ตรวจเจอ Next.js เอง
+ต้องใส่ environment variable สองตัวนี้ที่ **Project Settings → Environment Variables**
+
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+```
+
+ถ้าไม่ใส่ เว็ปจะขึ้นหน้าบอกวิธีตั้งค่าแทนที่จะพังเงียบๆ
 
 ## การเก็บข้อมูล
 
-แอปนี้ไม่มี backend ข้อมูลอยู่ในเบราว์เซอร์เครื่องที่ใช้งานเท่านั้น
-
 | ข้อมูล | ที่เก็บ |
 | --- | --- |
-| รถ ประวัติชาร์จ ต้นทุน การเตือน การตั้งค่า | `localStorage` คีย์ `evlog.v1` |
-| รูปแนบ (สลิป / สกรีนช็อต) | `IndexedDB` ชื่อ `evlog-images` |
+| รถ ประวัติชาร์จ ต้นทุน การเตือน การตั้งค่า | ตาราง Postgres บน Supabase |
+| รูปแนบ (สลิป / สกรีนช็อต) | Supabase Storage บัคเก็ต `charge-images` (private) |
+| ธีม และสถานะ "ดูรถทุกคัน" | `localStorage` (ค่าประจำเครื่อง) |
 
-รูปจะถูกย่อเหลือด้านยาวสุด 1600px และบีบเป็น JPEG ก่อนเก็บ
-เนื่องจากข้อมูลผูกกับเบราว์เซอร์ ควรกด **สำรองข้อมูล (JSON)** ในหน้าบัญชีเก็บไว้เป็นระยะ
+ทุกตารางเปิด **Row Level Security** ผูกกับ `auth.uid()` ผู้ใช้เห็นและแก้ได้เฉพาะข้อมูลของตัวเอง
+anon key เปิดเผยได้โดยไม่มีปัญหา เพราะความปลอดภัยอยู่ที่ RLS ไม่ใช่ที่การซ่อน key
+
+รูปแนบเป็นบัคเก็ตส่วนตัว เข้าถึงผ่าน signed URL อายุ 1 ชั่วโมง
+path เป็น `<user_id>/<uuid>.jpg` และ policy ตรวจโฟลเดอร์แรกเทียบกับผู้ใช้ที่ล็อกอิน
+
+## ย้ายข้อมูลจากรุ่นเดิม
+
+ถ้าเคยใช้รุ่นที่เก็บข้อมูลในเบราว์เซอร์ พอล็อกอินครั้งแรกจะเห็นการ์ดในหน้า **บัญชี**
+ให้กดย้ายข้อมูลขึ้น Supabase — ระบบอัปโหลดรูปจาก IndexedDB ให้ด้วย แล้วลบของเดิมในเครื่องทิ้ง
 
 ## ข้อจำกัด
 
-- Login `Admin / Admin` ตรวจสอบฝั่งเบราว์เซอร์เท่านั้น เป็นการล็อกหน้าจอเบื้องต้น **ไม่ใช่การป้องกันข้อมูลจริง**
 - แจ้งเตือนเป็นแบบ in-app (เห็นตอนเปิดเว็ป) ไม่ใช่ push notification
-- ข้อมูลไม่ sync ข้ามเครื่อง
-
-ทั้งสามข้อแก้ได้ด้วยการเพิ่ม backend เช่น Vercel Postgres + NextAuth
+- ไฟล์ส่งออก JSON ไม่รวมรูปแนบ เพราะรูปอยู่ใน Supabase Storage
+- ยังไม่มี realtime sync ระหว่างแท็บ/เครื่อง (ต้องรีเฟรชเพื่อเห็นการแก้จากเครื่องอื่น)
 
 ## โครงสร้าง
 
 ```
-app/          หน้าเว็ปแต่ละหน้า (App Router) + globals.css
-components/   store (React Context), AppShell, กราฟ SVG, modal ต่างๆ
-lib/          สูตรคำนวณ, จัดรูปแบบ, storage, ส่งออกไฟล์, ข้อมูลรถ EV
-doc/plan.txt  แผนงานและบันทึกการตัดสินใจ
+app/             หน้าเว็ปแต่ละหน้า (App Router) + globals.css
+components/      store (React Context), AppShell, Login, กราฟ SVG, modal ต่างๆ
+lib/
+  supabase.js    client + ข้อความ error ภาษาไทย
+  db.js          query ทั้งหมดที่คุยกับฐานข้อมูล
+  mappers.js     แปลง snake_case (DB) <-> camelCase (แอป)
+  storage.js     รูปแนบบน Supabase Storage
+  legacy.js      ย้ายข้อมูลรุ่นเดิมขึ้น cloud
+  calc.js        สูตรคำนวณทั้งหมด
+supabase/schema.sql   ตาราง + RLS + บัคเก็ต (รันใน SQL Editor)
+doc/plan.txt          แผนงานและบันทึกการตัดสินใจ
 ```

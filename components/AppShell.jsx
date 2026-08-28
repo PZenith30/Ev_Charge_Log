@@ -1,5 +1,5 @@
 'use client';
-/** โครงหน้าจอหลัก — sidebar (จอใหญ่), tab bar + ปุ่มลอย (มือถือ), แถบบน และ modal ระดับแอป */
+/** โครงหน้าจอหลัก — จัดการสถานะการเข้าสู่ระบบ การโหลดข้อมูล และเมนูทั้งหมด */
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NAV } from '@/lib/data';
@@ -11,14 +11,64 @@ import { useStore } from './store';
 
 const isActive = (pathname, href) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
 
+/** ยังไม่ได้ตั้งค่า env — บอกวิธีแก้แทนที่จะพังเงียบๆ */
+function SetupNotice() {
+  return (
+    <div className="login-wrap">
+      <div className="login-card" style={{ maxWidth: 520 }}>
+        <div className="login-mark" style={{ background: 'var(--danger)' }}>
+          <Icon name="alert" style={{ stroke: '#fff', fill: 'none', strokeWidth: 2 }} />
+        </div>
+        <h1>ยังไม่ได้เชื่อมต่อ Supabase</h1>
+        <p className="sub">แอปต้องใช้ค่าสองตัวนี้จึงจะทำงานได้</p>
+        <pre
+          style={{
+            background: 'var(--surface-3)', padding: 12, borderRadius: 'var(--r-sm)',
+            fontSize: 12, overflowX: 'auto', margin: 0,
+          }}
+        >{`NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...`}</pre>
+        <div className="sm muted" style={{ marginTop: 16, lineHeight: 1.7 }}>
+          <b>รันในเครื่อง:</b> คัดลอก <code>.env.local.example</code> เป็น <code>.env.local</code> แล้วใส่ค่าจริง
+          <br />
+          <b>บน Vercel:</b> Project Settings → Environment Variables แล้ว Redeploy
+          <br />
+          หาค่าได้ที่ Supabase Dashboard → Project Settings → Data API
+          <br />
+          <br />
+          อย่าลืมรัน <code>supabase/schema.sql</code> ใน SQL Editor เพื่อสร้างตารางด้วย
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FullScreenMessage({ children }) {
+  return (
+    <div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', padding: 24 }}>
+      <div style={{ textAlign: 'center', color: 'var(--muted)' }}>{children}</div>
+    </div>
+  );
+}
+
 export default function AppShell({ children }) {
   const {
-    ready, authed, logout, cars, settings, setSettings,
-    dark, toggleTheme, alertCount, quickOpen, setQuickOpen,
+    phase, user, dataLoading, loadError, reload,
+    cars, settings, viewAllCars, setActiveCar,
+    dark, toggleTheme, logout, alertCount, quickOpen, setQuickOpen,
   } = useStore();
   const pathname = usePathname();
 
-  if (!ready) {
+  if (phase === 'unconfigured') {
+    return (
+      <>
+        <IconSprite />
+        <SetupNotice />
+      </>
+    );
+  }
+
+  if (phase === 'loading') {
     return (
       <>
         <IconSprite />
@@ -27,7 +77,7 @@ export default function AppShell({ children }) {
     );
   }
 
-  if (!authed) {
+  if (phase === 'anon') {
     return (
       <>
         <IconSprite />
@@ -39,6 +89,7 @@ export default function AppShell({ children }) {
 
   const current = NAV.find((item) => isActive(pathname, item.href)) || NAV[0];
   const tabs = NAV.filter((item) => item.tab);
+  const carValue = viewAllCars ? '__all__' : settings.activeCar || '';
 
   return (
     <>
@@ -66,6 +117,9 @@ export default function AppShell({ children }) {
 
         <div className="nav-spacer" />
         <div className="nav-sep" />
+        <div style={{ padding: '4px 11px 8px', fontSize: 11.5, color: 'var(--faint)', wordBreak: 'break-all' }}>
+          {user?.email}
+        </div>
         <button type="button" className="navlink" onClick={toggleTheme}>
           <Icon name={dark ? 'sun' : 'moon'} />
           {dark ? 'โหมดสว่าง' : 'โหมดมืด'}
@@ -85,8 +139,8 @@ export default function AppShell({ children }) {
 
           {cars.length > 0 ? (
             <select
-              value={settings.activeCar || ''}
-              onChange={(e) => setSettings({ activeCar: e.target.value })}
+              value={carValue}
+              onChange={(e) => setActiveCar(e.target.value)}
               style={{ width: 'auto', maxWidth: 190, fontSize: 13.5, padding: '7px 30px 7px 10px' }}
               title="เลือกรถที่ต้องการดูข้อมูล"
             >
@@ -121,7 +175,24 @@ export default function AppShell({ children }) {
           </button>
         </header>
 
-        <div className="views">{children}</div>
+        <div className="views">
+          {loadError ? (
+            <div className="alert danger" style={{ marginBottom: 14 }}>
+              <Icon name="alert" />
+              <div style={{ flex: 1 }}>
+                <div className="t1">โหลดข้อมูลไม่สำเร็จ</div>
+                <div className="t2">{loadError}</div>
+              </div>
+              <button type="button" className="btn btn-sm" onClick={() => reload(user.id)}>ลองใหม่</button>
+            </div>
+          ) : null}
+
+          {dataLoading && !loadError ? (
+            <FullScreenMessage>กำลังโหลดข้อมูลจาก Supabase…</FullScreenMessage>
+          ) : (
+            children
+          )}
+        </div>
       </main>
 
       <nav className="tabbar">
