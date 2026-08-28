@@ -260,6 +260,31 @@ export function LineChart({ labels, values, color, height = 232, tip: tipFor, av
   );
 }
 
+/** เส้นแนวโน้มขนาดเล็ก ไม่มีแกน ใช้ประกอบตัวเลขในการ์ด */
+export function Sparkline({ values, color = 'var(--dc)', height = 46 }) {
+  const [ref, W] = useMeasure();
+  const pts = values.filter((v) => Number.isFinite(v));
+  if (pts.length < 2) return <div ref={ref} style={{ height }} />;
+
+  const w = Math.max(60, W || 120);
+  const max = Math.max(...pts);
+  const min = Math.min(...pts);
+  const span = max - min || 1;
+  const pad = 4;
+  const x = (i) => (w * i) / (pts.length - 1);
+  const y = (v) => pad + (height - pad * 2) * (1 - (v - min) / span);
+  const d = pts.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
+
+  return (
+    <div ref={ref}>
+      <svg viewBox={`0 0 ${w} ${height}`} style={{ height, width: '100%', display: 'block' }} aria-hidden="true">
+        <path d={`${d} L${w} ${height} L0 ${height} Z`} style={{ fill: color, opacity: 0.12 }} />
+        <path d={d} fill="none" style={{ stroke: color }} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </div>
+  );
+}
+
 /* -------------------------------- โดนัท -------------------------------- */
 export function DonutChart({ slices, center, sub, unit = '', empty }) {
   const [tip, bind] = useTip();

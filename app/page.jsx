@@ -1,50 +1,83 @@
 'use client';
-/** แดชบอร์ด — ภาพรวมการชาร์จ ค่าใช้จ่าย และประสิทธิภาพทั้งหมด */
+/** แดชบอร์ด — ภาพรวมตามช่วงเวลาที่เลือกบนแถบบน */
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/components/store';
-import { Stat, EmptyState } from '@/components/ui';
-import { BarChart, DonutChart, LineChart } from '@/components/Charts';
-import { AlertBanner, BudgetBanner, SessionDetail, SessionRow } from '@/components/SessionViews';
-import { monthlyTotals, sDashReading, sDist, sEff, sKwh100, sTotal, summarize } from '@/lib/calc';
-import { fmt, fmt0, fmt1, fmtDist, money, money0, n, thDate, thMonth, thMonthLong } from '@/lib/format';
+import { Stat, EmptyState, Trend, TypePill } from '@/components/ui';
+import { BarChart, DonutChart, LineChart, Sparkline } from '@/components/Charts';
+import { AlertBanner, BudgetBanner, SessionDetail } from '@/components/SessionViews';
+import CarArt from '@/components/CarArt';
+import Icon from '@/components/Icon';
+import {
+  monthlyTotals, sDist, sEff, sKwh100, sPricePerKwh, sTotal, summarize,
+} from '@/lib/calc';
+import { comparisonLabel, pctChange } from '@/lib/period';
+import { fmt, fmt0, fmt1, fmtDist, isNum, money, money0, n, thDate, thMonth, thMonthLong } from '@/lib/format';
+
+const STATION_COLORS = ['var(--accent)', 'var(--dc)', 'var(--purple)', 'var(--warn)', 'var(--faint)'];
+
+/** จัดกลุ่มการชาร์จตามชื่อสถานี เรียงจากใช้บ่อยที่สุด */
+function groupStations(list) {
+  const map = new Map();
+  for (const s of list) {
+    const key = (s.station || '').trim() || 'ไม่ระบุสถานี';
+    if (!map.has(key)) map.set(key, { name: key, count: 0, kwh: 0, cost: 0, ac: 0, dc: 0 });
+    const g = map.get(key);
+    g.count += 1;
+    g.kwh += n(s.kwh);
+    g.cost += sTotal(s);
+    if (s.type === 'DC') g.dc += 1; else g.ac += 1;
+  }
+  return Array.from(map.values()).sort((a, b) => b.count - a.count);
+}
+
+/** รวมพลังงาน/ค่าใช้จ่ายเป็นรายวัน สำหรับกราฟช่วงสั้น */
+function dailyTotals(list) {
+  const map = new Map();
+  for (const s of list) {
+    if (!s.date) continue;
+    if (!map.has(s.date)) map.set(s.date, { kwh: 0, cost: 0, count: 0 });
+    const d = map.get(s.date);
+    d.kwh += n(s.kwh);
+    d.cost += sTotal(s);
+    d.count += 1;
+  }
+  return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+}
 
 export default function DashboardPage() {
-  const { sessions, costs, due, budgetOver, setEditingId } = useStore();
+  const {
+    sessions, costs, periodSessions, periodCosts, prevSessions, prevCosts,
+    period, activeCar, due, budgetOver, setEditingId,
+  } = useStore();
   const [detail, setDetail] = useState(null);
+  const [grain, setGrain] = useState('day');
   const router = useRouter();
 
-  const sum = useMemo(() => summarize(sessions), [sessions]);
-  const otherCost = useMemo(() => costs.reduce((a, c) => a + n(c.amount), 0), [costs]);
-  const months = useMemo(() => monthlyTotals(sessions, costs), [sessions, costs]);
-  const monthCount = months.length || 1;
+  const sum = useMemo(() => summarize(periodSessions), [periodSessions]);
+  const prev = useMemo(() => summarize(prevSessions), [prevSessions]);
+  const otherCost = useMemo(() => periodCosts.reduce((a, c) => a + n(c.amount), 0), [periodCosts]);
+  const prevOtherCost = useMemo(() => prevCosts.reduce((a, c) => a + n(c.amount), 0), [prevCosts]);
 
-  const recentAsc = useMemo(() => sessions.slice(0, 24).reverse(), [sessions]);
-  const effPoints = useMemo(
-    () => sessions.filter((s) => sEff(s) !== null).slice(0, 30).reverse(),
-    [sessions]
+  const asc = useMemo(() => periodSessions.slice().reverse(), [periodSessions]);
+  const days = useMemo(() => dailyTotals(periodSessions), [periodSessions]);
+  const months = useMemo(() => monthlyTotals(periodSessions, periodCosts), [periodSessions, periodCosts]);
+  const stations = useMemo(() => groupStations(periodSessions), [periodSessions]);
+  const cmpLabel = comparisonLabel(period.key);
+
+  const effPoints = useMemo(() => asc.filter((s) => sEff(s) !== null), [asc]);
+  const priceTrend = useMemo(
+    () => asc.map((s) => sPricePerKwh(s)).filter((v) => v !== null),
+    [asc]
   );
-  const effAvg = effPoints.length
-    ? effPoints.reduce((a, s) => a + sEff(s), 0) / effPoints.length
-    : NaN;
 
-  const monthsShown = months.slice(-12);
   const activeDue = due.filter((a) => a.level !== 'ok').slice(0, 3);
-
-  const chargeTip = (list) => (i) => {
-    const s = list[i];
-    if (!s) return null;
-    return (
-      <>
-        <b>{thDate(s.date, 'long')}</b>
-        <br />
-        {s.type === 'DC' ? 'DC' : 'AC'} · {fmt1(n(s.kwh))} kWh · {money(sTotal(s))}
-        {sDist(s) !== null ? (<><br />{fmtDist(sDist(s))} km · {fmt(sEff(s), 2)} km/kWh</>) : null}
-        {s.station ? (<><br />{s.station}</>) : null}
-      </>
-    );
-  };
+  const latestSoc = periodSessions.find((s) => isNum(s.socAfter))
+    ?? sessions.find((s) => isNum(s.socAfter));
+  const soc = latestSoc ? Number(latestSoc.socAfter) : null;
+  const estRange = activeCar && isNum(activeCar.range) && soc !== null ? (n(activeCar.range) * soc) / 100 : null;
+  const lastOdoValue = sessions.find((s) => isNum(s.odoAfter));
 
   if (!sessions.length && !costs.length) {
     return (
@@ -62,193 +95,276 @@ export default function DashboardPage() {
     );
   }
 
+  const chartRows = grain === 'day' ? days : months;
+  const chartLabels = chartRows.map(([k]) => (grain === 'day' ? thDate(k) : thMonth(k)));
+  const chartTip = (i) => {
+    const [k, v] = chartRows[i];
+    return (
+      <>
+        <b>{grain === 'day' ? thDate(k, 'long') : thMonthLong(k)}</b>
+        <br />
+        {fmt1(v.kwh)} kWh · {money(v.cost ?? v.charge ?? 0)}
+        <br />
+        {v.count} ครั้ง
+      </>
+    );
+  };
+
   return (
     <>
       {budgetOver || activeDue.length ? (
-        <div className="stack" style={{ marginBottom: 14 }}>
+        <div className="stack" style={{ marginBottom: 16 }}>
           {budgetOver ? <BudgetBanner over budget={budgetOver.budget} avg={budgetOver.avg} /> : null}
           {activeDue.map((a) => <AlertBanner key={a.id} item={a} />)}
         </div>
       ) : null}
 
+      {/* ---------------- Summary cards ---------------- */}
       <div className="stats">
-        <Stat icon="bolt" label="จำนวนครั้งที่ชาร์จ" value={fmt0(sum.count)} unit="ครั้ง"
-          detail={sum.count ? `AC ${sum.ac} · DC ${sum.dc}` : null} />
-        <Stat icon="battery" label="พลังงานสะสม" value={fmt1(sum.kwh)} unit="kWh"
-          detail={sum.count ? `เฉลี่ย ${fmt1(sum.kwh / sum.count)} kWh/ครั้ง` : null} />
-        <Stat icon="road" label="ระยะทางสะสม" value={fmtDist(sum.dist)} unit="km"
-          detail={sum.count ? `เฉลี่ย ${fmtDist(sum.dist / sum.count)} km/ครั้ง` : null} />
-        <Stat icon="coin" label="ค่าชาร์จสะสม" value={money0(sum.cost)}
-          detail={`+ ต้นทุนอื่น ${money0(otherCost)} = ${money0(sum.cost + otherCost)}`} />
-        <Stat icon="gauge" label="Efficiency เฉลี่ย"
-          value={sum.eff !== null ? fmt(sum.eff, 2) : '—'} unit="km/kWh"
-          detail={sum.eff !== null
-            ? `${fmt0(sum.eff100)} km/100kWh · ${fmt(sum.kwh100, 1)} kWh/100km`
-            : 'ต้องกรอกเลขไมล์ก่อน/หลังชาร์จ'} />
-        <Stat icon="road" label="ค่าใช้จ่ายต่อระยะทาง"
-          value={sum.bahtKm !== null ? fmt(sum.bahtKm, 2) : '—'} unit="฿/km"
-          detail={sum.dist > 0 ? `รวมต้นทุนอื่น ${fmt((sum.cost + otherCost) / sum.dist, 2)} ฿/km` : null} />
-        <Stat icon="wallet" label="ค่าใช้จ่ายเฉลี่ย/เดือน"
-          value={money0((sum.cost + otherCost) / monthCount)}
-          detail={`จากข้อมูล ${monthCount} เดือน`} />
-        <Stat icon="coin" label="ราคาเฉลี่ย"
-          value={sum.avgPrice !== null ? fmt(sum.avgPrice, 2) : '—'} unit="฿/kWh"
-          detail={[
-            sum.acPrice !== null ? `AC ${fmt(sum.acPrice, 2)}` : null,
-            sum.dcPrice !== null ? `DC ${fmt(sum.dcPrice, 2)}` : null,
-          ].filter(Boolean).join(' · ')} />
+        <Stat
+          tone="accent" icon="battery" label="การชาร์จทั้งหมด"
+          value={fmt0(sum.count)} unit="ครั้ง"
+          detail={<Trend pct={pctChange(sum.count, prev.count)} label={cmpLabel} />}
+        />
+        <Stat
+          tone="dc" icon="bolt" label="พลังงานรวม"
+          value={fmt(sum.kwh, 2)} unit="kWh"
+          detail={<Trend pct={pctChange(sum.kwh, prev.kwh)} label={cmpLabel} />}
+        />
+        <Stat
+          tone="purple" icon="coin" label="ค่าใช้จ่ายรวม"
+          value={money0(sum.cost + otherCost)}
+          detail={<Trend pct={pctChange(sum.cost + otherCost, prev.cost + prevOtherCost)} label={cmpLabel} invert />}
+        />
+        <Stat
+          tone="warn" icon="road" label="ระยะทางรวม"
+          value={fmtDist(sum.dist)} unit="km"
+          detail={<Trend pct={pctChange(sum.dist, prev.dist)} label={cmpLabel} />}
+        />
       </div>
 
-      <div className="charts">
+      {/* ---------------- กราฟพลังงาน + สัดส่วนสถานี ---------------- */}
+      <div className="charts split">
         <div className="card">
           <div className="card-head">
-            <h3>พลังงานที่ชาร์จแต่ละครั้ง<span className="hint">หน่วย kWh · แยกสี AC / DC</span></h3>
-          </div>
-          <div className="card-body">
-            <BarChart
-              stacked
-              labels={recentAsc.map((s) => thDate(s.date))}
-              series={[
-                { name: 'AC', color: 'var(--ac)', values: recentAsc.map((s) => (s.type === 'DC' ? 0 : n(s.kwh))) },
-                { name: 'DC', color: 'var(--dc)', values: recentAsc.map((s) => (s.type === 'DC' ? n(s.kwh) : 0)) },
-              ]}
-              tip={chargeTip(recentAsc)}
-              empty="ยังไม่มีการชาร์จที่บันทึกไว้"
-            />
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="card-head">
-            <h3>ค่าใช้จ่ายต่อครั้ง<span className="hint">รวมค่าบริการเพิ่มเติมแล้ว</span></h3>
-          </div>
-          <div className="card-body">
-            <BarChart
-              stacked
-              labels={recentAsc.map((s) => thDate(s.date))}
-              series={[
-                { name: 'AC', color: 'var(--ac)', values: recentAsc.map((s) => (s.type === 'DC' ? 0 : sTotal(s))) },
-                { name: 'DC', color: 'var(--dc)', values: recentAsc.map((s) => (s.type === 'DC' ? sTotal(s) : 0)) },
-              ]}
-              tip={chargeTip(recentAsc)}
-              empty="ยังไม่มีการชาร์จที่บันทึกไว้"
-            />
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="card-head"><h3>เปรียบเทียบ AC / DC</h3></div>
-          <div className="card-body">
-            <DonutChart
-              center={fmt0(sum.kwh)}
-              sub="kWh รวม"
-              slices={[
-                { label: 'AC', value: sum.acKwh, color: 'var(--ac)' },
-                { label: 'DC', value: sum.dcKwh, color: 'var(--dc)' },
-              ]}
-              empty="ยังไม่มีการชาร์จที่บันทึกไว้"
-            />
-            {sum.count ? (
-              <table className="compact" style={{ marginTop: 14 }}>
-                <thead>
-                  <tr>
-                    <th />
-                    <th className="num" style={{ color: 'var(--ac)' }}>AC</th>
-                    <th className="num" style={{ color: 'var(--dc)' }}>DC</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr><td className="muted">จำนวนครั้ง</td><td className="num">{sum.ac} ครั้ง</td><td className="num">{sum.dc} ครั้ง</td></tr>
-                  <tr><td className="muted">พลังงาน</td><td className="num">{fmt1(sum.acKwh)} kWh</td><td className="num">{fmt1(sum.dcKwh)} kWh</td></tr>
-                  <tr><td className="muted">ค่าใช้จ่าย</td><td className="num">{money0(sum.acCost)}</td><td className="num">{money0(sum.dcCost)}</td></tr>
-                  <tr>
-                    <td className="muted">ราคาเฉลี่ย</td>
-                    <td className="num">{sum.acPrice !== null ? `${fmt(sum.acPrice, 2)} ฿/kWh` : '—'}</td>
-                    <td className="num">{sum.dcPrice !== null ? `${fmt(sum.dcPrice, 2)} ฿/kWh` : '—'}</td>
-                  </tr>
-                </tbody>
-              </table>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="card-head">
-            <h3>ค่าใช้จ่ายรายเดือน<span className="hint">ค่าชาร์จ + ต้นทุนอื่นของรถ</span></h3>
-          </div>
-          <div className="card-body">
-            <BarChart
-              stacked
-              labels={monthsShown.map(([k]) => thMonth(k))}
-              series={[
-                { name: 'ค่าชาร์จ', color: 'var(--accent)', values: monthsShown.map(([, v]) => v.charge) },
-                { name: 'ต้นทุนอื่น', color: 'var(--dc)', values: monthsShown.map(([, v]) => v.other) },
-              ]}
-              tip={(i) => {
-                const [k, v] = monthsShown[i];
-                return (
-                  <>
-                    <b>{thMonthLong(k)}</b><br />
-                    ค่าชาร์จ {money(v.charge)}<br />
-                    ต้นทุนอื่น {money(v.other)}<br />
-                    รวม {money(v.charge + v.other)}<br />
-                    {v.count} ครั้ง · {fmt1(v.kwh)} kWh
-                  </>
-                );
-              }}
-              empty="ยังไม่มีข้อมูลรายเดือน"
-            />
-          </div>
-        </div>
-
-        <div className="card span2">
-          <div className="card-head">
-            <h3>แนวโน้มอัตราสิ้นเปลือง<span className="hint">คำนวณจากระยะทาง ÷ พลังงานที่ชาร์จ (km/kWh)</span></h3>
+            <h3>พลังงานที่ชาร์จ<span className="hint">หน่วย kWh</span></h3>
+            <select
+              value={grain}
+              onChange={(e) => setGrain(e.target.value)}
+              style={{ width: 'auto', fontSize: 13, padding: '6px 30px 6px 10px' }}
+            >
+              <option value="day">รายวัน</option>
+              <option value="month">รายเดือน</option>
+            </select>
           </div>
           <div className="card-body">
             <LineChart
-              labels={effPoints.map((s) => thDate(s.date))}
-              values={effPoints.map((s) => sEff(s))}
+              labels={chartLabels}
+              values={chartRows.map(([, v]) => v.kwh)}
               color="var(--accent)"
-              avg={effAvg}
-              avgLabel={effPoints.length ? `ค่าเฉลี่ย ${fmt(effAvg, 2)} km/kWh` : null}
-              legend="km/kWh ต่อครั้ง"
-              empty="ต้องมีเลขไมล์ก่อน/หลังชาร์จอย่างน้อย 2 ครั้ง จึงจะคำนวณแนวโน้มได้"
-              tip={(i) => {
-                const s = effPoints[i];
-                const dash = sDashReading(s);
-                return (
-                  <>
-                    <b>{thDate(s.date, 'long')}</b><br />
-                    {fmt(sEff(s), 2)} km/kWh · {fmt(sKwh100(s), 1)} kWh/100km<br />
-                    {fmtDist(sDist(s))} km / {fmt1(n(s.kwh))} kWh
-                    {dash ? (
-                      <><br />หน้าปัด {fmt(dash.value, dash.unit === 'km/kWh' ? 2 : 0)} {dash.unit}</>
-                    ) : null}
-                  </>
-                );
-              }}
+              height={250}
+              tip={chartTip}
+              empty="ยังไม่มีการชาร์จในช่วงเวลานี้"
             />
+          </div>
+        </div>
+
+        <div className="stack-col">
+          <div className="card">
+            <div className="card-head"><h3>สัดส่วนสถานีชาร์จ</h3></div>
+            <div className="card-body">
+              <DonutChart
+                center={fmt0(sum.count)}
+                sub="ครั้ง"
+                unit=""
+                slices={stations.slice(0, 5).map((s, i) => ({
+                  label: s.name, value: s.count, color: STATION_COLORS[i % STATION_COLORS.length],
+                }))}
+                empty="ยังไม่มีข้อมูลสถานี"
+              />
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-head plain"><h3>ค่าใช้จ่ายเฉลี่ย</h3></div>
+            <div className="card-body" style={{ paddingTop: 10 }}>
+              <div style={{ fontSize: 28, fontWeight: 690, letterSpacing: '-.025em' }}>
+                {sum.avgPrice !== null ? money(sum.avgPrice) : '—'}
+                <small style={{ fontSize: 14, fontWeight: 500, color: 'var(--muted)', marginLeft: 4 }}>/ kWh</small>
+              </div>
+              <div className="sm" style={{ marginTop: 6 }}>
+                <Trend pct={pctChange(sum.avgPrice, prev.avgPrice)} label={cmpLabel} invert />
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <Sparkline values={priceTrend} color="var(--dc)" />
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
+      {/* ---------------- สถานะรถ + สถานีที่ใช้บ่อย ---------------- */}
+      <div className="charts half">
+        <div className="card">
+          <div className="card-head"><h3>สถานะรถปัจจุบัน</h3></div>
+          <div className="card-body">
+            {activeCar ? (
+              <>
+                <div className="vstat">
+                  <div className="soc">
+                    <div className="big">
+                      {soc !== null ? fmt0(soc) : '—'}<small> %</small>
+                    </div>
+                    <div className="km">{estRange !== null ? `${fmt0(estRange)} km` : '—'}</div>
+                    <div className="cap">ระยะทางที่วิ่งได้</div>
+                  </div>
+                  <div className="art"><CarArt soc={soc} /></div>
+                </div>
+                <div className="vmini">
+                  <div>
+                    <div className="k">แบตเตอรี่</div>
+                    <div className="v">
+                      {isNum(activeCar.batt) ? fmt1(Number(activeCar.batt)) : '—'}<small>kWh</small>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="k">การใช้พลังงานเฉลี่ย</div>
+                    <div className="v">
+                      {sum.kwh100 !== null ? fmt1(sum.kwh100) : '—'}<small>kWh/100km</small>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="k">ODO</div>
+                    <div className="v">
+                      {lastOdoValue ? fmtDist(Number(lastOdoValue.odoAfter)) : '—'}<small>km</small>
+                    </div>
+                  </div>
+                </div>
+                <p className="sm faint" style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Icon name="refresh" style={{ width: 13, height: 13, stroke: 'currentColor', fill: 'none', strokeWidth: 2 }} />
+                  {latestSoc ? `อัปเดตล่าสุด ${thDate(latestSoc.date, 'long')}` : 'ยังไม่เคยกรอก SOC'}
+                </p>
+              </>
+            ) : (
+              <EmptyState
+                message="ยังไม่ได้เลือกรถ"
+                action={<Link href="/account" className="btn btn-primary btn-sm">เพิ่มรถ</Link>}
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-head">
+            <h3>สถานีที่ใช้บ่อย</h3>
+            <Link href="/history" className="btn btn-sm btn-ghost">ดูทั้งหมด</Link>
+          </div>
+          <div className="card-body">
+            {stations.length ? (
+              <div className="station-list">
+                {stations.slice(0, 5).map((s, i) => (
+                  <div className="station-row" key={s.name}>
+                    <span className="station-pin" style={{ background: STATION_COLORS[i % STATION_COLORS.length] }}>
+                      {i + 1}
+                    </span>
+                    <div className="body">
+                      <div className="t1">{s.name}</div>
+                      <div className="t2">{s.count} ครั้ง · {fmt1(s.kwh)} kWh · {money0(s.cost)}</div>
+                      <div className="t3">
+                        <Icon name="bolt" viewBox="0 0 32 32" style={{ fill: 'currentColor', stroke: 'none' }} />
+                        {s.ac ? `AC ${s.ac}` : ''}{s.ac && s.dc ? ' · ' : ''}{s.dc ? `DC ${s.dc}` : ''}
+                        {s.kwh > 0 ? ` · เฉลี่ย ${fmt(s.cost / s.kwh, 2)} ฿/kWh` : ''}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState message="ยังไม่มีข้อมูลสถานีในช่วงเวลานี้" />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ---------------- แนวโน้มอัตราสิ้นเปลือง ---------------- */}
       <div className="card mt">
         <div className="card-head">
-          <h3>การชาร์จล่าสุด</h3>
+          <h3>แนวโน้มอัตราสิ้นเปลือง<span className="hint">คำนวณจากระยะทาง ÷ พลังงานที่ชาร์จ</span></h3>
+        </div>
+        <div className="card-body">
+          <BarChart
+            labels={effPoints.map((s) => thDate(s.date))}
+            series={[{ name: 'kWh/100km', color: 'var(--purple)', values: effPoints.map((s) => sKwh100(s)) }]}
+            height={200}
+            tip={(i) => {
+              const s = effPoints[i];
+              return (
+                <>
+                  <b>{thDate(s.date, 'long')}</b><br />
+                  {fmt(sKwh100(s), 1)} kWh/100km · {fmt(sEff(s), 2)} km/kWh<br />
+                  {fmtDist(sDist(s))} km / {fmt1(n(s.kwh))} kWh
+                </>
+              );
+            }}
+            empty="ต้องกรอกเลขไมล์ก่อน/หลังชาร์จจึงจะคำนวณได้"
+          />
+        </div>
+      </div>
+
+      {/* ---------------- ประวัติการชาร์จล่าสุด ---------------- */}
+      <div className="card mt">
+        <div className="card-head">
+          <h3>ประวัติการชาร์จล่าสุด</h3>
           <Link href="/history" className="btn btn-sm btn-ghost">ดูทั้งหมด</Link>
         </div>
-        <div className="rows">
-          {sessions.slice(0, 6).map((s) => (
-            <SessionRow key={s.id} session={s} onClick={() => setDetail(s)} />
-          ))}
-          {!sessions.length ? (
-            <EmptyState
-              message="ยังไม่มีการชาร์จที่บันทึกไว้"
-              action={<Link href="/add" className="btn btn-primary btn-sm">บันทึกการชาร์จครั้งแรก</Link>}
-            />
-          ) : null}
-        </div>
+        {periodSessions.length ? (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>วันที่</th>
+                  <th>สถานีชาร์จ</th>
+                  <th>ประเภท</th>
+                  <th className="num">% เริ่มต้น</th>
+                  <th className="num">% สิ้นสุด</th>
+                  <th className="num">พลังงาน (kWh)</th>
+                  <th className="num">ค่าใช้จ่าย (฿)</th>
+                  <th className="num">ระยะทาง (km)</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {periodSessions.slice(0, 6).map((s) => (
+                  <tr key={s.id} style={{ cursor: 'pointer' }} onClick={() => setDetail(s)}>
+                    <td>{thDate(s.date)}</td>
+                    <td>{s.station || '—'}</td>
+                    <td><TypePill type={s.type} /></td>
+                    <td className="num">{isNum(s.socBefore) ? `${fmt0(n(s.socBefore))}%` : '—'}</td>
+                    <td className="num">{isNum(s.socAfter) ? `${fmt0(n(s.socAfter))}%` : '—'}</td>
+                    <td className="num">{fmt(n(s.kwh), 2)}</td>
+                    <td className="num"><b>{fmt(sTotal(s), 2)}</b></td>
+                    <td className="num">{sDist(s) !== null ? fmtDist(sDist(s)) : '—'}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="btn btn-icon btn-ghost btn-sm"
+                        title="แก้ไข"
+                        onClick={(e) => { e.stopPropagation(); setEditingId(s.id); router.push('/add'); }}
+                      >
+                        <Icon name="edit" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <EmptyState
+            message="ไม่มีการชาร์จในช่วงเวลาที่เลือก"
+            action={<Link href="/add" className="btn btn-primary btn-sm">บันทึกการชาร์จ</Link>}
+          />
+        )}
       </div>
 
       {detail ? (

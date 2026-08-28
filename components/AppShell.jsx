@@ -3,11 +3,21 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NAV } from '@/lib/data';
+import { fmt0, isNum, n } from '@/lib/format';
 import Icon, { IconSprite } from './Icon';
 import Login from './Login';
 import QuickAdd from './QuickAdd';
+import CarArt from './CarArt';
+import DateRangePicker from './DateRangePicker';
+import SidebarQuickAdd from './SidebarQuickAdd';
 import { ConfirmDialog, Lightbox, Toasts } from './ui';
 import { useStore } from './store';
+
+/** SOC ล่าสุดของรถ = SOC หลังชาร์จของครั้งล่าสุดที่กรอกไว้ */
+function latestSoc(sessions) {
+  const hit = sessions.find((s) => isNum(s.socAfter));
+  return hit ? Number(hit.socAfter) : null;
+}
 
 const isActive = (pathname, href) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
 
@@ -54,8 +64,8 @@ function FullScreenMessage({ children }) {
 export default function AppShell({ children }) {
   const {
     phase, user, dataLoading, loadError, reload,
-    cars, settings, viewAllCars, setActiveCar,
-    dark, toggleTheme, logout, alertCount, quickOpen, setQuickOpen,
+    cars, settings, viewAllCars, setActiveCar, activeCar, sessions,
+    dark, toggleTheme, alertCount, quickOpen, setQuickOpen,
   } = useStore();
   const pathname = usePathname();
 
@@ -91,6 +101,11 @@ export default function AppShell({ children }) {
   const tabs = NAV.filter((item) => item.tab);
   const carValue = viewAllCars ? '__all__' : settings.activeCar || '';
 
+  const soc = latestSoc(sessions);
+  const estRange =
+    activeCar && isNum(activeCar.range) && soc !== null ? (n(activeCar.range) * soc) / 100 : null;
+  const initials = (user?.email || '?').trim().charAt(0).toUpperCase();
+
   return (
     <>
       <IconSprite />
@@ -104,29 +119,47 @@ export default function AppShell({ children }) {
           </div>
         </div>
 
-        {NAV.map((item, i) => (
-          <div key={item.href}>
-            {i === NAV.length - 1 ? <div className="nav-sep" /> : null}
-            <Link href={item.href} className={`navlink${isActive(pathname, item.href) ? ' active' : ''}`}>
-              <Icon name={item.icon} />
-              {item.label}
-              {item.href === '/alerts' && alertCount > 0 ? <span className="badge">{alertCount}</span> : null}
-            </Link>
-          </div>
-        ))}
-
-        <div className="nav-spacer" />
-        <div className="nav-sep" />
-        <div style={{ padding: '4px 11px 8px', fontSize: 11.5, color: 'var(--faint)', wordBreak: 'break-all' }}>
-          {user?.email}
+        <div className="sb-scroll">
+          {NAV.map((item, i) => (
+            <div key={item.href}>
+              {i === NAV.length - 1 ? <div className="nav-sep" /> : null}
+              <Link href={item.href} className={`navlink${isActive(pathname, item.href) ? ' active' : ''}`}>
+                <Icon name={item.icon} />
+                {item.label}
+                {item.href === '/alerts' && alertCount > 0 ? <span className="badge">{alertCount}</span> : null}
+              </Link>
+            </div>
+          ))}
+          <div className="nav-spacer" />
         </div>
-        <button type="button" className="navlink" onClick={toggleTheme}>
-          <Icon name={dark ? 'sun' : 'moon'} />
-          {dark ? 'โหมดสว่าง' : 'โหมดมืด'}
-        </button>
-        <button type="button" className="navlink" onClick={logout}>
-          <Icon name="logout" />
-          ออกจากระบบ
+
+        {activeCar ? (
+          <div className="sb-car">
+            <div className="nm">{activeCar.name}</div>
+            <div className="st">
+              <i />
+              {[activeCar.brand, activeCar.model].filter(Boolean).join(' ') || 'ไม่ระบุรุ่น'}
+            </div>
+            <div className="art"><CarArt soc={soc} /></div>
+            <div className="row">
+              <span>{soc !== null ? `${fmt0(soc)}%` : 'ยังไม่มีข้อมูล SOC'}</span>
+              <b>{estRange !== null ? `${fmt0(estRange)} km` : '—'}</b>
+            </div>
+            <div className="sb-bar"><span style={{ width: `${soc ?? 0}%` }} /></div>
+          </div>
+        ) : null}
+
+        <SidebarQuickAdd />
+
+        <button
+          type="button"
+          className={`sb-theme${dark ? ' on' : ''}`}
+          onClick={toggleTheme}
+          aria-pressed={dark}
+        >
+          <Icon name="moon" />
+          Dark Mode
+          <span className="sw" />
         </button>
       </aside>
 
@@ -141,7 +174,8 @@ export default function AppShell({ children }) {
             <select
               value={carValue}
               onChange={(e) => setActiveCar(e.target.value)}
-              style={{ width: 'auto', maxWidth: 190, fontSize: 13.5, padding: '7px 30px 7px 10px' }}
+              className="hide-mobile"
+              style={{ width: 'auto', maxWidth: 170, fontSize: 13.5, padding: '8px 30px 8px 12px' }}
               title="เลือกรถที่ต้องการดูข้อมูล"
             >
               {cars.map((c) => (
@@ -150,6 +184,8 @@ export default function AppShell({ children }) {
               {cars.length > 1 ? <option value="__all__">รถทุกคัน</option> : null}
             </select>
           ) : null}
+
+          <DateRangePicker />
 
           <Link href="/alerts" className="btn btn-icon" title="แจ้งเตือน" style={{ position: 'relative' }}>
             <Icon name="bell" />
@@ -165,14 +201,17 @@ export default function AppShell({ children }) {
             ) : null}
           </Link>
 
-          <button type="button" className="btn btn-icon" onClick={toggleTheme} title="สลับธีม">
+          <button type="button" className="btn btn-icon hide-mobile" onClick={toggleTheme} title="สลับธีม">
             <Icon name={dark ? 'sun' : 'moon'} />
           </button>
 
-          <button type="button" className="btn btn-primary no-print hide-mobile" onClick={() => setQuickOpen(true)}>
-            <Icon name="plus" />
-            Quick Add
-          </button>
+          <Link href="/account" className="tb-profile" title="บัญชีผู้ใช้">
+            <span className="tb-avatar">{initials}</span>
+            <span className="hide-mobile" style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user?.email}
+            </span>
+            <Icon name="chevron-down" style={{ width: 14, height: 14, opacity: 0.5 }} />
+          </Link>
         </header>
 
         <div className="views">

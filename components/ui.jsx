@@ -4,11 +4,17 @@ import { useEffect, useState } from 'react';
 import Icon from './Icon';
 import { useStore } from './store';
 
-export function Stat({ icon, label, value, unit, detail }) {
+/**
+ * การ์ดสถิติ — ไอคอนในกล่องสีอ่อน, ตัวเลขเด่น, บรรทัดล่างเป็นรายละเอียดหรือแนวโน้ม
+ * `tone` คุมสีไอคอน: accent (เขียว) · dc (น้ำเงิน) · purple (ม่วง) · warn · danger
+ */
+export function Stat({ icon, label, value, unit, detail, tone = 'accent' }) {
   return (
     <div className="stat">
       <div className="k">
-        <Icon name={icon} />
+        <span className="ic" style={{ background: `var(--${tone}-soft)`, color: `var(--${tone})` }}>
+          <Icon name={icon} />
+        </span>
         {label}
       </div>
       <div className="v">
@@ -17,6 +23,26 @@ export function Stat({ icon, label, value, unit, detail }) {
       </div>
       {detail ? <div className="d">{detail}</div> : null}
     </div>
+  );
+}
+
+/** ป้ายแนวโน้ม "↑ 20% จากเดือนที่แล้ว" — pct เป็น null เมื่อเทียบไม่ได้ */
+export function Trend({ pct, label, invert = false }) {
+  if (pct === null || pct === undefined || !Number.isFinite(pct)) {
+    return <span className="faint">{label ? `เทียบ${label}ไม่ได้` : 'ไม่มีข้อมูลเทียบ'}</span>;
+  }
+  const flat = Math.abs(pct) < 0.5;
+  // invert = ตัวเลขน้อยลงถือว่าดี (เช่น ค่าใช้จ่าย, kWh/100km)
+  const good = flat ? false : invert ? pct < 0 : pct > 0;
+  const cls = flat ? 'flat' : good ? 'up' : 'down';
+  const arrow = flat ? '→' : pct > 0 ? '↑' : '↓';
+  return (
+    <>
+      <span className={`trend ${cls}`}>
+        {arrow} {Math.abs(pct).toFixed(0)}%
+      </span>
+      {label ? <span className="tx">{label}</span> : null}
+    </>
   );
 }
 

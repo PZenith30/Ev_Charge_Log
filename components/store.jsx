@@ -12,6 +12,7 @@ import { DEFAULT_SETTINGS, THEME_CACHE_KEY, VIEW_ALL_KEY, emptyState } from '@/l
 import * as db from '@/lib/db';
 import { setStorageUser, imgDel, gcImages } from '@/lib/storage';
 import { avgMonthlySpend, dueList, sortDesc } from '@/lib/calc';
+import { filterByRange, previousRange, resolveRange } from '@/lib/period';
 import { uuid } from '@/lib/format';
 import { readLegacy } from '@/lib/legacy';
 
@@ -58,6 +59,8 @@ export function StoreProvider({ children }) {
   const [editingId, setEditingId] = useState(null);
   const [viewAllCars, setViewAllCars] = useState(false);
   const [legacyFound, setLegacyFound] = useState(null);
+  // ช่วงเวลาที่เลือกบนแถบบน — ใช้ร่วมกันทั้งแดชบอร์ด สถิติ และหน้าวิเคราะห์
+  const [period, setPeriodState] = useState({ key: 'month', from: null, to: null });
 
   const dataRef = useRef(data);
   dataRef.current = data;
@@ -363,6 +366,27 @@ export function StoreProvider({ children }) {
   );
   const alerts = useMemo(() => filterByCar(data.alerts), [data.alerts, filterByCar]);
 
+  /* ---------------- กรองตามช่วงเวลาที่เลือกบนแถบบน ---------------- */
+  const setPeriod = useCallback((key, custom) => {
+    setPeriodState({ key, from: custom?.from ?? null, to: custom?.to ?? null });
+  }, []);
+  const range = useMemo(
+    () => resolveRange(period.key, { from: period.from, to: period.to }),
+    [period]
+  );
+  const prevRange = useMemo(() => previousRange(range), [range]);
+
+  const periodSessions = useMemo(() => filterByRange(sessions, range), [sessions, range]);
+  const periodCosts = useMemo(() => filterByRange(costs, range), [costs, range]);
+  const prevSessions = useMemo(
+    () => (prevRange ? filterByRange(sessions, prevRange) : []),
+    [sessions, prevRange]
+  );
+  const prevCosts = useMemo(
+    () => (prevRange ? filterByRange(costs, prevRange) : []),
+    [costs, prevRange]
+  );
+
   const carName = useCallback((id) => {
     const c = data.cars.find((x) => x.id === id);
     return c ? c.name : '—';
@@ -394,6 +418,8 @@ export function StoreProvider({ children }) {
     cars: data.cars, settings: data.settings,
     sessions, costs, alerts, activeCar, showAllCars, viewAllCars, carName,
     due, budgetOver, alertCount,
+    period, setPeriod, range, prevRange,
+    periodSessions, periodCosts, prevSessions, prevCosts,
   };
 
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>;
