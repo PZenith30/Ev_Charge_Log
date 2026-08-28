@@ -1,8 +1,9 @@
 'use client';
 /** ตัวเลือกช่วงเวลาบนแถบบน — preset สำเร็จรูป + กำหนดเองด้วยวันที่เริ่ม/สิ้นสุด */
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { PERIOD_PRESETS, rangeText } from '@/lib/period';
 import Icon from './Icon';
+import { useDismiss } from './ui';
 import { useStore } from './store';
 
 export default function DateRangePicker() {
@@ -10,21 +11,7 @@ export default function DateRangePicker() {
   const [open, setOpen] = useState(false);
   const [from, setFrom] = useState(range.from || '');
   const [to, setTo] = useState(range.to || '');
-  const boxRef = useRef(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e) => {
-      if (boxRef.current && !boxRef.current.contains(e.target)) setOpen(false);
-    };
-    const onKey = (e) => e.key === 'Escape' && setOpen(false);
-    document.addEventListener('pointerdown', onDown);
-    window.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('pointerdown', onDown);
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
+  const boxRef = useDismiss(open, useCallback(() => setOpen(false), []));
 
   function pick(key) {
     if (key === 'custom') {
@@ -51,31 +38,24 @@ export default function DateRangePicker() {
       </button>
 
       {open ? (
-        <div
-          style={{
-            position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 60, width: 260,
-            background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r)',
-            boxShadow: 'var(--shadow-lg)', padding: 8,
-          }}
-        >
+        <div className="menu" role="menu" style={{ minWidth: 250 }}>
           {PERIOD_PRESETS.filter((p) => p.key !== 'custom').map((p) => (
             <button
               key={p.key}
               type="button"
-              className={`navlink${period.key === p.key ? ' active' : ''}`}
-              style={
-                period.key === p.key
-                  ? undefined
-                  : { color: 'var(--muted)', background: 'none' }
-              }
+              role="menuitem"
+              className="menu-item"
+              style={period.key === p.key ? { color: 'var(--accent-text)', fontWeight: 600 } : undefined}
               onClick={() => pick(p.key)}
             >
+              <Icon name={period.key === p.key ? 'check' : 'calendar'} />
               {p.label}
             </button>
           ))}
 
-          <div style={{ borderTop: '1px solid var(--border)', margin: '8px 4px', paddingTop: 10 }}>
-            <div className="sm muted" style={{ marginBottom: 8, fontWeight: 550 }}>กำหนดเอง</div>
+          <div className="menu-sep" />
+          <div style={{ padding: '2px 7px 4px' }}>
+            <div className="menu-label" style={{ padding: '0 4px 8px' }}>กำหนดเอง</div>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={{ fontSize: 13, padding: '6px 8px' }} />
               <span className="faint">–</span>

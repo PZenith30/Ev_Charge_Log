@@ -1,8 +1,79 @@
 'use client';
 /** ชิ้นส่วน UI ที่ใช้ซ้ำทั้งแอป — การ์ดสถิติ, modal, toast, ฟิลด์ฟอร์ม ฯลฯ */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Icon from './Icon';
 import { useStore } from './store';
+
+/** ปิดเมนู/ป็อปอัปเมื่อคลิกนอกกรอบหรือกด Escape */
+export function useDismiss(open, onClose) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) onClose();
+    };
+    const onKey = (e) => e.key === 'Escape' && onClose();
+    document.addEventListener('pointerdown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open, onClose]);
+  return ref;
+}
+
+const COLLAPSE_KEY = 'evlog.collapsed';
+const readCollapsed = () => {
+  try {
+    return JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '{}');
+  } catch {
+    return {};
+  }
+};
+
+/**
+ * การ์ดที่หด/ขยายได้ — จำสถานะไว้ในเครื่องด้วย id ที่ส่งมา
+ * ปุ่มด้านขวาของหัวข้อ (actions) กดได้โดยไม่พับการ์ด
+ */
+export function CollapsibleCard({ id, title, hint, actions, defaultOpen = true, children, className = '' }) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  // อ่านค่าใน useEffect เพื่อไม่ให้ HTML ฝั่งเซิร์ฟเวอร์กับฝั่งเบราว์เซอร์ไม่ตรงกัน
+  useEffect(() => {
+    const saved = readCollapsed();
+    if (id && typeof saved[id] === 'boolean') setOpen(saved[id]);
+  }, [id]);
+
+  const toggle = useCallback(() => {
+    setOpen((prev) => {
+      const next = !prev;
+      if (id) {
+        try {
+          localStorage.setItem(COLLAPSE_KEY, JSON.stringify({ ...readCollapsed(), [id]: next }));
+        } catch { /* โหมดส่วนตัวเขียนไม่ได้ ก็ไม่ต้องจำ */ }
+      }
+      return next;
+    });
+  }, [id]);
+
+  return (
+    <div className={`card${className ? ' ' + className : ''}`}>
+      <div className={`card-head${open ? '' : ' closed'}`}>
+        <button type="button" className="card-toggle" onClick={toggle} aria-expanded={open}>
+          <Icon name="chevron-down" className="chev" />
+          <h3>
+            {title}
+            {hint ? <span className="hint">{hint}</span> : null}
+          </h3>
+        </button>
+        {actions}
+      </div>
+      {/* ซ่อนด้วย hidden แทนการถอดออกจาก DOM เพื่อไม่ให้ค่าที่กรอกค้างไว้ในฟอร์มหาย */}
+      <div hidden={!open}>{children}</div>
+    </div>
+  );
+}
 
 /**
  * การ์ดสถิติ — ไอคอนในกล่องสีอ่อน, ตัวเลขเด่น, บรรทัดล่างเป็นรายละเอียดหรือแนวโน้ม

@@ -2,7 +2,7 @@
 /** บัญชี & รถของฉัน — จัดการรถ ค่าเริ่มต้น ธีม บัญชีผู้ใช้ และข้อมูลบน Supabase */
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@/components/store';
-import { EmptyState, Field, PasswordInput } from '@/components/ui';
+import { CollapsibleCard, EmptyState, Field } from '@/components/ui';
 import CarModal from '@/components/CarModal';
 import Icon from '@/components/Icon';
 import { lastOdo, summarize } from '@/lib/calc';
@@ -16,7 +16,7 @@ import { clearLegacy, migrateLegacy } from '@/lib/legacy';
 export default function AccountPage() {
   const {
     user, data, cars, settings, setSettings, wipeAll, reload,
-    confirm, toast, logout, sessions, changePassword,
+    confirm, toast, logout, sessions, setPwOpen,
     legacyFound, setLegacyFound,
   } = useStore();
 
@@ -24,8 +24,6 @@ export default function AccountPage() {
   const [priceAC, setPriceAC] = useState(String(settings.priceAC ?? ''));
   const [priceDC, setPriceDC] = useState(String(settings.priceDC ?? ''));
   const [usage, setUsage] = useState({ images: 0, bytes: 0 });
-  const [newPass, setNewPass] = useState('');
-  const [passBusy, setPassBusy] = useState(false);
   const [migrating, setMigrating] = useState('');
   const fileRef = useRef(null);
 
@@ -41,16 +39,6 @@ export default function AccountPage() {
       priceDC: priceDC === '' ? null : Number(priceDC),
     });
     toast('บันทึกค่าเริ่มต้นเรียบร้อย');
-  }
-
-  async function doChangePassword() {
-    if (newPass.length < 6) return toast('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร', true);
-    setPassBusy(true);
-    const error = await changePassword(newPass);
-    setPassBusy(false);
-    if (error) return toast(error, true);
-    setNewPass('');
-    toast('เปลี่ยนรหัสผ่านเรียบร้อย');
   }
 
   /** ออก id ใหม่ให้ทุกแถวแล้วผูก carId กลับให้ถูก ก่อนใส่เข้าบัญชีนี้ */
@@ -178,16 +166,16 @@ export default function AccountPage() {
         </div>
       ) : null}
 
-      <div className="card">
-        <div className="card-head">
-          <h3>
-            รถของฉัน
-            <span className="hint">เพิ่มได้หลายคัน · สลับคันที่ดูข้อมูลได้จากแถบด้านบน</span>
-          </h3>
+      <CollapsibleCard
+        id="acc-cars"
+        title="รถของฉัน"
+        hint="เพิ่มได้หลายคัน · สลับคันที่ดูข้อมูลได้จากแถบด้านบน"
+        actions={
           <button type="button" className="btn btn-sm btn-primary" onClick={() => setEditing(null)}>
             <Icon name="plus" />เพิ่มรถ
           </button>
-        </div>
+        }
+      >
         <div className="rows">
           {cars.map((c) => {
             const s = summarize(data.sessions.filter((x) => x.carId === c.id));
@@ -228,10 +216,9 @@ export default function AccountPage() {
             />
           ) : null}
         </div>
-      </div>
+      </CollapsibleCard>
 
-      <div className="card">
-        <div className="card-head"><h3>ค่าเริ่มต้นและธีม</h3></div>
+      <CollapsibleCard id="acc-defaults" title="ค่าเริ่มต้นและธีม" className="mt">
         <div className="card-body">
           <div className="form-grid">
             <Field label="ราคาเริ่มต้น AC (฿/kWh)" help="ใช้เติมให้อัตโนมัติตอนบันทึกการชาร์จ">
@@ -256,15 +243,14 @@ export default function AccountPage() {
             </button>
           </div>
         </div>
-      </div>
+      </CollapsibleCard>
 
-      <div className="card">
-        <div className="card-head">
-          <h3>
-            ข้อมูลของคุณ
-            <span className="hint">เก็บบน Supabase · เข้าถึงได้จากทุกเครื่องที่ล็อกอินบัญชีนี้</span>
-          </h3>
-        </div>
+      <CollapsibleCard
+        id="acc-data"
+        title="ข้อมูลของคุณ"
+        hint="เก็บบน Supabase · เข้าถึงได้จากทุกเครื่องที่ล็อกอินบัญชีนี้"
+        className="mt"
+      >
         <div className="card-body">
           <div className="alert" style={{ marginBottom: 14 }}>
             <Icon name="inbox" style={{ color: 'var(--accent)' }} />
@@ -298,10 +284,9 @@ export default function AccountPage() {
             การนำเข้าจะเพิ่มข้อมูลเข้าบัญชีนี้โดยไม่ลบของเดิม
           </p>
         </div>
-      </div>
+      </CollapsibleCard>
 
-      <div className="card">
-        <div className="card-head"><h3>บัญชีผู้ใช้</h3></div>
+      <CollapsibleCard id="acc-user" title="บัญชีผู้ใช้" className="mt">
         <div className="card-body">
           <dl className="kv" style={{ maxWidth: 420 }}>
             <dt>อีเมล</dt><dd style={{ wordBreak: 'break-all' }}>{user?.email}</dd>
@@ -309,25 +294,21 @@ export default function AccountPage() {
             <dt>จำนวนการชาร์จที่บันทึก</dt><dd>{sessions.length}</dd>
           </dl>
 
-          <div className="form-grid mt" style={{ maxWidth: 420 }}>
-            <Field label="ตั้งรหัสผ่านใหม่" help="อย่างน้อย 6 ตัวอักษร">
-              <PasswordInput
-                autoComplete="new-password"
-                value={newPass}
-                onChange={(e) => setNewPass(e.target.value)}
-              />
-            </Field>
-          </div>
           <div className="rowflex mt">
-            <button type="button" className="btn" onClick={doChangePassword} disabled={passBusy || !newPass}>
-              <Icon name="check" />{passBusy ? 'กำลังบันทึก…' : 'เปลี่ยนรหัสผ่าน'}
+            {/* ใช้หน้าต่างเดียวกับที่เรียกจากเมนูโปรไฟล์ จะได้ไม่มีฟอร์มซ้ำสองที่ */}
+            <button type="button" className="btn" onClick={() => setPwOpen(true)}>
+              <Icon name="settings" />เปลี่ยนรหัสผ่าน
             </button>
-            <button type="button" className="btn" onClick={logout}>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => confirm('ออกจากระบบ', 'ต้องออกจากระบบตอนนี้เลยไหม ข้อมูลถูกบันทึกไว้บน Supabase แล้ว', logout)}
+            >
               <Icon name="logout" />ออกจากระบบ
             </button>
           </div>
         </div>
-      </div>
+      </CollapsibleCard>
 
       {editing !== undefined ? (
         <CarModal car={editing} onClose={() => setEditing(undefined)} />

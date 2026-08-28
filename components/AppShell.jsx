@@ -8,7 +8,9 @@ import Icon, { IconSprite } from './Icon';
 import Login from './Login';
 import QuickAdd from './QuickAdd';
 import CarPhoto from './CarPhoto';
+import ChangePasswordModal from './ChangePasswordModal';
 import DateRangePicker from './DateRangePicker';
+import ProfileMenu from './ProfileMenu';
 import SidebarQuickAdd from './SidebarQuickAdd';
 import { ConfirmDialog, Lightbox, Toasts } from './ui';
 import { useStore } from './store';
@@ -65,7 +67,7 @@ export default function AppShell({ children }) {
   const {
     phase, user, dataLoading, loadError, reload,
     cars, settings, viewAllCars, setActiveCar, activeCar, sessions,
-    dark, toggleTheme, alertCount, quickOpen, setQuickOpen,
+    dark, toggleTheme, alertCount, quickOpen, setQuickOpen, pwOpen, setPwOpen,
   } = useStore();
   const pathname = usePathname();
 
@@ -104,7 +106,6 @@ export default function AppShell({ children }) {
   const soc = latestSoc(sessions);
   const estRange =
     activeCar && isNum(activeCar.range) && soc !== null ? (n(activeCar.range) * soc) / 100 : null;
-  const initials = (user?.email || '?').trim().charAt(0).toUpperCase();
 
   return (
     <>
@@ -205,13 +206,7 @@ export default function AppShell({ children }) {
             <Icon name={dark ? 'sun' : 'moon'} />
           </button>
 
-          <Link href="/account" className="tb-profile" title="บัญชีผู้ใช้">
-            <span className="tb-avatar">{initials}</span>
-            <span className="hide-mobile" style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {user?.email}
-            </span>
-            <Icon name="chevron-down" style={{ width: 14, height: 14, opacity: 0.5 }} />
-          </Link>
+          <ProfileMenu onChangePassword={() => setPwOpen(true)} />
         </header>
 
         <div className="views">
@@ -248,6 +243,7 @@ export default function AppShell({ children }) {
       </button>
 
       {quickOpen ? <QuickAdd /> : null}
+      {pwOpen ? <ChangePasswordModal onClose={() => setPwOpen(false)} /> : null}
       <ConfirmDialog />
       <Lightbox />
       <Toasts />
