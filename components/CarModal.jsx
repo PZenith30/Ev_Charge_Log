@@ -2,6 +2,7 @@
 /** เพิ่ม / แก้ไขรถ — เลือกยี่ห้อแล้วรุ่นจะกรองให้เอง พร้อมเติมความจุแบตและระยะทางให้อัตโนมัติ */
 import { useMemo, useState } from 'react';
 import { EV_DATA, OTHER } from '@/lib/data';
+import { findCarImage, isRemoteImage } from '@/lib/carImages';
 import Icon from './Icon';
 import ImageUploader from './ImageUploader';
 import { Field, Modal } from './ui';
@@ -27,6 +28,23 @@ export default function CarModal({ car, onClose }) {
     photo: car?.photo || null,
   }));
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const [searching, setSearching] = useState(false);
+
+  /** ค้นรูปตามยี่ห้อ/รุ่นที่เลือกไว้ แล้วปักหมุดลิงก์นั้นกับรถคันนี้ */
+  async function searchPhoto() {
+    const brand = form.brand === OTHER || !form.brand ? form.brandOther.trim() : form.brand;
+    const model = form.model === OTHER || form.brand === OTHER || !form.brand
+      ? form.modelOther.trim()
+      : form.model;
+    if (!brand && !model) return toast('เลือกยี่ห้อและรุ่นก่อน จึงจะค้นรูปได้', true);
+
+    setSearching(true);
+    const hit = await findCarImage(brand, model, { force: true });
+    setSearching(false);
+    if (!hit) return toast(`หารูปของ ${brand} ${model} ไม่เจอ — อัปโหลดรูปเองได้`, true);
+    set('photo', hit.url);
+    toast(`ได้รูปจาก Wikipedia: ${hit.title}`);
+  }
 
   const models = useMemo(() => EV_DATA[form.brand] || [], [form.brand]);
   const modelKnown = models.some((m) => m[0] === form.model);
@@ -161,15 +179,37 @@ export default function CarModal({ car, onClose }) {
       </div>
 
       <div className="mt">
-        <div className="sm muted" style={{ marginBottom: 8, fontWeight: 550 }}>รูปรถ</div>
-        <ImageUploader
-          max={1}
-          hint="เลือกรูปรถของคุณ"
-          imageIds={form.photo ? [form.photo] : []}
-          onChange={(ids) => set('photo', ids[0] || null)}
-        />
+        <div className="rowflex" style={{ marginBottom: 10 }}>
+          <div className="sm muted" style={{ flex: 1, fontWeight: 550 }}>รูปรถ</div>
+          <button type="button" className="btn btn-sm" onClick={searchPhoto} disabled={searching}>
+            <Icon name={searching ? 'clock' : 'search'} />
+            {searching ? 'กำลังค้น…' : 'ค้นรูปจากอินเทอร์เน็ต'}
+          </button>
+        </div>
+
+        {isRemoteImage(form.photo) ? (
+          <div className="thumbs">
+            <div className="thumb">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={form.photo} alt="รูปรถจากอินเทอร์เน็ต" />
+              <button type="button" className="del" onClick={() => set('photo', null)} aria-label="ลบรูป">
+                ×
+              </button>
+            </div>
+          </div>
+        ) : (
+          <ImageUploader
+            max={1}
+            hint="เลือกรูปรถของคุณ"
+            imageIds={form.photo ? [form.photo] : []}
+            onChange={(ids) => set('photo', ids[0] || null)}
+          />
+        )}
+
         <p className="help" style={{ marginTop: 8 }}>
-          ใช้แสดงในแถบเมนูและการ์ดสถานะรถ · ถ้าไม่ใส่จะใช้ภาพวาดแทน
+          ใช้แสดงในแถบเมนูและการ์ดสถานะรถ · รูปที่อัปโหลดเองจะตรงกับรถคันจริงที่สุด
+          <br />
+          ถ้าไม่ใส่ ระบบจะลองค้นรูปประกอบของรุ่นนี้จาก Wikipedia ให้เอง ไม่เจอจึงใช้ภาพวาดแทน
         </p>
       </div>
     </Modal>

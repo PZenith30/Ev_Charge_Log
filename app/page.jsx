@@ -218,7 +218,7 @@ export default function DashboardPage() {
                     <div className="km">{estRange !== null ? `${fmt0(estRange)} km` : '—'}</div>
                     <div className="cap">ระยะทางที่วิ่งได้</div>
                   </div>
-                  <div className="art"><CarPhoto car={activeCar} soc={soc} rounded={14} /></div>
+                  <div className="art"><CarPhoto car={activeCar} soc={soc} rounded={14} showCredit /></div>
                 </div>
                 <div className="vmini">
                   <div>
