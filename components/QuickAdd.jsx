@@ -115,15 +115,15 @@ export default function QuickAdd() {
           <TypeToggle value={type} onChange={changeType} />
         </Field>
         <Field label="พลังงาน (kWh)">
-          <input type="number" min="0" step="0.01" inputMode="decimal" required
+          <input type="number" min="0" step="any" inputMode="decimal" required
             value={kwh} onChange={(e) => setKwh(e.target.value)} placeholder="24.5" />
         </Field>
         <Field label="ราคา / kWh (฿)">
-          <input type="number" min="0" step="0.01" inputMode="decimal"
+          <input type="number" min="0" step="any" inputMode="decimal"
             value={price} onChange={(e) => setPrice(e.target.value)} placeholder="7.50" />
         </Field>
         <Field label="ค่าใช้จ่ายรวม (฿)" help="เว้นว่างไว้เพื่อใช้ค่าที่คำนวณให้">
-          <input type="number" min="0" step="0.01" inputMode="decimal" className="calc"
+          <input type="number" min="0" step="any" inputMode="decimal" className="calc"
             value={totalOverride} onChange={(e) => setTotalOverride(e.target.value)}
             placeholder={autoTotal ? autoTotal.toFixed(2) : '0.00'} />
         </Field>
@@ -131,15 +131,15 @@ export default function QuickAdd() {
           label="เลขไมล์ปัจจุบัน (km)"
           help={odoBefore !== null ? `ครั้งก่อน ${fmtDist(odoBefore)} km` : 'ยังไม่มีเลขไมล์ตั้งต้น'}
         >
-          <input type="number" min="0" step="0.1" inputMode="decimal"
+          <input type="number" min="0" step="any" inputMode="decimal"
             value={odo} onChange={(e) => setOdo(e.target.value)} />
         </Field>
         <Field label="SOC ก่อน (%)">
-          <input type="number" min="0" max="100" step="1" inputMode="numeric"
+          <input type="number" min="0" max="100" step="any" inputMode="decimal"
             value={socBefore} onChange={(e) => setSocBefore(e.target.value)} />
         </Field>
         <Field label="SOC หลัง (%)">
-          <input type="number" min="0" max="100" step="1" inputMode="numeric"
+          <input type="number" min="0" max="100" step="any" inputMode="decimal"
             value={socAfter} onChange={(e) => setSocAfter(e.target.value)} />
         </Field>
       </div>

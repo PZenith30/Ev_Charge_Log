@@ -81,7 +81,7 @@ export default function AlertModal({ item, onClose }) {
           <input type="date" required value={form.due} onChange={(e) => set('due', e.target.value)} />
         </Field>
         <Field label="เตือนล่วงหน้า (วัน)">
-          <input type="number" min="0" step="1" inputMode="numeric"
+          <input type="number" min="0" step="any" inputMode="decimal"
             value={form.advance} onChange={(e) => set('advance', e.target.value)} />
         </Field>
       </div>

@@ -128,7 +128,8 @@ export default function AddPage() {
     if (!form.date) return toast('กรุณาเลือกวันที่', true);
     if (!isNum(form.kwh) || Number(form.kwh) <= 0) return toast('กรุณากรอกพลังงานที่ชาร์จ (kWh)', true);
 
-    const durationSec = n(form.durH) * 3600 + n(form.durM) * 60 + n(form.durS);
+    // กรอกเกิน 59 นาที/วินาทีได้ ผลรวมจะถูกปรับให้เป็น ชม./นาที/วินาที ตอนแสดงผลเอง
+    const durationSec = Math.round(n(form.durH) * 3600 + n(form.durM) * 60 + n(form.durS));
 
     saveSession({
       id: editing?.id,
@@ -214,14 +215,17 @@ export default function AddPage() {
           <Field label="วันที่">
             <input type="date" value={form.date} onChange={(e) => set('date', e.target.value)} required />
           </Field>
-          <Field label="เวลาที่ใช้ในการชาร์จ" help="ชั่วโมง : นาที : วินาที" style={{ gridColumn: 'span 2' }}>
+          <Field
+            label="เวลาที่ใช้ในการชาร์จ"
+            help="ชั่วโมง : นาที : วินาที · กรอกเกิน 59 ได้ ระบบจะรวมให้เอง เช่น 90 นาที = 1 ชม. 30 นาที"
+            style={{ gridColumn: 'span 2' }}
+          >
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               {[['durH', 'ชม.'], ['durM', 'นาที'], ['durS', 'วิ']].map(([key, unit], i) => (
                 <div key={key} style={{ display: 'flex', gap: 6, alignItems: 'center', flex: 1, minWidth: 0 }}>
                   {i > 0 ? <span className="faint" style={{ flex: 'none' }}>:</span> : null}
                   <input
-                    type="number" min="0" step="1" inputMode="numeric" placeholder="0"
-                    max={key === 'durH' ? undefined : 59}
+                    type="number" min="0" step="any" inputMode="decimal" placeholder="0"
                     style={{ flex: 1, minWidth: 0, textAlign: 'right' }}
                     value={form[key]} onChange={(e) => set(key, e.target.value)}
                   />
@@ -250,22 +254,22 @@ export default function AddPage() {
             label="เลขไมล์ก่อนชาร์จ (km)"
             help={!editing && prevOdo !== null ? `เติมอัตโนมัติจากครั้งก่อน (${fmtDist(prevOdo)} km)` : null}
           >
-            <input type="number" min="0" step="0.1" inputMode="decimal" value={form.odoBefore}
+            <input type="number" min="0" step="any" inputMode="decimal" value={form.odoBefore}
               onChange={(e) => { setOdoTouched(true); set('odoBefore', e.target.value); }} />
           </Field>
           <Field label="เลขไมล์หลังชาร์จ (km)">
-            <input type="number" min="0" step="0.1" inputMode="decimal"
+            <input type="number" min="0" step="any" inputMode="decimal"
               value={form.odoAfter} onChange={(e) => set('odoAfter', e.target.value)} />
           </Field>
           <Field label="ระยะทางที่วิ่งได้ (km)">
             <input type="text" className="calc" readOnly value={dist !== null ? fmtDist(dist) : '—'} />
           </Field>
           <Field label="SOC ก่อนชาร์จ (%)">
-            <input type="number" min="0" max="100" step="1" inputMode="numeric"
+            <input type="number" min="0" max="100" step="any" inputMode="decimal"
               value={form.socBefore} onChange={(e) => set('socBefore', e.target.value)} />
           </Field>
           <Field label="SOC หลังชาร์จ (%)">
-            <input type="number" min="0" max="100" step="1" inputMode="numeric"
+            <input type="number" min="0" max="100" step="any" inputMode="decimal"
               value={form.socAfter} onChange={(e) => set('socAfter', e.target.value)} />
           </Field>
           <Field label="SOC ที่เพิ่มขึ้น (%)">
@@ -278,7 +282,7 @@ export default function AddPage() {
           >
             <div style={{ display: 'flex', gap: 6 }}>
               <input
-                type="number" min="0" step="0.01" inputMode="decimal"
+                type="number" min="0" step="any" inputMode="decimal"
                 placeholder={DASH_UNITS[dashUnit].placeholder}
                 style={{ flex: 1, minWidth: 0 }}
                 value={form.dashEff}
@@ -303,19 +307,19 @@ export default function AddPage() {
         <h4>ข้อมูลพลังงานและค่าใช้จ่าย</h4>
         <div className="form-grid">
           <Field label="พลังงานที่ชาร์จ (kWh)">
-            <input type="number" min="0" step="0.01" inputMode="decimal" placeholder="24.5" required
+            <input type="number" min="0" step="any" inputMode="decimal" placeholder="24.5" required
               value={form.kwh} onChange={(e) => set('kwh', e.target.value)} />
           </Field>
           <Field label="ราคา / kWh (บาท)">
-            <input type="number" min="0" step="0.01" inputMode="decimal" placeholder="7.50"
+            <input type="number" min="0" step="any" inputMode="decimal" placeholder="7.50"
               value={form.price} onChange={(e) => set('price', e.target.value)} />
           </Field>
           <Field label="ค่าบริการเพิ่มเติม (บาท)">
-            <input type="number" min="0" step="0.01" inputMode="decimal" placeholder="0"
+            <input type="number" min="0" step="any" inputMode="decimal" placeholder="0"
               value={form.fee} onChange={(e) => set('fee', e.target.value)} />
           </Field>
           <Field label="ค่าใช้จ่ายรวม (บาท)" help="คำนวณอัตโนมัติ — แก้ทับได้ถ้ายอดจริงต่างจากนี้">
-            <input type="number" min="0" step="0.01" inputMode="decimal" className="calc"
+            <input type="number" min="0" step="any" inputMode="decimal" className="calc"
               placeholder={autoTotal ? autoTotal.toFixed(2) : '0.00'}
               value={form.total} onChange={(e) => set('total', e.target.value)} />
           </Field>

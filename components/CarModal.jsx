@@ -140,15 +140,15 @@ export default function CarModal({ car, onClose }) {
         ) : null}
 
         <Field label="ความจุแบตเตอรี่ (kWh)">
-          <input type="number" min="0" step="0.1" inputMode="decimal"
+          <input type="number" min="0" step="any" inputMode="decimal"
             value={form.batt} onChange={(e) => set('batt', e.target.value)} />
         </Field>
         <Field label="ระยะทางที่วิ่งได้ (km)">
-          <input type="number" min="0" step="1" inputMode="numeric"
+          <input type="number" min="0" step="any" inputMode="decimal"
             value={form.range} onChange={(e) => set('range', e.target.value)} />
         </Field>
         <Field label="เลขไมล์ปัจจุบัน (km)" help="ใช้เป็นค่าตั้งต้นของการชาร์จครั้งแรก">
-          <input type="number" min="0" step="1" inputMode="numeric"
+          <input type="number" min="0" step="any" inputMode="decimal"
             value={form.odo} onChange={(e) => set('odo', e.target.value)} />
         </Field>
         <Field label="ทะเบียน">

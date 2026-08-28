@@ -148,11 +148,11 @@ export default function AccountPage() {
         <div className="card-body">
           <div className="form-grid">
             <Field label="ราคาเริ่มต้น AC (฿/kWh)" help="ใช้เติมให้อัตโนมัติตอนบันทึกการชาร์จ">
-              <input type="number" min="0" step="0.01" inputMode="decimal" placeholder="4.50"
+              <input type="number" min="0" step="any" inputMode="decimal" placeholder="4.50"
                 value={priceAC} onChange={(e) => setPriceAC(e.target.value)} />
             </Field>
             <Field label="ราคาเริ่มต้น DC (฿/kWh)">
-              <input type="number" min="0" step="0.01" inputMode="decimal" placeholder="7.50"
+              <input type="number" min="0" step="any" inputMode="decimal" placeholder="7.50"
                 value={priceDC} onChange={(e) => setPriceDC(e.target.value)} />
             </Field>
             <Field label="ธีม">

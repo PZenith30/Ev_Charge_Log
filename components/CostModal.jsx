@@ -74,7 +74,7 @@ export default function CostModal({ cost, onClose }) {
           <input type="date" required value={form.date} onChange={(e) => set('date', e.target.value)} />
         </Field>
         <Field label="จำนวนเงิน (บาท)">
-          <input type="number" min="0" step="0.01" inputMode="decimal" required
+          <input type="number" min="0" step="any" inputMode="decimal" required
             value={form.amount} onChange={(e) => set('amount', e.target.value)} />
         </Field>
         <Field label="รถ">

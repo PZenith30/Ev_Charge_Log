@@ -105,11 +105,11 @@ export default function AlertsPage() {
         <div className="card-body">
           <div className="form-grid">
             <Field label="งบประมาณ (บาท / เดือน)" help="เตือนเมื่อค่าใช้จ่ายเฉลี่ยต่อเดือนเกินงบนี้ · 0 = ไม่ตั้งงบ">
-              <input type="number" min="0" step="100" inputMode="decimal" placeholder="0"
+              <input type="number" min="0" step="any" inputMode="decimal" placeholder="0"
                 value={budget} onChange={(e) => setBudget(e.target.value)} />
             </Field>
             <Field label="เตือนล่วงหน้า (วัน)" help="ใช้กับรายการที่ไม่ได้ระบุจำนวนวันเอง">
-              <input type="number" min="0" step="1" inputMode="numeric" placeholder="30"
+              <input type="number" min="0" step="any" inputMode="decimal" placeholder="30"
                 value={advance} onChange={(e) => setAdvance(e.target.value)} />
             </Field>
           </div>

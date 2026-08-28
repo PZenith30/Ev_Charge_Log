@@ -80,11 +80,11 @@ export default function HistoryPage() {
             </select>
           </Field>
           <Field label="ค่าใช้จ่ายต่ำสุด">
-            <input type="number" min="0" step="1" inputMode="decimal" placeholder="0"
+            <input type="number" min="0" step="any" inputMode="decimal" placeholder="0"
               value={f.cmin} onChange={(e) => set('cmin', e.target.value)} />
           </Field>
           <Field label="ค่าใช้จ่ายสูงสุด">
-            <input type="number" min="0" step="1" inputMode="decimal" placeholder="ไม่จำกัด"
+            <input type="number" min="0" step="any" inputMode="decimal" placeholder="ไม่จำกัด"
               value={f.cmax} onChange={(e) => set('cmax', e.target.value)} />
           </Field>
           <Field label="เรียงตาม">
