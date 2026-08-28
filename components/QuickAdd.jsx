@@ -1,6 +1,6 @@
 'use client';
 /** Quick Add — บันทึกด่วนด้วยข้อมูลเท่าที่จำเป็น ส่วนที่เหลือคำนวณให้อัตโนมัติ */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Field, Modal, TypeToggle } from './ui';
 import { useStore } from './store';
@@ -8,18 +8,29 @@ import { isNum, n, nOrNull, todayISO, fmt, fmtDist, money } from '@/lib/format';
 import { lastOdo, sBahtKm, sDist, sEff, sTotal } from '@/lib/calc';
 
 export default function QuickAdd() {
-  const { data, cars, activeCar, settings, saveSession, setQuickOpen, toast } = useStore();
+  const {
+    data, cars, activeCar, settings, saveSession,
+    setQuickOpen, quickDraft, setQuickDraft, toast,
+  } = useStore();
   const router = useRouter();
 
-  const [carId, setCarId] = useState(activeCar ? activeCar.id : cars[0]?.id || '');
-  const [date, setDate] = useState(todayISO());
-  const [type, setType] = useState('AC');
-  const [kwh, setKwh] = useState('');
-  const [price, setPrice] = useState(String(settings.priceAC ?? ''));
-  const [totalOverride, setTotalOverride] = useState('');
-  const [odo, setOdo] = useState('');
-  const [socBefore, setSocBefore] = useState('');
-  const [socAfter, setSocAfter] = useState('');
+  // รับค่าที่ยกมาจาก Quick Add ในแถบเมนู (ถ้ามี) แล้วล้างทิ้งหลังใช้
+  const d = quickDraft || {};
+  const [carId, setCarId] = useState(d.carId || (activeCar ? activeCar.id : cars[0]?.id || ''));
+  const [date, setDate] = useState(d.date || todayISO());
+  const [type, setType] = useState(d.type || 'AC');
+  const [kwh, setKwh] = useState(d.kwh ?? '');
+  const [price, setPrice] = useState(d.price ?? String(settings.priceAC ?? ''));
+  const [totalOverride, setTotalOverride] = useState(d.total ?? '');
+  const [odo, setOdo] = useState(d.odo ?? '');
+  const [socBefore, setSocBefore] = useState(d.socBefore ?? '');
+  const [socAfter, setSocAfter] = useState(d.socAfter ?? '');
+
+  useEffect(() => {
+    if (quickDraft) setQuickDraft(null);
+    // ตั้งใจให้ทำครั้งเดียวตอนเปิด — ค่าถูกอ่านไปใส่ state ข้างบนแล้ว
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const odoBefore = useMemo(() => lastOdo(data.sessions, cars, carId), [data.sessions, cars, carId]);
 
@@ -84,6 +95,8 @@ export default function QuickAdd() {
             type="button"
             className="btn btn-ghost left"
             onClick={() => {
+              // ยกทุกค่าที่กรอกไว้ไปให้ฟอร์มเต็ม จะได้กรอกต่อได้เลย
+              setQuickDraft({ carId, date, type, kwh, price, total: totalOverride, odo, socBefore, socAfter });
               setQuickOpen(false);
               router.push('/add');
             }}

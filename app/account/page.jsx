@@ -2,7 +2,7 @@
 /** บัญชี & รถของฉัน — จัดการรถ ค่าเริ่มต้น ธีม บัญชีผู้ใช้ และข้อมูลบน Supabase */
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@/components/store';
-import { EmptyState, Field } from '@/components/ui';
+import { EmptyState, Field, PasswordInput } from '@/components/ui';
 import CarModal from '@/components/CarModal';
 import Icon from '@/components/Icon';
 import { lastOdo, summarize } from '@/lib/calc';
@@ -311,9 +311,10 @@ export default function AccountPage() {
 
           <div className="form-grid mt" style={{ maxWidth: 420 }}>
             <Field label="ตั้งรหัสผ่านใหม่" help="อย่างน้อย 6 ตัวอักษร">
-              <input
-                type="password" autoComplete="new-password" placeholder="••••••"
-                value={newPass} onChange={(e) => setNewPass(e.target.value)}
+              <PasswordInput
+                autoComplete="new-password"
+                value={newPass}
+                onChange={(e) => setNewPass(e.target.value)}
               />
             </Field>
           </div>

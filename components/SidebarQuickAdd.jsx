@@ -11,7 +11,7 @@ import { isNum, n, nOrNull, todayISO } from '@/lib/format';
 import { lastOdo } from '@/lib/calc';
 
 export default function SidebarQuickAdd() {
-  const { data, cars, activeCar, settings, saveSession, setQuickOpen, toast } = useStore();
+  const { data, cars, activeCar, settings, saveSession, setQuickOpen, setQuickDraft, toast } = useStore();
   const [socBefore, setSocBefore] = useState('');
   const [socAfter, setSocAfter] = useState('');
   const [kwh, setKwh] = useState('');
@@ -59,7 +59,16 @@ export default function SidebarQuickAdd() {
           <b>Quick Add</b>
           <span>บันทึกการชาร์จล่าสุด</span>
         </div>
-        <button type="button" className="add" onClick={() => setQuickOpen(true)} title="กรอกแบบละเอียด">
+        <button
+          type="button"
+          className="add"
+          title="กรอกแบบละเอียด"
+          onClick={() => {
+            // ยกค่าที่พิมพ์ค้างไว้ไปให้ Quick Add ต่อ จะได้ไม่ต้องกรอกซ้ำ
+            setQuickDraft({ carId, socBefore, socAfter, kwh });
+            setQuickOpen(true);
+          }}
+        >
           <Icon name="plus" />
         </button>
       </div>

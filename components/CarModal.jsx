@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { EV_DATA, OTHER } from '@/lib/data';
 import Icon from './Icon';
+import ImageUploader from './ImageUploader';
 import { Field, Modal } from './ui';
 import { useStore } from './store';
 
@@ -23,6 +24,7 @@ export default function CarModal({ car, onClose }) {
     range: car?.range ?? '',
     odo: car?.odo ?? '',
     plate: car?.plate || '',
+    photo: car?.photo || null,
   }));
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -62,6 +64,7 @@ export default function CarModal({ car, onClose }) {
       range: form.range === '' ? null : Number(form.range),
       odo: form.odo === '' ? null : Number(form.odo),
       plate: form.plate.trim(),
+      photo: form.photo,
     });
     toast(car ? 'แก้ไขข้อมูลรถเรียบร้อย' : 'เพิ่มรถเรียบร้อย');
     onClose();
@@ -155,6 +158,19 @@ export default function CarModal({ car, onClose }) {
           <input type="text" placeholder="ไม่บังคับ"
             value={form.plate} onChange={(e) => set('plate', e.target.value)} />
         </Field>
+      </div>
+
+      <div className="mt">
+        <div className="sm muted" style={{ marginBottom: 8, fontWeight: 550 }}>รูปรถ</div>
+        <ImageUploader
+          max={1}
+          hint="เลือกรูปรถของคุณ"
+          imageIds={form.photo ? [form.photo] : []}
+          onChange={(ids) => set('photo', ids[0] || null)}
+        />
+        <p className="help" style={{ marginTop: 8 }}>
+          ใช้แสดงในแถบเมนูและการ์ดสถานะรถ · ถ้าไม่ใส่จะใช้ภาพวาดแทน
+        </p>
       </div>
     </Modal>
   );

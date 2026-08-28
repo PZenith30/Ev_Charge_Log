@@ -7,7 +7,7 @@ import { fmt0, isNum, n } from '@/lib/format';
 import Icon, { IconSprite } from './Icon';
 import Login from './Login';
 import QuickAdd from './QuickAdd';
-import CarArt from './CarArt';
+import CarPhoto from './CarPhoto';
 import DateRangePicker from './DateRangePicker';
 import SidebarQuickAdd from './SidebarQuickAdd';
 import { ConfirmDialog, Lightbox, Toasts } from './ui';
@@ -140,7 +140,7 @@ export default function AppShell({ children }) {
               <i />
               {[activeCar.brand, activeCar.model].filter(Boolean).join(' ') || 'ไม่ระบุรุ่น'}
             </div>
-            <div className="art"><CarArt soc={soc} /></div>
+            <div className="art"><CarPhoto car={activeCar} soc={soc} rounded={10} /></div>
             <div className="row">
               <span>{soc !== null ? `${fmt0(soc)}%` : 'ยังไม่มีข้อมูล SOC'}</span>
               <b>{estRange !== null ? `${fmt0(estRange)} km` : '—'}</b>

@@ -5,7 +5,8 @@ import { addImageFiles, imgDel, imgMany } from '@/lib/storage';
 import Icon from './Icon';
 import { useStore } from './store';
 
-export default function ImageUploader({ imageIds = [], onChange }) {
+/** max = จำนวนรูปสูงสุด (ค่าเริ่มต้นไม่จำกัด) · ครบแล้วปุ่มเพิ่มจะซ่อน */
+export default function ImageUploader({ imageIds = [], onChange, max = Infinity, hint }) {
   const { setLightbox, toast } = useStore();
   const [recs, setRecs] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -28,7 +29,9 @@ export default function ImageUploader({ imageIds = [], onChange }) {
     try {
       const added = await addImageFiles(files);
       if (added.length) {
-        onChange([...imageIds, ...added.map((a) => a.id)]);
+        // ถ้าเกินโควตา ให้เก็บใบล่าสุดตามจำนวนที่กำหนด
+        const next = [...imageIds, ...added.map((a) => a.id)];
+        onChange(Number.isFinite(max) ? next.slice(-max) : next);
         toast(`แนบรูปแล้ว ${added.length} ไฟล์`);
       } else {
         toast('ไม่พบไฟล์รูปที่แนบได้', true);
@@ -59,17 +62,26 @@ export default function ImageUploader({ imageIds = [], onChange }) {
             </button>
           </div>
         ))}
-        <button
-          type="button"
-          className="uploader"
-          onClick={() => inputRef.current?.click()}
-          title="แนบรูป"
-          disabled={busy}
-        >
-          <Icon name={busy ? 'clock' : 'camera'} />
-        </button>
+        {recs.length < max ? (
+          <button
+            type="button"
+            className="uploader"
+            onClick={() => inputRef.current?.click()}
+            title={hint || 'แนบรูป'}
+            disabled={busy}
+          >
+            <Icon name={busy ? 'clock' : 'camera'} />
+          </button>
+        ) : null}
       </div>
-      <input ref={inputRef} type="file" accept="image/*" multiple hidden onChange={handleFiles} />
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        multiple={max !== 1}
+        hidden
+        onChange={handleFiles}
+      />
     </>
   );
 }

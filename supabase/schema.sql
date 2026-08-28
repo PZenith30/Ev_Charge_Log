@@ -19,8 +19,11 @@ create table if not exists public.cars (
   range       numeric,          -- ระยะทางที่วิ่งได้ (km)
   odo         numeric,          -- เลขไมล์ตั้งต้น
   plate       text,
+  photo       text,             -- path รูปรถในบัคเก็ต charge-images (ว่าง = ใช้ภาพวาดแทน)
   created_at  timestamptz not null default now()
 );
+-- เผื่อโปรเจกต์ที่สร้างตารางไว้ก่อนมีคอลัมน์นี้
+alter table public.cars add column if not exists photo text;
 
 -- ------------------------------------------------------ การชาร์จแต่ละครั้ง
 create table if not exists public.charge_sessions (

@@ -22,6 +22,7 @@ export default function AddPage() {
   const {
     data, cars, activeCar, settings, sessions, setSettings,
     saveSession, deleteSession, editingId, setEditingId, toast, confirm,
+    quickDraft, setQuickDraft,
   } = useStore();
   const router = useRouter();
 
@@ -60,13 +61,29 @@ export default function AddPage() {
       });
       setOdoTouched(true);
     } else {
+      // ค่าที่ยกมาจาก Quick Add ตอนกด "กรอกแบบเต็ม →"
+      const d = quickDraft || {};
+      const type = d.type === 'DC' ? 'DC' : 'AC';
+      const defPrice = type === 'DC' ? settings.priceDC : settings.priceAC;
       setDashUnit(settings.dashEffUnit || DEFAULT_DASH_UNIT);
       setForm({
         ...blank(),
-        carId: activeCar ? activeCar.id : cars[0]?.id || '',
-        price: isNum(settings.priceAC) ? String(settings.priceAC) : '',
+        carId: d.carId || (activeCar ? activeCar.id : cars[0]?.id || ''),
+        date: d.date || todayISO(),
+        type,
+        kwh: d.kwh ?? '',
+        price: d.price ?? (isNum(defPrice) ? String(defPrice) : ''),
+        total: d.total ?? '',
+        odoAfter: d.odo ?? '',
+        socBefore: d.socBefore ?? '',
+        socAfter: d.socAfter ?? '',
       });
+      // d.odo คือเลขไมล์ "หลังชาร์จ" ส่วนเลขไมล์ก่อนชาร์จยังให้ระบบเติมจากครั้งก่อนตามเดิม
       setOdoTouched(false);
+      if (quickDraft) {
+        setQuickDraft(null);
+        toast('ยกข้อมูลที่กรอกไว้มาให้แล้ว');
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingId]);

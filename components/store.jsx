@@ -57,6 +57,8 @@ export function StoreProvider({ children }) {
   const [lightbox, setLightbox] = useState(null);
   const [quickOpen, setQuickOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  // ค่าที่กรอกค้างไว้ตอนสลับจาก Quick Add ไปฟอร์มเต็ม (หรือจากแถบเมนูเข้า Quick Add)
+  const [quickDraft, setQuickDraft] = useState(null);
   const [viewAllCars, setViewAllCars] = useState(false);
   const [legacyFound, setLegacyFound] = useState(null);
   // ช่วงเวลาที่เลือกบนแถบบน — ใช้ร่วมกันทั้งแดชบอร์ด สถิติ และหน้าวิเคราะห์
@@ -407,6 +409,7 @@ export function StoreProvider({ children }) {
     toast, toasts, confirm, confirmState, setConfirmState,
     lightbox, setLightbox,
     quickOpen, setQuickOpen,
+    quickDraft, setQuickDraft,
     editingId, setEditingId,
     dark, toggleTheme, setSettings, setActiveCar,
     saveSession, deleteSession,

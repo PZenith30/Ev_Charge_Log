@@ -7,7 +7,7 @@ import { useStore } from '@/components/store';
 import { Stat, EmptyState, Trend, TypePill } from '@/components/ui';
 import { BarChart, DonutChart, LineChart, Sparkline } from '@/components/Charts';
 import { AlertBanner, BudgetBanner, SessionDetail } from '@/components/SessionViews';
-import CarArt from '@/components/CarArt';
+import CarPhoto from '@/components/CarPhoto';
 import Icon from '@/components/Icon';
 import {
   monthlyTotals, sDist, sEff, sKwh100, sPricePerKwh, sTotal, summarize,
@@ -218,7 +218,7 @@ export default function DashboardPage() {
                     <div className="km">{estRange !== null ? `${fmt0(estRange)} km` : '—'}</div>
                     <div className="cap">ระยะทางที่วิ่งได้</div>
                   </div>
-                  <div className="art"><CarArt soc={soc} /></div>
+                  <div className="art"><CarPhoto car={activeCar} soc={soc} rounded={14} /></div>
                 </div>
                 <div className="vmini">
                   <div>
