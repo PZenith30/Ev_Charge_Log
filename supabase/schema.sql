@@ -94,6 +94,28 @@ create index if not exists costs_user_idx            on public.costs (user_id, d
 create index if not exists reminders_user_idx        on public.reminders (user_id, due);
 
 -- =====================================================================
+-- สิทธิ์ระดับตาราง (GRANT) — คนละชั้นกับ RLS และต้องมีทั้งคู่
+--
+--   GRANT = role ไหน "แตะตารางนี้ได้ไหม"
+--   RLS   = แตะได้แล้ว "เห็นแถวไหนบ้าง"
+--
+-- ถ้าขาด GRANT จะขึ้น "permission denied for table cars" ตั้งแต่ยังไม่ถึง RLS
+-- โปรเจกต์ Supabase บางรุ่นไม่ได้ตั้ง default privileges ให้ จึงประกาศไว้ตรงนี้ให้ชัด
+--
+-- ให้สิทธิ์เฉพาะ role `authenticated` เท่านั้น ไม่ให้ `anon`
+-- คนที่ยังไม่ล็อกอินจึงยิงเข้าตารางเหล่านี้ไม่ได้เลย
+-- =====================================================================
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on all tables in schema public to authenticated;
+grant usage, select on all sequences in schema public to authenticated;
+
+-- ตารางที่สร้างเพิ่มทีหลังจะได้สิทธิ์เดียวกันโดยไม่ต้องมารันซ้ำ
+alter default privileges in schema public
+  grant select, insert, update, delete on tables to authenticated;
+alter default privileges in schema public
+  grant usage, select on sequences to authenticated;
+
+-- =====================================================================
 -- Row Level Security — ทุกตารางเห็นเฉพาะแถวที่ user_id ตรงกับผู้ใช้ที่ล็อกอิน
 -- =====================================================================
 alter table public.cars            enable row level security;
