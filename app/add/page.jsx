@@ -7,9 +7,9 @@ import { useStore } from '@/components/store';
 import { EmptyState, Field, TypeToggle } from '@/components/ui';
 import ImageUploader from '@/components/ImageUploader';
 import Icon from '@/components/Icon';
-import { fmt, fmt0, fmtDist, isNum, money, n, nOrNull, splitDuration, todayISO } from '@/lib/format';
+import { fmt, fmt0, fmtDist, isNum, limitDecimals, money, n, nOrNull, splitDuration, todayISO } from '@/lib/format';
 import { lastOdo, sBahtKm, sDist, sEff, sEff100, sSoc, sTotal } from '@/lib/calc';
-import { DASH_UNITS, DEFAULT_DASH_UNIT } from '@/lib/data';
+import { DASH_DECIMALS, DASH_UNITS, DEFAULT_DASH_UNIT } from '@/lib/data';
 
 const blank = () => ({
   carId: '', date: todayISO(), type: 'AC', station: '',
@@ -49,7 +49,7 @@ export default function AddPage() {
         socBefore: editing.socBefore ?? '',
         socAfter: editing.socAfter ?? '',
         dashEff: isNum(editing.dashEff)
-          ? String(Number(DASH_UNITS[unit].fromBase(Number(editing.dashEff)).toFixed(4)))
+          ? String(Number(DASH_UNITS[unit].fromBase(Number(editing.dashEff)).toFixed(DASH_DECIMALS)))
           : '',
         kwh: editing.kwh ?? '',
         price: editing.price ?? '',
@@ -76,7 +76,7 @@ export default function AddPage() {
     setForm((f) => {
       if (!isNum(f.dashEff)) return f;
       const base = DASH_UNITS[dashUnit].toBase(Number(f.dashEff));
-      return { ...f, dashEff: String(Number(DASH_UNITS[next].fromBase(base).toFixed(4))) };
+      return { ...f, dashEff: String(Number(DASH_UNITS[next].fromBase(base).toFixed(DASH_DECIMALS))) };
     });
     setDashUnit(next);
     setSettings({ dashEffUnit: next });
@@ -273,15 +273,16 @@ export default function AddPage() {
           </Field>
           <Field
             label="อัตราสิ้นเปลืองจากหน้าปัด"
-            help="ค่าที่รถแสดงบนหน้าปัด · หน่วยที่เลือกจะถูกจำไว้ใช้ครั้งถัดไป"
+            help="ค่าที่รถแสดงบนหน้าปัด · ทศนิยมได้ไม่เกิน 2 ตำแหน่ง · หน่วยที่เลือกจะถูกจำไว้ใช้ครั้งถัดไป"
             style={{ gridColumn: 'span 2' }}
           >
             <div style={{ display: 'flex', gap: 6 }}>
               <input
-                type="number" min="0" step={DASH_UNITS[dashUnit].step} inputMode="decimal"
+                type="number" min="0" step="0.01" inputMode="decimal"
                 placeholder={DASH_UNITS[dashUnit].placeholder}
                 style={{ flex: 1, minWidth: 0 }}
-                value={form.dashEff} onChange={(e) => set('dashEff', e.target.value)}
+                value={form.dashEff}
+                onChange={(e) => set('dashEff', limitDecimals(e.target.value, DASH_DECIMALS))}
               />
               <select
                 value={dashUnit}
