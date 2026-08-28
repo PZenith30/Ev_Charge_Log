@@ -1,6 +1,6 @@
 'use client';
 /** ชิ้นส่วน UI ที่ใช้ซ้ำทั้งแอป — การ์ดสถิติ, modal, toast, ฟิลด์ฟอร์ม ฯลฯ */
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Icon from './Icon';
 import { useStore } from './store';
 
@@ -36,6 +36,40 @@ export function Field({ label, help, children, style }) {
       {label ? <label>{label}</label> : null}
       {children}
       {help ? <span className="help">{help}</span> : null}
+    </div>
+  );
+}
+
+/**
+ * ช่องรหัสผ่านพร้อมปุ่มดู/ซ่อน
+ * ปุ่มตั้ง tabIndex=-1 เพื่อไม่ให้ขวางลำดับ Tab จากช่องกรอกไปยังปุ่มยืนยัน
+ */
+export function PasswordInput({ value, onChange, autoComplete, placeholder = '••••••' }) {
+  const [show, setShow] = useState(false);
+  const label = show ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน';
+  return (
+    <div className="pw-wrap">
+      <input
+        type={show ? 'text' : 'password'}
+        value={value}
+        onChange={onChange}
+        autoComplete={autoComplete}
+        placeholder={placeholder}
+        spellCheck={false}
+        autoCapitalize="none"
+        autoCorrect="off"
+      />
+      <button
+        type="button"
+        className="pw-toggle"
+        onClick={() => setShow((s) => !s)}
+        title={label}
+        aria-label={label}
+        aria-pressed={show}
+        tabIndex={-1}
+      >
+        <Icon name={show ? 'eye-off' : 'eye'} />
+      </button>
     </div>
   );
 }

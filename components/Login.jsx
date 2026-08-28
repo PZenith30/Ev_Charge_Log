@@ -2,7 +2,7 @@
 /** เข้าสู่ระบบด้วย Supabase Auth — อีเมล + รหัสผ่าน พร้อมสมัครสมาชิกและลืมรหัสผ่าน */
 import { useState } from 'react';
 import Icon from './Icon';
-import { Field } from './ui';
+import { Field, PasswordInput } from './ui';
 import { useStore } from './store';
 
 const MODES = {
@@ -93,24 +93,20 @@ export default function Login() {
 
           {mode !== 'reset' ? (
             <Field label="รหัสผ่าน" help={mode === 'signup' ? 'อย่างน้อย 6 ตัวอักษร' : null}>
-              <input
-                type="password"
+              <PasswordInput
                 value={pass}
                 onChange={(e) => setPass(e.target.value)}
                 autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                placeholder="••••••"
               />
             </Field>
           ) : null}
 
           {mode === 'signup' ? (
             <Field label="ยืนยันรหัสผ่าน">
-              <input
-                type="password"
+              <PasswordInput
                 value={pass2}
                 onChange={(e) => setPass2(e.target.value)}
                 autoComplete="new-password"
-                placeholder="••••••"
               />
             </Field>
           ) : null}
