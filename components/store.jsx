@@ -61,6 +61,8 @@ export function StoreProvider({ children }) {
   const [quickDraft, setQuickDraft] = useState(null);
   // หน้าต่างเปลี่ยนรหัสผ่าน — เปิดได้ทั้งจากเมนูโปรไฟล์และหน้าบัญชี
   const [pwOpen, setPwOpen] = useState(false);
+  // แผงผู้ช่วย AI — เปิดจากปุ่มลอยหรือเมนูโปรไฟล์
+  const [chatOpen, setChatOpen] = useState(false);
   const [viewAllCars, setViewAllCars] = useState(false);
   const [legacyFound, setLegacyFound] = useState(null);
   // ช่วงเวลาที่เลือกบนแถบบน — ใช้ร่วมกันทั้งแดชบอร์ด สถิติ และหน้าวิเคราะห์
@@ -413,6 +415,7 @@ export function StoreProvider({ children }) {
     quickOpen, setQuickOpen,
     quickDraft, setQuickDraft,
     pwOpen, setPwOpen,
+    chatOpen, setChatOpen,
     editingId, setEditingId,
     dark, toggleTheme, setSettings, setActiveCar,
     saveSession, deleteSession,

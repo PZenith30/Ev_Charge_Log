@@ -7,7 +7,7 @@ import { useDismiss } from './ui';
 import { useStore } from './store';
 
 export default function ProfileMenu({ onChangePassword }) {
-  const { user, dark, toggleTheme, logout, alertCount, confirm, setQuickOpen } = useStore();
+  const { user, dark, toggleTheme, logout, alertCount, confirm, setQuickOpen, setChatOpen } = useStore();
   const [open, setOpen] = useState(false);
   const ref = useDismiss(open, useCallback(() => setOpen(false), []));
   const router = useRouter();
@@ -49,6 +49,9 @@ export default function ProfileMenu({ onChangePassword }) {
           </div>
 
           <div className="menu-label">เมนูลัด</div>
+          <button type="button" className="menu-item" role="menuitem" onClick={run(() => setChatOpen(true))}>
+            <Icon name="sparkle" />ถามผู้ช่วย AI
+          </button>
           <button type="button" className="menu-item" role="menuitem" onClick={run(() => setQuickOpen(true))}>
             <Icon name="plus" />บันทึกการชาร์จด่วน
           </button>

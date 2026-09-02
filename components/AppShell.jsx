@@ -9,6 +9,7 @@ import Login from './Login';
 import QuickAdd from './QuickAdd';
 import CarPhoto from './CarPhoto';
 import ChangePasswordModal from './ChangePasswordModal';
+import ChatWidget from './ChatWidget';
 import DateRangePicker from './DateRangePicker';
 import ProfileMenu from './ProfileMenu';
 import SidebarQuickAdd from './SidebarQuickAdd';
@@ -241,6 +242,8 @@ export default function AppShell({ children }) {
       <button type="button" className="fab" onClick={() => setQuickOpen(true)} title="Quick Add">
         <Icon name="plus" />
       </button>
+
+      <ChatWidget />
 
       {quickOpen ? <QuickAdd /> : null}
       {pwOpen ? <ChangePasswordModal onClose={() => setPwOpen(false)} /> : null}

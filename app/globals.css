@@ -459,6 +459,67 @@ table.compact{min-width:0}
 .lightbox{position:fixed;inset:0;z-index:180;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out}
 .lightbox img{max-width:100%;max-height:100%;border-radius:8px}
 
+/* ============================ ผู้ช่วย AI ============================ */
+.chat-fab{
+  position:fixed;right:22px;bottom:22px;z-index:70;width:54px;height:54px;border-radius:99px;
+  border:0;background:var(--accent);color:#fff;display:grid;place-items:center;cursor:pointer;
+  box-shadow:0 8px 22px rgba(34,197,94,.4);transition:transform .13s,background .13s
+}
+.chat-fab:hover{background:var(--accent-hover);transform:translateY(-1px)}
+.chat-fab svg{width:25px;height:25px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+.chat-panel{
+  position:fixed;right:20px;bottom:20px;z-index:75;width:390px;max-width:calc(100vw - 40px);
+  height:min(620px,calc(100dvh - 40px));display:flex;flex-direction:column;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  box-shadow:var(--shadow-lg);overflow:hidden;animation:pop .16s ease
+}
+.chat-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex:none}
+.chat-head .ic{width:32px;height:32px;border-radius:9px;background:var(--accent-soft);color:var(--accent-text);display:grid;place-items:center;flex:none}
+.chat-head .ic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
+.chat-head .t{flex:1;min-width:0}
+.chat-head b{font-size:14.5px;display:block;line-height:1.25}
+.chat-head span{font-size:11.5px;color:var(--faint)}
+
+.chat-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.chat-msg{max-width:88%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.chat-msg.me{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:5px}
+.chat-msg.ai{align-self:flex-start;background:var(--surface-3);border-bottom-left-radius:5px}
+.chat-msg.err{align-self:flex-start;background:var(--danger-soft);color:var(--danger)}
+.chat-caret{display:inline-block;width:7px;height:15px;background:var(--muted);vertical-align:-2px;margin-left:2px;animation:blink 1s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+
+.chat-intro{color:var(--muted);font-size:13px;line-height:1.7}
+.chat-suggest{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.chat-suggest button{
+  text-align:left;padding:9px 12px;border-radius:var(--r-sm);border:1px solid var(--border-strong);
+  background:var(--surface);font-size:13px;cursor:pointer;color:inherit;transition:.13s
+}
+.chat-suggest button:hover{background:var(--surface-3);border-color:var(--accent)}
+
+.chat-foot{flex:none;border-top:1px solid var(--border);padding:12px 14px;background:var(--surface-2)}
+.chat-input{display:flex;gap:8px;align-items:flex-end}
+.chat-input textarea{
+  flex:1;min-height:40px;max-height:120px;resize:none;padding:9px 12px;font-size:14px;
+  border-radius:var(--r-sm);background:var(--surface)
+}
+.chat-send{
+  flex:none;width:40px;height:40px;border-radius:var(--r-sm);border:0;background:var(--accent);color:#fff;
+  display:grid;place-items:center;cursor:pointer
+}
+.chat-send:hover{background:var(--accent-hover)}
+.chat-send:disabled{opacity:.45;cursor:not-allowed}
+.chat-send svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.chat-share{display:flex;align-items:center;gap:7px;margin-top:9px;font-size:11.5px;color:var(--faint);cursor:pointer}
+.chat-share input{width:auto;accent-color:var(--accent)}
+
+@media (max-width:900px){
+  /* ปุ่มแชทวางเหนือปุ่ม Quick Add เดิม ไม่ให้ทับกัน */
+  .chat-fab{right:16px;bottom:calc(140px + env(safe-area-inset-bottom));width:48px;height:48px}
+  .chat-fab svg{width:22px;height:22px}
+  .chat-panel{inset:0;width:auto;max-width:none;height:auto;border-radius:0;border:0}
+}
+
 /* ============================ Toast & misc ============================ */
 .toasts{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:220;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
 .toast{background:var(--text);color:var(--bg);padding:9px 15px;border-radius:99px;font-size:13.5px;font-weight:550;box-shadow:var(--shadow-lg);animation:up .2s ease}
