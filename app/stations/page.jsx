@@ -28,6 +28,7 @@ export default function StationsPage() {
   const [attribution, setAttribution] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [errorCode, setErrorCode] = useState(null);
   const [locating, setLocating] = useState(false);
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function StationsPage() {
     if (!target) return;
     setBusy(true);
     setError('');
+    setErrorCode(null);
     try {
       const data = await fetchStations({ lat: target.lat, lng: target.lng, distance: dist });
       setStations(data.stations || []);
@@ -46,6 +48,7 @@ export default function StationsPage() {
     } catch (e) {
       setStations([]);
       setError(e.message);
+      setErrorCode(e.code || null);
     } finally {
       setBusy(false);
     }
@@ -92,6 +95,54 @@ export default function StationsPage() {
   const dcCount = shown.filter((s) => s.hasDC).length;
   const fastest = shown.reduce((a, s) => Math.max(a, s.maxPowerKW || 0), 0);
   const nearest = shown.length ? shown[0].distanceKm : null;
+
+  // ยังไม่ได้ตั้งคีย์ — แสดงวิธีตั้งค่าให้ชัด แทนที่จะเป็นข้อความ error สั้นๆ
+  if (errorCode === 'NO_KEY' || errorCode === 'BAD_KEY') {
+    return (
+      <div className="card">
+        <div className="card-body">
+          <div className="alert warn" style={{ marginBottom: 16 }}>
+            <Icon name="alert" />
+            <div>
+              <div className="t1">หน้านี้ยังใช้ไม่ได้ — {errorCode === 'NO_KEY' ? 'ยังไม่ได้ตั้งคีย์' : 'คีย์ไม่ถูกต้อง'}</div>
+              <div className="t2">{error}</div>
+            </div>
+          </div>
+
+          <div className="sm" style={{ lineHeight: 1.9 }}>
+            <b>วิธีตั้งค่า</b>
+            <br />
+            1. สมัครคีย์ฟรีที่{' '}
+            <a href="https://openchargemap.org/site/develop/api" target="_blank" rel="noopener noreferrer">
+              openchargemap.org/site/develop/api
+            </a>{' '}
+            (ไม่ต้องผูกบัตร)
+            <br />
+            2. Vercel → Project Settings → Environment Variables เพิ่มตัวแปร
+            <pre
+              style={{
+                background: 'var(--surface-3)', padding: '10px 12px', borderRadius: 'var(--r-sm)',
+                fontSize: 12.5, overflowX: 'auto', margin: '8px 0',
+              }}
+            >OPENCHARGEMAP_API_KEY = คีย์ที่ได้มา</pre>
+            3. กด <b>Redeploy</b> (ตัวแปรใหม่จะมีผลต่อเมื่อ deploy รอบถัดไป)
+          </div>
+
+          <p className="sm faint mt">
+            ตัวแปรนี้ไม่มี <code>NEXT_PUBLIC_</code> นำหน้า เพราะถูกอ่านฝั่งเซิร์ฟเวอร์เท่านั้น คีย์จึงไม่หลุดไปกับหน้าเว็ป
+            <br />
+            หน้าอื่นของแอปใช้งานได้ตามปกติแม้ยังไม่ตั้งค่าตัวนี้
+          </p>
+
+          <div className="mt">
+            <button type="button" className="btn" onClick={() => search(loc, radius)} disabled={busy}>
+              <Icon name="refresh" />ลองใหม่
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

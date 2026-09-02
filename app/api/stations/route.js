@@ -66,7 +66,7 @@ export async function GET(request) {
   const key = process.env.OPENCHARGEMAP_API_KEY;
   if (!key) {
     return Response.json(
-      { error: 'ยังไม่ได้ตั้งค่า OPENCHARGEMAP_API_KEY — สมัครคีย์ฟรีที่ openchargemap.io แล้วใส่เป็น environment variable' },
+      { code: 'NO_KEY', error: 'ยังไม่ได้ตั้งค่า OPENCHARGEMAP_API_KEY บนเซิร์ฟเวอร์' },
       { status: 503 }
     );
   }
@@ -90,8 +90,13 @@ export async function GET(request) {
     });
 
     if (!res.ok) {
-      const detail = res.status === 401 || res.status === 403 ? 'คีย์ไม่ถูกต้องหรือหมดสิทธิ์' : `HTTP ${res.status}`;
-      return Response.json({ error: `เรียก Open Charge Map ไม่สำเร็จ (${detail})` }, { status: 502 });
+      if (res.status === 401 || res.status === 403) {
+        return Response.json(
+          { code: 'BAD_KEY', error: 'Open Charge Map ปฏิเสธคีย์ — ตรวจว่าคัดลอกคีย์มาครบและ Redeploy แล้ว' },
+          { status: 502 }
+        );
+      }
+      return Response.json({ error: `เรียก Open Charge Map ไม่สำเร็จ (HTTP ${res.status})` }, { status: 502 });
     }
 
     const raw = await res.json();

@@ -1,10 +1,11 @@
 'use client';
 /**
- * รูปรถ — ลำดับความสำคัญ
+ * รูปรถ — ไล่ลำดับจนกว่าจะได้รูป ไม่ค้างเป็นกล่องเปล่า
  *   1. รูปที่ผู้ใช้อัปโหลดเอง (ตรงกับรถคันจริงที่สุด)
  *   2. รูปที่ปักหมุดไว้จากอินเทอร์เน็ต (เก็บเป็น URL เต็ม)
- *   3. ค้นจาก Wikipedia อัตโนมัติตามยี่ห้อ/รุ่น (แคชผลไว้ 30 วัน)
+ *   3. ค้นจาก Wikipedia ตามยี่ห้อ/รุ่น (แคชผลไว้ 30 วัน)
  *   4. ภาพวาด SVG
+ * ทุกขั้นถ้าล้มเหลวจะตกไปขั้นถัดไปเสมอ
  */
 import { useEffect, useState } from 'react';
 import { imgMany } from '@/lib/storage';
@@ -18,46 +19,57 @@ export default function CarPhoto({ car, soc = null, rounded = 12, showCredit = f
 
   const [src, setSrc] = useState(null);
   const [credit, setCredit] = useState(null);
-  const [failed, setFailed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [broken, setBroken] = useState(false); // <img> โหลดไม่ขึ้น
 
   useEffect(() => {
     let alive = true;
     setSrc(null);
     setCredit(null);
-    setFailed(false);
+    setBroken(false);
 
-    // 2) ปักหมุดเป็นลิงก์ภายนอกไว้แล้ว
+    /** ขั้นสุดท้าย: ลองค้นจาก Wikipedia — คืน true ถ้าได้รูป */
+    async function tryWikipedia() {
+      if (!autoFetch || (!brand && !model)) return false;
+      const hit = await findCarImage(brand, model).catch(() => null);
+      if (!alive || !hit) return false;
+      setSrc(hit.url);
+      setCredit(hit);
+      return true;
+    }
+
+    // 2) ปักหมุดเป็นลิงก์ภายนอกไว้แล้ว ใช้ได้เลย
     if (isRemoteImage(photo)) {
       setSrc(photo);
-      return undefined;
-    }
-    // 1) ไฟล์ในบัคเก็ตของเราเอง ต้องขอ signed URL ก่อน
-    if (photo) {
-      imgMany([photo])
-        .then((r) => { if (alive) setSrc(r[0]?.dataUrl || null); })
-        .catch(() => {});
       return () => { alive = false; };
     }
-    // 3) ยังไม่มีรูป ลองค้นจากอินเทอร์เน็ตตามรุ่น
-    if (autoFetch && (brand || model)) {
-      findCarImage(brand, model)
-        .then((hit) => {
-          if (!alive || !hit) return;
-          setSrc(hit.url);
-          setCredit(hit);
+
+    // 1) ไฟล์ในบัคเก็ตของเรา ต้องขอ signed URL ก่อน
+    if (photo) {
+      setLoading(true);
+      imgMany([photo])
+        .then((r) => {
+          if (!alive) return;
+          const url = r[0]?.dataUrl;
+          if (url) setSrc(url);
+          else return tryWikipedia(); // ไฟล์หายหรือขอลิงก์ไม่ได้ อย่าค้างเป็นกล่องเปล่า
+          return undefined;
         })
-        .catch(() => {});
+        .catch(() => { if (alive) tryWikipedia(); })
+        .finally(() => { if (alive) setLoading(false); });
+      return () => { alive = false; };
     }
+
+    // 3) ยังไม่เคยตั้งรูป
+    tryWikipedia();
     return () => { alive = false; };
   }, [photo, brand, model, autoFetch]);
 
-  if (!src || failed) {
-    // ระหว่างรอลิงก์ของรูปที่มีอยู่แล้ว กันเลย์เอาต์กระตุกด้วยกล่องเปล่า
-    if (photo && !failed) {
-      return <div style={{ width: '100%', aspectRatio: '16 / 10', borderRadius: rounded, background: 'var(--surface-3)' }} />;
-    }
-    return <CarArt soc={soc} />;
+  // ระหว่างรอลิงก์ของรูปที่มีอยู่จริง แสดงกล่องจางกันเลย์เอาต์กระตุก
+  if (!src && loading) {
+    return <div style={{ width: '100%', aspectRatio: '16 / 10', borderRadius: rounded, background: 'var(--surface-3)' }} />;
   }
+  if (!src || broken) return <CarArt soc={soc} />;
 
   return (
     <div style={{ width: '100%' }}>
@@ -66,7 +78,7 @@ export default function CarPhoto({ car, soc = null, rounded = 12, showCredit = f
       <img
         src={src}
         alt={car?.name ? `รูปรถ ${car.name}` : 'รูปรถ'}
-        onError={() => setFailed(true)}
+        onError={() => setBroken(true)}
         style={{ width: '100%', borderRadius: rounded, display: 'block', objectFit: 'cover' }}
       />
       {showCredit && credit ? (
