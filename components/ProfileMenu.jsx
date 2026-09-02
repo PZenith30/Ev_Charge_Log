@@ -52,6 +52,9 @@ export default function ProfileMenu({ onChangePassword }) {
           <button type="button" className="menu-item" role="menuitem" onClick={run(() => setQuickOpen(true))}>
             <Icon name="plus" />บันทึกการชาร์จด่วน
           </button>
+          <button type="button" className="menu-item" role="menuitem" onClick={go('/stations')}>
+            <Icon name="map-pin" />สถานีชาร์จใกล้ฉัน
+          </button>
           <button type="button" className="menu-item" role="menuitem" onClick={go('/account')}>
             <Icon name="car" />บัญชี &amp; รถของฉัน
           </button>

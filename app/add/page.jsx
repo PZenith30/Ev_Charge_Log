@@ -71,6 +71,7 @@ export default function AddPage() {
         carId: d.carId || (activeCar ? activeCar.id : cars[0]?.id || ''),
         date: d.date || todayISO(),
         type,
+        station: d.station || '',
         kwh: d.kwh ?? '',
         price: d.price ?? (isNum(defPrice) ? String(defPrice) : ''),
         total: d.total ?? '',
@@ -82,7 +83,7 @@ export default function AddPage() {
       setOdoTouched(false);
       if (quickDraft) {
         setQuickDraft(null);
-        toast('ยกข้อมูลที่กรอกไว้มาให้แล้ว');
+        toast(d.station ? `เติมสถานี "${d.station}" ให้แล้ว` : 'ยกข้อมูลที่กรอกไว้มาให้แล้ว');
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
