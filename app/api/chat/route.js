@@ -12,7 +12,7 @@
  */
 import { createClient } from '@supabase/supabase-js';
 import { buildSystemInstruction } from '@/lib/aiPrompt';
-import { GEMINI_BASE as BASE, listUsableModels, pickModel } from '@/lib/aiModels';
+import { GEMINI_BASE as BASE, keyFormatWarning, listUsableModels, pickModel } from '@/lib/aiModels';
 
 const MAX_MESSAGES = 20;      // เก็บบทสนทนาย้อนหลังเท่านี้ กันไม่ให้ token บาน
 const MAX_CHARS = 4000;       // ความยาวข้อความเดียวสูงสุด
@@ -94,7 +94,7 @@ export async function POST(request) {
   const user = await verifyUser(request);
   if (!user) return fail('UNAUTHORIZED', 'ต้องเข้าสู่ระบบก่อนใช้ผู้ช่วย AI', 401);
 
-  const key = process.env.GEMINI_API_KEY;
+  const key = (process.env.GEMINI_API_KEY || '').trim();
   if (!key) return fail('NO_KEY', 'ยังไม่ได้ตั้งค่า GEMINI_API_KEY บนเซิร์ฟเวอร์', 503);
 
   let body;
@@ -137,11 +137,23 @@ export async function POST(request) {
 
   try {
     // ลำดับการเลือกรุ่น: ที่ตั้งไว้เอง > ที่เคยใช้ได้ > ถามรายชื่อจาก API
-    let model = process.env.GEMINI_MODEL || cachedModel;
+    let model = (process.env.GEMINI_MODEL || '').trim() || cachedModel;
     if (!model) {
-      model = pickModel(await listUsableModels(key));
+      const listed = await listUsableModels(key);
+      model = pickModel(listed.models);
       if (!model) {
-        return fail('BAD_KEY', 'คีย์นี้ยังไม่มีสิทธิ์เรียกโมเดลใดเลย — ตรวจว่าเปิดใช้งาน Generative Language API แล้ว', 502);
+        // ข้อความจาก Google คือสิ่งเดียวที่บอกได้ว่าคีย์ผิด API ไม่ได้เปิด หรือคีย์ถูกจำกัด
+        const hint = keyFormatWarning(process.env.GEMINI_API_KEY);
+        const reason =
+          listed.error ? listed.error
+          : listed.all.length ? `คีย์เห็น ${listed.all.length} โมเดล แต่ไม่มีตัวไหนรองรับการแชทแบบสตรีม`
+          : 'คีย์ใช้ได้แต่ไม่เห็นโมเดลใดเลย';
+        return fail(
+          'BAD_KEY',
+          `เรียกผู้ช่วยไม่ได้ — ${reason}${hint ? ` (ข้อสังเกต: ${hint})` : ''}`,
+          502,
+          { detail: listed.raw || null, googleStatus: listed.status, allModels: listed.all }
+        );
       }
       cachedModel = model;
     }
@@ -150,8 +162,8 @@ export async function POST(request) {
 
     // รุ่นที่ตั้งไว้ใช้ไม่ได้ ลองหาตัวที่บัญชีนี้ใช้ได้จริงแล้วยิงใหม่ครั้งเดียว
     if (res.status === 404) {
-      const available = await listUsableModels(key);
-      const alt = pickModel(available);
+      const listed = await listUsableModels(key);
+      const alt = pickModel(listed.models);
       if (alt && alt !== model) {
         cachedModel = alt;
         model = alt;
@@ -159,11 +171,11 @@ export async function POST(request) {
       } else {
         return fail(
           'BAD_MODEL',
-          available.length
-            ? `ไม่พบโมเดล "${model}" — รุ่นที่บัญชีคุณใช้ได้: ${available.slice(0, 8).join(', ')}`
-            : `ไม่พบโมเดล "${model}" และดึงรายชื่อรุ่นที่ใช้ได้ไม่สำเร็จ`,
+          listed.models.length
+            ? `ไม่พบโมเดล "${model}" — รุ่นที่บัญชีคุณใช้ได้: ${listed.models.slice(0, 8).join(', ')}`
+            : `ไม่พบโมเดล "${model}" และดึงรายชื่อรุ่นไม่สำเร็จ — ${listed.error || 'ไม่ทราบสาเหตุ'}`,
           502,
-          { available }
+          { available: listed.models }
         );
       }
     }
@@ -209,13 +221,22 @@ export async function GET(request) {
   const user = await verifyUser(request);
   if (!user) return fail('UNAUTHORIZED', 'ต้องเข้าสู่ระบบก่อน', 401);
 
-  const key = process.env.GEMINI_API_KEY;
+  const key = (process.env.GEMINI_API_KEY || '').trim();
   if (!key) return fail('NO_KEY', 'ยังไม่ได้ตั้งค่า GEMINI_API_KEY บนเซิร์ฟเวอร์', 503);
 
-  const available = await listUsableModels(key);
+  const listed = await listUsableModels(key);
+  const raw = process.env.GEMINI_API_KEY || '';
   return Response.json({
-    ตั้งค่าไว้: process.env.GEMINI_MODEL || '(ไม่ได้ตั้ง — ให้ระบบเลือกเอง)',
-    กำลังใช้: process.env.GEMINI_MODEL || cachedModel || pickModel(available) || null,
-    รุ่นที่ใช้ได้: available,
+    สถานะคีย์: listed.error ? 'มีปัญหา' : 'ใช้ได้',
+    ปัญหาที่พบ: listed.error || null,
+    ข้อความจาก_Google: listed.raw || null,
+    HTTP: listed.status,
+    // ไม่แสดงคีย์เต็ม แสดงแค่พอให้ตรวจว่าคัดลอกมาถูกตัว
+    คีย์: `${raw.slice(0, 6)}…${raw.slice(-4)} (ยาว ${raw.length} ตัว)`,
+    ข้อสังเกตเรื่องรูปแบบคีย์: keyFormatWarning(raw) || 'ปกติ',
+    ตั้งค่าไว้: (process.env.GEMINI_MODEL || '').trim() || '(ไม่ได้ตั้ง — ให้ระบบเลือกเอง)',
+    กำลังใช้: (process.env.GEMINI_MODEL || '').trim() || cachedModel || pickModel(listed.models) || null,
+    รุ่นที่แชทได้: listed.models,
+    รุ่นทั้งหมดที่คีย์นี้เห็น: listed.all,
   });
 }
