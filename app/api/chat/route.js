@@ -18,8 +18,8 @@ const MAX_MESSAGES = 20;      // เก็บบทสนทนาย้อน�
 const MAX_CHARS = 4000;       // ความยาวข้อความเดียวสูงสุด
 const TIMEOUT_MS = 30000;
 
-/** จำรุ่นที่ใช้ได้ไว้ตลอดอายุของ instance จะได้ไม่ต้องถามรายชื่อทุกครั้ง */
-let cachedModel = null;
+/** จำรุ่นที่ใช้ได้และวิธีเรียก (สตรีม/ไม่สตรีม) ไว้ตลอดอายุ instance จะได้ไม่ต้องถามซ้ำ */
+let cached = null;
 
 const fail = (code, error, status, extra = {}) => Response.json({ code, error, ...extra }, { status });
 
@@ -124,9 +124,12 @@ export async function POST(request) {
     },
   });
 
-  const callGemini = (model) =>
+  /** เรียกโมเดล — wantStream=false จะได้คำตอบเป็น JSON ก้อนเดียว */
+  const callGemini = (model, wantStream) =>
     fetch(
-      `${BASE}/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(key)}`,
+      `${BASE}/models/${encodeURIComponent(model)}:` +
+        (wantStream ? 'streamGenerateContent?alt=sse&' : 'generateContent?') +
+        `key=${encodeURIComponent(key)}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -137,7 +140,9 @@ export async function POST(request) {
 
   try {
     // ลำดับการเลือกรุ่น: ที่ตั้งไว้เอง > ที่เคยใช้ได้ > ถามรายชื่อจาก API
-    let model = (process.env.GEMINI_MODEL || '').trim() || cachedModel;
+    let model = (process.env.GEMINI_MODEL || '').trim() || cached?.model;
+    let stream = cached ? cached.stream : true;
+
     if (!model) {
       const listed = await listUsableModels(key);
       model = pickModel(listed.models);
@@ -146,7 +151,7 @@ export async function POST(request) {
         const hint = keyFormatWarning(process.env.GEMINI_API_KEY);
         const reason =
           listed.error ? listed.error
-          : listed.all.length ? `คีย์เห็น ${listed.all.length} โมเดล แต่ไม่มีตัวไหนรองรับการแชทแบบสตรีม`
+          : listed.all.length ? `คีย์เห็น ${listed.all.length} โมเดล แต่ไม่มีตัวไหนใช้กับงานแชทได้`
           : 'คีย์ใช้ได้แต่ไม่เห็นโมเดลใดเลย';
         return fail(
           'BAD_KEY',
@@ -155,19 +160,33 @@ export async function POST(request) {
           { detail: listed.raw || null, googleStatus: listed.status, allModels: listed.all }
         );
       }
-      cachedModel = model;
+      // ถ้า metadata ไม่ได้ประกาศว่าสตรีมได้ ก็ยังลองสตรีมก่อน แล้วค่อยถอยถ้าไม่ผ่าน
+      stream = listed.streamable.length === 0 || listed.streamable.includes(model);
+      cached = { model, stream };
     }
 
-    let res = await callGemini(model);
+    let res = await callGemini(model, stream);
 
-    // รุ่นที่ตั้งไว้ใช้ไม่ได้ ลองหาตัวที่บัญชีนี้ใช้ได้จริงแล้วยิงใหม่ครั้งเดียว
+    // โมเดลนี้อาจไม่รองรับสตรีม — ลองแบบไม่สตรีมก่อนจะยอมแพ้
+    if (!res.ok && stream) {
+      stream = false;
+      res = await callGemini(model, false);
+      if (res.ok) cached = { model, stream: false };
+    }
+
+    // ยังไม่ผ่าน อาจเป็นเพราะชื่อรุ่นใช้ไม่ได้ ลองหาตัวแทนแล้วยิงใหม่ครั้งเดียว
     if (res.status === 404) {
       const listed = await listUsableModels(key);
       const alt = pickModel(listed.models);
       if (alt && alt !== model) {
-        cachedModel = alt;
         model = alt;
-        res = await callGemini(alt);
+        stream = listed.streamable.length === 0 || listed.streamable.includes(alt);
+        res = await callGemini(alt, stream);
+        if (!res.ok && stream) {
+          stream = false;
+          res = await callGemini(alt, false);
+        }
+        if (res.ok) cached = { model, stream };
       } else {
         return fail(
           'BAD_MODEL',
@@ -180,7 +199,7 @@ export async function POST(request) {
       }
     }
 
-    if (!res.ok || !res.body) {
+    if (!res.ok || (stream && !res.body)) {
       let detail = '';
       try {
         detail = (await res.json())?.error?.message || '';
@@ -198,14 +217,27 @@ export async function POST(request) {
       return fail('UPSTREAM', `Gemini ตอบผิดพลาด (HTTP ${res.status})${detail ? ` — ${detail}` : ''}`, 502);
     }
 
-    return new Response(toPlainTextStream(res.body), {
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Cache-Control': 'no-store',
-        'X-Accel-Buffering': 'no', // กัน proxy บางตัวหน่วงสตรีมไว้จนไม่เห็นทยอยพิมพ์
-        'X-Gemini-Model': model,   // ดูได้ใน DevTools ว่าใช้รุ่นไหนอยู่
-      },
-    });
+    const headers = {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Accel-Buffering': 'no',                    // กัน proxy บางตัวหน่วงสตรีมไว้จนไม่เห็นทยอยพิมพ์
+      'X-Gemini-Model': model,                      // ดูได้ใน DevTools ว่าใช้รุ่นไหนอยู่
+      'X-Gemini-Stream': stream ? '1' : '0',
+    };
+
+    if (stream) return new Response(toPlainTextStream(res.body), { headers });
+
+    // โหมดไม่สตรีม — คำตอบมาเป็น JSON ก้อนเดียว ส่งกลับเป็นข้อความล้วนเหมือนกัน
+    // ฝั่งเบราว์เซอร์อ่านด้วยโค้ดชุดเดิม ต่างแค่ได้ทั้งหมดทีเดียวไม่ทยอยขึ้น
+    const json = await res.json();
+    const text = (json?.candidates?.[0]?.content?.parts || [])
+      .map((p) => p?.text || '')
+      .join('');
+    const blocked = json?.promptFeedback?.blockReason;
+    return new Response(
+      text || (blocked ? `คำถามนี้ถูกระบบความปลอดภัยของ Gemini ปฏิเสธ (${blocked})` : 'ผู้ช่วยไม่ได้ตอบอะไรกลับมา'),
+      { headers }
+    );
   } catch (e) {
     const timedOut = e?.name === 'TimeoutError' || e?.name === 'AbortError';
     return fail(
@@ -235,7 +267,9 @@ export async function GET(request) {
     คีย์: `${raw.slice(0, 6)}…${raw.slice(-4)} (ยาว ${raw.length} ตัว)`,
     ข้อสังเกตเรื่องรูปแบบคีย์: keyFormatWarning(raw) || 'ปกติ',
     ตั้งค่าไว้: (process.env.GEMINI_MODEL || '').trim() || '(ไม่ได้ตั้ง — ให้ระบบเลือกเอง)',
-    กำลังใช้: (process.env.GEMINI_MODEL || '').trim() || cachedModel || pickModel(listed.models) || null,
+    กำลังใช้: (process.env.GEMINI_MODEL || '').trim() || cached?.model || pickModel(listed.models) || null,
+    วิธีเรียก: cached ? (cached.stream ? 'สตรีม' : 'ไม่สตรีม') : '(ยังไม่เคยเรียก)',
+    รุ่นที่ประกาศว่าสตรีมได้: listed.streamable,
     รุ่นที่แชทได้: listed.models,
     รุ่นทั้งหมดที่คีย์นี้เห็น: listed.all,
   });
