@@ -22,7 +22,8 @@ export const maxDuration = 60;
 
 const MAX_MESSAGES = 20;   // เก็บบทสนทนาย้อนหลังเท่านี้ กันไม่ให้ token บาน
 const MAX_CHARS = 4000;    // ความยาวข้อความเดียวสูงสุด
-const TIMEOUT_MS = 20000;
+const TRY_TIMEOUT_MS = 14000;  // ต่อการเรียกหนึ่งครั้ง
+const BUDGET_MS = 45000;       // งบเวลารวมทั้งคำขอ ต้องต่ำกว่า maxDuration
 const MAX_CANDIDATES = 6;  // ไล่ลองมากสุดกี่รุ่นก่อนยอมแพ้
 
 /** จำรุ่นที่ตอบได้จริงและวิธีเรียก ไว้ตลอดอายุ instance จะได้ไม่ต้องไล่ลองใหม่ */
@@ -132,7 +133,13 @@ export async function POST(request) {
     },
   });
 
-  /** เรียกโมเดล — wantStream=false จะได้คำตอบเป็น JSON ก้อนเดียว */
+  const startedAt = Date.now();
+  const timeLeft = () => BUDGET_MS - (Date.now() - startedAt);
+
+  /**
+   * เรียกโมเดล — wantStream=false จะได้คำตอบเป็น JSON ก้อนเดียว
+   * ตั้ง timeout ต่อครั้งไม่ให้เกินงบเวลาที่เหลือ รุ่นที่ช้าจะได้ไม่กินเวลาของรุ่นถัดไป
+   */
   const callGemini = (model, wantStream) =>
     fetch(
       `${BASE}/models/${encodeURIComponent(model)}:` +
@@ -141,7 +148,7 @@ export async function POST(request) {
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(TIMEOUT_MS),
+        signal: AbortSignal.timeout(Math.max(3000, Math.min(TRY_TIMEOUT_MS, timeLeft()))),
         body: payload,
       }
     );
@@ -192,8 +199,24 @@ export async function POST(request) {
       // รุ่นที่เคยตอบได้แล้วรู้อยู่ว่าต้องใช้วิธีไหน ก็ไม่ต้องลองซ้ำอีกแบบ
       const modes = known?.model === model ? [known.stream] : [true, false];
 
+      if (timeLeft() < 4000) {
+        tried.push('หมดเวลาก่อนได้ลองครบทุกรุ่น');
+        break;
+      }
+
       for (const stream of modes) {
-        const res = await callGemini(model, stream);
+        let res;
+        try {
+          res = await callGemini(model, stream);
+        } catch (e) {
+          // รุ่นนี้ช้าหรือเชื่อมต่อไม่ได้ — ข้ามไปรุ่นถัดไป อย่าให้ล้มทั้งกระบวนการ
+          const timedOut = e?.name === 'TimeoutError' || e?.name === 'AbortError';
+          lastStatus = 0;
+          lastDetail = timedOut ? 'รุ่นนี้ตอบไม่ทันเวลา' : 'เชื่อมต่อรุ่นนี้ไม่ได้';
+          tried.push(`${model}${stream ? ' (สตรีม)' : ''}: ${lastDetail}`);
+          if (timedOut) badModels.add(model);
+          break;
+        }
 
         if (res.ok && (!stream || res.body)) {
           known = { model, stream };
