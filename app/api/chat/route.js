@@ -14,7 +14,7 @@ import { createClient } from '@supabase/supabase-js';
 import { buildSystemInstruction } from '@/lib/aiPrompt';
 import {
   GEMINI_BASE as BASE, explainGoogleError, isFatalError, isModelUnusable,
-  keyFormatWarning, listUsableModels, rankModels,
+  diversifyModels, keyFormatWarning, listUsableModels, rankModels,
 } from '@/lib/aiModels';
 
 // ต้องเผื่อเวลาไว้ให้กรณีต้องไล่ลองหลายรุ่นในคำขอแรก
@@ -23,11 +23,12 @@ export const maxDuration = 60;
 const MAX_MESSAGES = 20;   // เก็บบทสนทนาย้อนหลังเท่านี้ กันไม่ให้ token บาน
 const MAX_CHARS = 4000;    // ความยาวข้อความเดียวสูงสุด
 const TIMEOUT_MS = 20000;
-const MAX_CANDIDATES = 4;  // ไล่ลองมากสุดกี่รุ่นก่อนยอมแพ้
+const MAX_CANDIDATES = 6;  // ไล่ลองมากสุดกี่รุ่นก่อนยอมแพ้
 
 /** จำรุ่นที่ตอบได้จริงและวิธีเรียก ไว้ตลอดอายุ instance จะได้ไม่ต้องไล่ลองใหม่ */
 let known = null;      // { model, stream }
-let rankedCache = null; // รายชื่อรุ่นเรียงตามความเหมาะสม
+let rankedCache = null; // รายชื่อรุ่นเรียงตามความเหมาะสม กระจายข้ามเวอร์ชัน
+const badModels = new Set(); // รุ่นที่ตอบว่าใช้ไม่ได้ ไม่ต้องลองซ้ำ
 
 const fail = (code, error, status, extra = {}) => Response.json({ code, error, ...extra }, { status });
 
@@ -161,12 +162,12 @@ export async function POST(request) {
 
     if (!rankedCache) {
       listed = await listUsableModels(key);
-      rankedCache = rankModels(listed.models);
+      rankedCache = diversifyModels(listed.models);
     }
 
     const candidates = [];
     for (const name of [forced, known?.model, ...rankedCache]) {
-      if (name && !candidates.includes(name)) candidates.push(name);
+      if (name && !candidates.includes(name) && !badModels.has(name)) candidates.push(name);
     }
 
     if (!candidates.length) {
@@ -227,15 +228,18 @@ export async function POST(request) {
           return fail(code, explainGoogleError(res.status, lastDetail), res.status === 429 ? 429 : 502);
         }
         // รุ่นนี้ใช้กับ endpoint นี้ไม่ได้ ข้ามไปรุ่นถัดไปเลย ไม่ต้องลองอีกโหมด
-        if (isModelUnusable(res.status, lastDetail)) break;
+        if (isModelUnusable(res.status, lastDetail)) { badModels.add(model); break; }
       }
     }
 
+    // ลองครบแล้วไม่ผ่าน — แนบรายชื่อทั้งหมดที่คีย์เห็น เพื่อให้เลือกตั้ง GEMINI_MODEL เองได้
+    const everything = listed?.all || (await listUsableModels(key)).all;
     return fail(
       'BAD_MODEL',
-      `ลองแล้ว ${tried.length} วิธีแต่ไม่มีรุ่นไหนตอบได้ — ${explainGoogleError(lastStatus, lastDetail)}`,
+      `ลองแล้ว ${tried.length} วิธีแต่ไม่มีรุ่นไหนตอบได้ — ${explainGoogleError(lastStatus, lastDetail)}` +
+        ' · เปิด /api/chat เพื่อดูรายชื่อรุ่นทั้งหมด แล้วตั้ง GEMINI_MODEL เป็นรุ่นที่ต้องการได้',
       502,
-      { tried, candidates: candidates.slice(0, MAX_CANDIDATES) }
+      { tried, candidates: candidates.slice(0, MAX_CANDIDATES), allModels: everything }
     );
   } catch (e) {
     const timedOut = e?.name === 'TimeoutError' || e?.name === 'AbortError';
