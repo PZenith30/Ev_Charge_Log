@@ -69,7 +69,7 @@ OPENCHARGEMAP_API_KEY
 
 ```
 GEMINI_API_KEY
-GEMINI_MODEL      # ไม่ใส่ก็ได้ ค่าเริ่มต้น gemini-2.0-flash
+GEMINI_MODEL      # ไม่ต้องใส่ ระบบเลือกรุ่นที่บัญชีคุณใช้ได้เอง
 ```
 
 ขอคีย์ฟรีที่ [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
