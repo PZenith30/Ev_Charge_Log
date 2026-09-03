@@ -67,11 +67,13 @@ function encodePng(w, h, rgba) {
  */
 const MARK = [
   // ขาซ้าย ใช้ร่วมกันเป็นขาของทั้ง K และ L
-  [[6.8, 4.5], [11.6, 4.5], [11.6, 27.5], [6.8, 27.5]],
-  // ฐานล่าง บางกว่าขา ทำหน้าที่บอกใบ้ตัว L เฉยๆ ไม่แย่งสายตาจาก K กับสายฟ้า
-  [[6.8, 24.5], [16.2, 24.5], [16.2, 27.5], [6.8, 27.5]],
-  // สายฟ้าจรดขาแล้วแตกเป็นแขนบน-แขนล่างของ K รอยหักกลางคือจังหวะสายฟ้า
-  [[11.2, 10.4], [25, 4.2], [25, 9], [17.2, 12.6], [25.8, 18.4], [25.8, 23.4], [11.2, 17]],
+  [[6.2, 5], [11, 5], [11, 28], [6.2, 28]],
+  // ฐานล่าง บางและสั้น แค่บอกใบ้ตัว L ไม่ให้แย่งสายตา
+  [[6.2, 25.2], [14.6, 25.2], [14.6, 28], [6.2, 28]],
+  // สายฟ้าปลายแหลมสองด้าน จรดขาเป็นก้อนเดียวแล้วแยกเป็นสองแฉก
+  // ปลายต้องแหลม ถ้าตัดตรงจะอ่านเป็นแขนตัวอักษรเฉยๆ ไม่เป็นสายฟ้า
+  // สองแฉกนี้ทำหน้าที่เป็นแขนบน-แขนล่างของ K ไปพร้อมกัน
+  [[10.6, 9.3], [26, 3.3], [14.6, 13.1], [26.4, 25.9], [10.6, 19.3]],
 ];
 
 function inPolygon(px, py, poly) {
@@ -135,8 +137,14 @@ const files = [
   ['apple-touch-icon.png', 180, 0, 0.78],
 ];
 
-for (const [name, size, radius, scale] of files) {
-  const buf = drawIcon(size, radius, scale);
-  fs.writeFileSync(path.join(OUT, name), buf);
-  console.log(`${name.padEnd(24)} ${size}x${size}  ${String(buf.length).padStart(6)} bytes`);
+// เขียนไฟล์เฉพาะตอนถูกเรียกรันตรงๆ ถ้าถูก require มาก็ให้ส่งออกแค่ค่าคงที่
+if (require.main === module) {
+  for (const [name, size, radius, scale] of files) {
+    const buf = drawIcon(size, radius, scale);
+    fs.writeFileSync(path.join(OUT, name), buf);
+    console.log(`${name.padEnd(24)} ${size}x${size}  ${String(buf.length).padStart(6)} bytes`);
+  }
 }
+
+// ให้ doc/make-og.js เรียกใช้พิกัดและสีชุดเดียวกันได้ ไม่ต้องก๊อปไปวางแล้วหลุดกันทีหลัง
+module.exports = { MARK, BG, FG };
