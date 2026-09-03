@@ -12,7 +12,7 @@ import { money, money0, n, shortNum, thDate, thMonth, thMonthLong, thYear, today
 import { costsToCsv, download } from '@/lib/exporters';
 
 export default function CostsPage() {
-  const { costs, sessions, carName, toast } = useStore();
+  const { costs, sessions, carName, toast, t } = useStore();
   const [year, setYear] = useState('');
   const [editing, setEditing] = useState(undefined); // undefined = ปิด, null = เพิ่มใหม่, object = แก้ไข
 
@@ -53,11 +53,11 @@ export default function CostsPage() {
   return (
     <>
       <div className="stats">
-        <Stat icon="wallet" label="ต้นทุนอื่นรวม" value={money0(total)} detail={`${list.length} รายการ`} />
-        <Stat icon="bolt" label="ค่าชาร์จรวม" value={money0(chargeTotal)}
+        <Stat icon="wallet" label={t('ต้นทุนอื่นรวม')} value={money0(total)} detail={`${list.length} รายการ`} />
+        <Stat icon="bolt" label={t('ค่าชาร์จรวม')} value={money0(chargeTotal)}
           detail={year ? `ปี ${thYear(year)}` : 'ทั้งหมด'} />
-        <Stat icon="coin" label="ต้นทุนรวมทั้งหมด" value={money0(total + chargeTotal)} detail="ค่าชาร์จ + ต้นทุนอื่น" />
-        <Stat icon="car" label="ค่าไฟ / บำรุงรักษา"
+        <Stat icon="coin" label={t('ต้นทุนรวมทั้งหมด')} value={money0(total + chargeTotal)} detail="ค่าชาร์จ + ต้นทุนอื่น" />
+        <Stat icon="car" label={t('ค่าไฟ / บำรุงรักษา')}
           value={`${money0(byCat.electric)} / ${money0(byCat.maintenance)}`}
           detail={`ประกัน ${money0(byCat.insurance)} · ภาษี ${money0(byCat.tax)}`} />
       </div>
@@ -65,19 +65,19 @@ export default function CostsPage() {
       <div className="card mt">
         <div className="card-head">
           <h3>
-            ต้นทุนรถทั้งหมด
-            <span className="hint">ค่าไฟ · บำรุงรักษา · ประกันภัย · ภาษี · อื่นๆ</span>
+            {t('ต้นทุนรถทั้งหมด')}
+            <span className="hint">{t('ค่าไฟ · บำรุงรักษา · ประกันภัย · ภาษี · อื่นๆ')}</span>
           </h3>
           <select value={year} onChange={(e) => setYear(e.target.value)}
             style={{ width: 'auto', fontSize: 13.5, padding: '6px 30px 6px 10px' }}>
-            <option value="">ทุกปี</option>
+            <option value="">{t('ทุกปี')}</option>
             {years.map((y) => <option key={y} value={y}>ปี {thYear(y)}</option>)}
           </select>
           <button type="button" className="btn btn-sm" onClick={exportCsv}>
             <Icon name="download" />CSV
           </button>
           <button type="button" className="btn btn-sm btn-primary" onClick={() => setEditing(null)}>
-            <Icon name="plus" />เพิ่มรายการ
+            <Icon name="plus" />{t('เพิ่มรายการ')}
           </button>
         </div>
 
@@ -103,10 +103,10 @@ export default function CostsPage() {
           })}
           {!list.length ? (
             <EmptyState
-              message="ยังไม่มีรายการต้นทุน — บันทึกค่าไฟ ค่าบำรุงรักษา ประกันภัย หรือภาษีได้ที่นี่"
+              message={t('ยังไม่มีรายการต้นทุน — บันทึกค่าไฟ ค่าบำรุงรักษา ประกันภัย หรือภาษีได้ที่นี่')}
               action={
                 <button type="button" className="btn btn-primary btn-sm" onClick={() => setEditing(null)}>
-                  เพิ่มรายการแรก
+                  {t('เพิ่มรายการแรก')}
                 </button>
               }
             />
@@ -116,23 +116,23 @@ export default function CostsPage() {
 
       <div className="charts">
         <div className="card">
-          <div className="card-head"><h3>สัดส่วนต้นทุนตามประเภท</h3></div>
+          <div className="card-head"><h3>{t('สัดส่วนต้นทุนตามประเภท')}</h3></div>
           <div className="card-body">
             <DonutChart
-              unit="฿"
+              unit={t('฿')}
               center={shortNum(total)}
-              sub="บาท"
+              sub={t('บาท')}
               slices={Object.entries(COST_CATS).map(([k, v]) => ({
                 label: v.label, value: byCat[k] || 0, color: v.color,
               }))}
-              empty="ยังไม่มีรายการต้นทุน"
+              empty={t('ยังไม่มีรายการต้นทุน')}
             />
           </div>
         </div>
 
         <div className="card">
           <div className="card-head">
-            <h3>ต้นทุนรวมรายเดือน<span className="hint">ค่าชาร์จ + ต้นทุนอื่น</span></h3>
+            <h3>ต้นทุนรวมรายเดือน<span className="hint">{t('ค่าชาร์จ + ต้นทุนอื่น')}</span></h3>
           </div>
           <div className="card-body">
             <BarChart
@@ -153,7 +153,7 @@ export default function CostsPage() {
                   </>
                 );
               }}
-              empty="ยังไม่มีข้อมูลรายเดือน"
+              empty={t('ยังไม่มีข้อมูลรายเดือน')}
             />
           </div>
         </div>

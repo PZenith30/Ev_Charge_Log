@@ -15,6 +15,7 @@ import { avgMonthlySpend, dueList, sortDesc } from '@/lib/calc';
 import { filterByRange, previousRange, resolveRange } from '@/lib/period';
 import { uuid } from '@/lib/format';
 import { readLegacy } from '@/lib/legacy';
+import { DEFAULT_LANG, readLang, saveLang, setCurrentLang, translate } from '@/lib/i18n';
 
 const StoreCtx = createContext(null);
 
@@ -52,6 +53,8 @@ export function StoreProvider({ children }) {
   const [dataLoading, setDataLoading] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [dark, setDark] = useState(false);
+  // เริ่มที่ภาษาไทยเสมอให้ตรงกับที่เซิร์ฟเวอร์เรนเดอร์ แล้วค่อยสลับตามที่เก็บไว้หลัง mount
+  const [lang, setLangState] = useState(DEFAULT_LANG);
   const [toasts, setToasts] = useState([]);
   const [confirmState, setConfirmState] = useState(null);
   const [lightbox, setLightbox] = useState(null);
@@ -139,6 +142,29 @@ export function StoreProvider({ children }) {
     reload(user.id);
     setLegacyFound(readLegacy());
   }, [user, reload]);
+
+  /* ---------------- ภาษา (ไทย / อังกฤษ) ---------------- */
+  // อ่านจาก localStorage หลัง mount ไม่ใช่ตอนตั้งค่าเริ่มต้นของ state
+  // เพราะเซิร์ฟเวอร์เรนเดอร์ครั้งแรกเป็นภาษาไทยเสมอ ถ้าอ่านตั้งแต่แรกจะไม่ตรงกันแล้ว hydration พัง
+  useEffect(() => {
+    const saved = readLang();
+    setCurrentLang(saved);
+    setLangState(saved);
+    document.documentElement.lang = saved;
+  }, []);
+
+  const setLang = useCallback((code) => {
+    setCurrentLang(code);
+    saveLang(code);
+    setLangState(code);
+    document.documentElement.lang = code;
+  }, []);
+
+  /**
+   * ตัวแปลที่คอมโพเนนต์เรียกใช้
+   * ผูก lang ไว้ใน dependency เพื่อให้ทุกที่ที่ใช้ t วาดใหม่ตอนสลับภาษา
+   */
+  const t = useCallback((text, vars) => translate(text, vars, lang), [lang]);
 
   /* ---------------- ธีม (Dark / Light / ตามระบบ) ---------------- */
   useEffect(() => {
@@ -418,6 +444,7 @@ export function StoreProvider({ children }) {
     chatOpen, setChatOpen,
     editingId, setEditingId,
     dark, toggleTheme, setSettings, setActiveCar,
+    lang, setLang, t,
     saveSession, deleteSession,
     saveCost, deleteCost,
     saveCar, deleteCar,

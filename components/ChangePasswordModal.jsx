@@ -5,7 +5,7 @@ import { Field, Modal, PasswordInput } from './ui';
 import { useStore } from './store';
 
 export default function ChangePasswordModal({ onClose }) {
-  const { changePassword, toast } = useStore();
+  const { changePassword, toast, t } = useStore();
   const [pass, setPass] = useState('');
   const [pass2, setPass2] = useState('');
   const [busy, setBusy] = useState(false);
@@ -26,12 +26,12 @@ export default function ChangePasswordModal({ onClose }) {
 
   return (
     <Modal
-      title="เปลี่ยนรหัสผ่าน"
+      title={t('เปลี่ยนรหัสผ่าน')}
       onClose={onClose}
       onSubmit={submit}
       footer={
         <>
-          <button type="button" className="btn" onClick={onClose}>ยกเลิก</button>
+          <button type="button" className="btn" onClick={onClose}>{t('ยกเลิก')}</button>
           <button type="submit" className="btn btn-primary" disabled={busy}>
             {busy ? 'กำลังบันทึก…' : 'บันทึกรหัสผ่านใหม่'}
           </button>
@@ -39,16 +39,16 @@ export default function ChangePasswordModal({ onClose }) {
       }
     >
       <div className="stack">
-        <Field label="รหัสผ่านใหม่" help="อย่างน้อย 6 ตัวอักษร">
+        <Field label={t('รหัสผ่านใหม่')} help={t('อย่างน้อย 6 ตัวอักษร')}>
           <PasswordInput value={pass} onChange={(e) => setPass(e.target.value)} autoComplete="new-password" />
         </Field>
-        <Field label="ยืนยันรหัสผ่านใหม่">
+        <Field label={t('ยืนยันรหัสผ่านใหม่')}>
           <PasswordInput value={pass2} onChange={(e) => setPass2(e.target.value)} autoComplete="new-password" />
         </Field>
       </div>
       {err ? <div className="login-err">{err}</div> : null}
       <p className="sm faint mt">
-        เปลี่ยนแล้วยังใช้งานต่อได้ทันทีในเครื่องนี้ · เครื่องอื่นที่ล็อกอินค้างไว้จะยังใช้ได้จนกว่าเซสชันจะหมดอายุ
+        {t('เปลี่ยนแล้วยังใช้งานต่อได้ทันทีในเครื่องนี้ · เครื่องอื่นที่ล็อกอินค้างไว้จะยังใช้ได้จนกว่าเซสชันจะหมดอายุ')}
       </p>
     </Modal>
   );

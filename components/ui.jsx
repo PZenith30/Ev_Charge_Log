@@ -37,6 +37,7 @@ const readCollapsed = () => {
  * ปุ่มด้านขวาของหัวข้อ (actions) กดได้โดยไม่พับการ์ด
  */
 export function CollapsibleCard({ id, title, hint, actions, defaultOpen = true, children, className = '' }) {
+  const { t } = useStore();
   const [open, setOpen] = useState(defaultOpen);
 
   // อ่านค่าใน useEffect เพื่อไม่ให้ HTML ฝั่งเซิร์ฟเวอร์กับฝั่งเบราว์เซอร์ไม่ตรงกัน
@@ -63,8 +64,8 @@ export function CollapsibleCard({ id, title, hint, actions, defaultOpen = true, 
         <button type="button" className="card-toggle" onClick={toggle} aria-expanded={open}>
           <Icon name="chevron-down" className="chev" />
           <h3>
-            {title}
-            {hint ? <span className="hint">{hint}</span> : null}
+            {t(title)}
+            {hint ? <span className="hint">{t(hint)}</span> : null}
           </h3>
         </button>
         {actions}
@@ -80,17 +81,19 @@ export function CollapsibleCard({ id, title, hint, actions, defaultOpen = true, 
  * `tone` คุมสีไอคอน: accent (เขียว) · dc (น้ำเงิน) · purple (ม่วง) · warn · danger
  */
 export function Stat({ icon, label, value, unit, detail, tone = 'accent' }) {
+  // แปลตรงนี้ทีเดียว ผู้เรียกจึงส่งข้อความไทยมาได้ตามปกติ ไม่ต้องห่อ t() ทุกจุด
+  const { t } = useStore();
   return (
     <div className="stat">
       <div className="k">
         <span className="ic" style={{ background: `var(--${tone}-soft)`, color: `var(--${tone})` }}>
           <Icon name={icon} />
         </span>
-        {label}
+        {t(label)}
       </div>
       <div className="v">
         {value}
-        {unit ? <small>{unit}</small> : null}
+        {unit ? <small>{t(unit)}</small> : null}
       </div>
       {detail ? <div className="d">{detail}</div> : null}
     </div>
@@ -99,8 +102,13 @@ export function Stat({ icon, label, value, unit, detail, tone = 'accent' }) {
 
 /** ป้ายแนวโน้ม "↑ 20% จากเดือนที่แล้ว" — pct เป็น null เมื่อเทียบไม่ได้ */
 export function Trend({ pct, label, invert = false }) {
+  const { t } = useStore();
   if (pct === null || pct === undefined || !Number.isFinite(pct)) {
-    return <span className="faint">{label ? `เทียบ${label}ไม่ได้` : 'ไม่มีข้อมูลเทียบ'}</span>;
+    return (
+      <span className="faint">
+        {label ? t('เทียบ{label}ไม่ได้', { label: t(label) }) : t('ไม่มีข้อมูลเทียบ')}
+      </span>
+    );
   }
   const flat = Math.abs(pct) < 0.5;
   // invert = ตัวเลขน้อยลงถือว่าดี (เช่น ค่าใช้จ่าย, kWh/100km)
@@ -112,27 +120,29 @@ export function Trend({ pct, label, invert = false }) {
       <span className={`trend ${cls}`}>
         {arrow} {Math.abs(pct).toFixed(0)}%
       </span>
-      {label ? <span className="tx">{label}</span> : null}
+      {label ? <span className="tx">{t(label)}</span> : null}
     </>
   );
 }
 
 export function EmptyState({ message, action }) {
+  const { t } = useStore();
   return (
     <div className="empty">
       <Icon name="inbox" />
-      <p>{message}</p>
+      <p>{t(message)}</p>
       {action}
     </div>
   );
 }
 
 export function Field({ label, help, children, style }) {
+  const { t } = useStore();
   return (
     <div className="field" style={style}>
-      {label ? <label>{label}</label> : null}
+      {label ? <label>{t(label)}</label> : null}
       {children}
-      {help ? <span className="help">{help}</span> : null}
+      {help ? <span className="help">{t(help)}</span> : null}
     </div>
   );
 }
@@ -142,8 +152,9 @@ export function Field({ label, help, children, style }) {
  * ปุ่มตั้ง tabIndex=-1 เพื่อไม่ให้ขวางลำดับ Tab จากช่องกรอกไปยังปุ่มยืนยัน
  */
 export function PasswordInput({ value, onChange, autoComplete, placeholder = '••••••' }) {
+  const { t } = useStore();
   const [show, setShow] = useState(false);
-  const label = show ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน';
+  const label = show ? t('ซ่อนรหัสผ่าน') : t('แสดงรหัสผ่าน');
   return (
     <div className="pw-wrap">
       <input
@@ -198,6 +209,7 @@ export function TypeToggle({ value, onChange }) {
  * Modal มาตรฐาน — ถ้าส่ง onSubmit มา การ์ดจะเป็น <form> ให้ปุ่ม submit ทำงานได้
  */
 export function Modal({ title, onClose, onSubmit, footer, wide, children }) {
+  const { t } = useStore();
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') onClose();
@@ -223,11 +235,11 @@ export function Modal({ title, onClose, onSubmit, footer, wide, children }) {
 
   return (
     <div className="modal">
-      <button type="button" className="modal-bg" onClick={onClose} aria-label="ปิดหน้าต่าง" />
+      <button type="button" className="modal-bg" onClick={onClose} aria-label={t('ปิดหน้าต่าง')} />
       <Card className={`modal-card${wide ? ' wide' : ''}`} {...cardProps}>
         <div className="modal-head">
-          <h3>{title}</h3>
-          <button type="button" className="btn btn-icon btn-ghost" onClick={onClose} aria-label="ปิด">
+          <h3>{t(title)}</h3>
+          <button type="button" className="btn btn-icon btn-ghost" onClick={onClose} aria-label={t('ปิด')}>
             <Icon name="x" />
           </button>
         </div>
@@ -239,12 +251,14 @@ export function Modal({ title, onClose, onSubmit, footer, wide, children }) {
 }
 
 export function Toasts() {
-  const { toasts } = useStore();
+  // แปลตรงนี้ทีเดียว ทำให้ข้อความ error ที่มาจากไฟล์ใน lib/ (ซึ่งเรียก hook ไม่ได้)
+  // ถูกแปลไปด้วยโดยไม่ต้องแก้ไฟล์เหล่านั้น
+  const { toasts, t } = useStore();
   return (
     <div className="toasts">
-      {toasts.map((t) => (
-        <div key={t.id} className={`toast${t.isErr ? ' err' : ''}`}>
-          {t.message}
+      {toasts.map((item) => (
+        <div key={item.id} className={`toast${item.isErr ? ' err' : ''}`}>
+          {t(item.message)}
         </div>
       ))}
     </div>
@@ -252,7 +266,7 @@ export function Toasts() {
 }
 
 export function ConfirmDialog() {
-  const { confirmState, setConfirmState } = useStore();
+  const { confirmState, setConfirmState, t } = useStore();
   if (!confirmState) return null;
   const close = () => setConfirmState(null);
   return (
@@ -262,7 +276,7 @@ export function ConfirmDialog() {
       footer={
         <>
           <button type="button" className="btn" onClick={close}>
-            ยกเลิก
+            {t('ยกเลิก')}
           </button>
           <button
             type="button"
@@ -272,18 +286,18 @@ export function ConfirmDialog() {
               confirmState.onConfirm();
             }}
           >
-            ยืนยัน
+            {t('ยืนยัน')}
           </button>
         </>
       }
     >
-      <p className="sm muted">{confirmState.message}</p>
+      <p className="sm muted">{t(confirmState.message)}</p>
     </Modal>
   );
 }
 
 export function Lightbox() {
-  const { lightbox, setLightbox } = useStore();
+  const { lightbox, setLightbox, t } = useStore();
   if (!lightbox) return null;
   return (
     <div
@@ -291,11 +305,11 @@ export function Lightbox() {
       onClick={() => setLightbox(null)}
       role="button"
       tabIndex={-1}
-      aria-label="ปิดรูป"
+      aria-label={t('ปิดรูป')}
     >
       {/* รูปมาจาก data: URL ใน IndexedDB จึงใช้ <img> ตรงๆ แทน next/image */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={lightbox} alt="รูปแนบ" />
+      <img src={lightbox} alt={t('รูปแนบ')} />
     </div>
   );
 }

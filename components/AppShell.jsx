@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { NAV } from '@/lib/data';
 import { fmt0, isNum, n } from '@/lib/format';
 import Icon, { IconSprite } from './Icon';
+import Wordmark from './Wordmark';
 import Login from './Login';
 import QuickAdd from './QuickAdd';
 import CarPhoto from './CarPhoto';
@@ -33,8 +34,8 @@ function SetupNotice() {
         <div className="login-mark" style={{ background: 'var(--danger)' }}>
           <Icon name="alert" style={{ stroke: '#fff', fill: 'none', strokeWidth: 2 }} />
         </div>
-        <h1>ยังไม่ได้เชื่อมต่อ Supabase</h1>
-        <p className="sub">แอปต้องใช้ค่าสองตัวนี้จึงจะทำงานได้</p>
+        <h1>{t('ยังไม่ได้เชื่อมต่อ Supabase')}</h1>
+        <p className="sub">{t('แอปต้องใช้ค่าสองตัวนี้จึงจะทำงานได้')}</p>
         <pre
           style={{
             background: 'var(--surface-3)', padding: 12, borderRadius: 'var(--r-sm)',
@@ -43,11 +44,11 @@ function SetupNotice() {
         >{`NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...`}</pre>
         <div className="sm muted" style={{ marginTop: 16, lineHeight: 1.7 }}>
-          <b>รันในเครื่อง:</b> คัดลอก <code>.env.local.example</code> เป็น <code>.env.local</code> แล้วใส่ค่าจริง
+          <b>{t('รันในเครื่อง:')}</b> คัดลอก <code>.env.local.example</code> เป็น <code>.env.local</code> แล้วใส่ค่าจริง
           <br />
-          <b>บน Vercel:</b> Project Settings → Environment Variables แล้ว Redeploy
+          <b>{t('บน Vercel:')}</b> Project Settings → Environment Variables แล้ว Redeploy
           <br />
-          หาค่าได้ที่ Supabase Dashboard → Project Settings → Data API
+          {t('หาค่าได้ที่ Supabase Dashboard → Project Settings → Data API')}
           <br />
           <br />
           อย่าลืมรัน <code>supabase/schema.sql</code> ใน SQL Editor เพื่อสร้างตารางด้วย
@@ -69,7 +70,7 @@ export default function AppShell({ children }) {
   const {
     phase, user, dataLoading, loadError, reload,
     cars, settings, viewAllCars, setActiveCar, activeCar, sessions,
-    dark, toggleTheme, alertCount, quickOpen, setQuickOpen, pwOpen, setPwOpen,
+    dark, toggleTheme, alertCount, quickOpen, setQuickOpen, pwOpen, setPwOpen, t,
   } = useStore();
   const pathname = usePathname();
 
@@ -114,13 +115,9 @@ export default function AppShell({ children }) {
       <IconSprite />
 
       <aside className="sidebar">
+        {/* แถบข้างเป็นสีเข้มเสมอไม่ว่าธีมไหน จึงระบุรุ่นพื้นเข้มไปตรงๆ ไม่ต้องวาดสองรูป */}
         <div className="brand">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="mark" src="/icon-192.png" alt="" width="34" height="34" />
-          <div>
-            <b>KiloEV</b>
-            <span>บันทึกการชาร์จรถไฟฟ้า</span>
-          </div>
+          <Wordmark fixed="dark" height={30} />
         </div>
 
         <div className="sb-scroll">
@@ -129,7 +126,7 @@ export default function AppShell({ children }) {
               {i === NAV.length - 1 ? <div className="nav-sep" /> : null}
               <Link href={item.href} className={`navlink${isActive(pathname, item.href) ? ' active' : ''}`}>
                 <Icon name={item.icon} />
-                {item.label}
+                {t(item.label)}
                 {item.href === '/alerts' && alertCount > 0 ? <span className="badge">{alertCount}</span> : null}
               </Link>
             </div>
@@ -170,8 +167,8 @@ export default function AppShell({ children }) {
       <main className="main">
         <header className="topbar">
           <div className="tb-title">
-            <h2>{current.label}</h2>
-            <div className="sub hide-mobile">{current.sub}</div>
+            <h2>{t(current.label)}</h2>
+            <div className="sub hide-mobile">{t(current.sub)}</div>
           </div>
 
           {cars.length > 0 ? (
@@ -180,18 +177,18 @@ export default function AppShell({ children }) {
               onChange={(e) => setActiveCar(e.target.value)}
               className="hide-mobile"
               style={{ width: 'auto', maxWidth: 170, fontSize: 13.5, padding: '8px 30px 8px 12px' }}
-              title="เลือกรถที่ต้องการดูข้อมูล"
+              title={t('เลือกรถที่ต้องการดูข้อมูล')}
             >
               {cars.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
-              {cars.length > 1 ? <option value="__all__">รถทุกคัน</option> : null}
+              {cars.length > 1 ? <option value="__all__">{t('รถทุกคัน')}</option> : null}
             </select>
           ) : null}
 
           <DateRangePicker />
 
-          <Link href="/alerts" className="btn btn-icon" title="แจ้งเตือน" style={{ position: 'relative' }}>
+          <Link href="/alerts" className="btn btn-icon" title={t('แจ้งเตือน')} style={{ position: 'relative' }}>
             <Icon name="bell" />
             {alertCount > 0 ? (
               <span
@@ -205,7 +202,7 @@ export default function AppShell({ children }) {
             ) : null}
           </Link>
 
-          <button type="button" className="btn btn-icon hide-mobile" onClick={toggleTheme} title="สลับธีม">
+          <button type="button" className="btn btn-icon hide-mobile" onClick={toggleTheme} title={t('สลับธีม')}>
             <Icon name={dark ? 'sun' : 'moon'} />
           </button>
 
@@ -217,15 +214,15 @@ export default function AppShell({ children }) {
             <div className="alert danger" style={{ marginBottom: 14 }}>
               <Icon name="alert" />
               <div style={{ flex: 1 }}>
-                <div className="t1">โหลดข้อมูลไม่สำเร็จ</div>
+                <div className="t1">{t('โหลดข้อมูลไม่สำเร็จ')}</div>
                 <div className="t2">{loadError}</div>
               </div>
-              <button type="button" className="btn btn-sm" onClick={() => reload(user.id)}>ลองใหม่</button>
+              <button type="button" className="btn btn-sm" onClick={() => reload(user.id)}>{t('ลองใหม่')}</button>
             </div>
           ) : null}
 
           {dataLoading && !loadError ? (
-            <FullScreenMessage>กำลังโหลดข้อมูลจาก Supabase…</FullScreenMessage>
+            <FullScreenMessage>{t('กำลังโหลดข้อมูลจาก Supabase…')}</FullScreenMessage>
           ) : (
             children
           )}

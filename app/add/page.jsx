@@ -22,7 +22,7 @@ export default function AddPage() {
   const {
     data, cars, activeCar, settings, sessions, setSettings,
     saveSession, deleteSession, editingId, setEditingId, toast, confirm,
-    quickDraft, setQuickDraft,
+    quickDraft, setQuickDraft, t
   } = useStore();
   const router = useRouter();
 
@@ -191,8 +191,8 @@ export default function AddPage() {
     return (
       <div className="card">
         <EmptyState
-          message="ยังไม่มีรถในระบบ — เพิ่มรถก่อนเริ่มบันทึกการชาร์จ"
-          action={<Link href="/account" className="btn btn-primary btn-sm">ไปหน้าเพิ่มรถ</Link>}
+          message={t('ยังไม่มีรถในระบบ — เพิ่มรถก่อนเริ่มบันทึกการชาร์จ')}
+          action={<Link href="/account" className="btn btn-primary btn-sm">{t('ไปหน้าเพิ่มรถ')}</Link>}
         />
       </div>
     );
@@ -214,28 +214,28 @@ export default function AddPage() {
           <div className="alert warn">
             <Icon name="edit" />
             <div style={{ flex: 1 }}>
-              <div className="t1">กำลังแก้ไขรายการเดิม</div>
+              <div className="t1">{t('กำลังแก้ไขรายการเดิม')}</div>
               <div className="t2">บันทึกทับรายการวันที่ {form.date}</div>
             </div>
-            <button type="button" className="btn btn-sm" onClick={resetForm}>เพิ่มรายการใหม่แทน</button>
+            <button type="button" className="btn btn-sm" onClick={resetForm}>{t('เพิ่มรายการใหม่แทน')}</button>
           </div>
         </div>
       ) : null}
 
       <div className="form-sec">
-        <h4>ข้อมูลพื้นฐาน</h4>
+        <h4>{t('ข้อมูลพื้นฐาน')}</h4>
         <div className="form-grid">
-          <Field label="รถ">
+          <Field label={t('รถ')}>
             <select value={form.carId} onChange={(e) => set('carId', e.target.value)} required>
               {cars.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </Field>
-          <Field label="วันที่">
+          <Field label={t('วันที่')}>
             <input type="date" value={form.date} onChange={(e) => set('date', e.target.value)} required />
           </Field>
           <Field
-            label="เวลาที่ใช้ในการชาร์จ"
-            help="ชั่วโมง : นาที : วินาที · กรอกเกิน 59 ได้ ระบบจะรวมให้เอง เช่น 90 นาที = 1 ชม. 30 นาที"
+            label={t('เวลาที่ใช้ในการชาร์จ')}
+            help={t('ชั่วโมง : นาที : วินาที · กรอกเกิน 59 ได้ ระบบจะรวมให้เอง เช่น 90 นาที = 1 ชม. 30 นาที')}
             style={{ gridColumn: 'span 2' }}
           >
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -252,11 +252,11 @@ export default function AddPage() {
               ))}
             </div>
           </Field>
-          <Field label="ประเภทการชาร์จ">
+          <Field label={t('ประเภทการชาร์จ')}>
             <TypeToggle value={form.type} onChange={changeType} />
           </Field>
-          <Field label="สถานี / สถานที่">
-            <input type="text" list="station-list" placeholder="เช่น บ้าน, PTT Station"
+          <Field label={t('สถานี / สถานที่')}>
+            <input type="text" list="station-list" placeholder={t('เช่น บ้าน, PTT Station')}
               value={form.station} onChange={(e) => set('station', e.target.value)} />
             <datalist id="station-list">
               {stations.map((s) => <option key={s} value={s} />)}
@@ -266,36 +266,36 @@ export default function AddPage() {
       </div>
 
       <div className="form-sec">
-        <h4>ข้อมูลรถ · ระยะทางและแบตเตอรี่</h4>
+        <h4>{t('ข้อมูลรถ · ระยะทางและแบตเตอรี่')}</h4>
         <div className="form-grid">
           <Field
-            label="เลขไมล์ก่อนชาร์จ (km)"
+            label={t('เลขไมล์ก่อนชาร์จ (km)')}
             help={!editing && prevOdo !== null ? `เติมอัตโนมัติจากครั้งก่อน (${fmtDist(prevOdo)} km)` : null}
           >
             <input type="number" min="0" step="any" inputMode="decimal" value={form.odoBefore}
               onChange={(e) => { setOdoTouched(true); set('odoBefore', e.target.value); }} />
           </Field>
-          <Field label="เลขไมล์หลังชาร์จ (km)">
+          <Field label={t('เลขไมล์หลังชาร์จ (km)')}>
             <input type="number" min="0" step="any" inputMode="decimal"
               value={form.odoAfter} onChange={(e) => set('odoAfter', e.target.value)} />
           </Field>
-          <Field label="ระยะทางที่วิ่งได้ (km)">
+          <Field label={t('ระยะทางที่วิ่งได้ (km)')}>
             <input type="text" className="calc" readOnly value={dist !== null ? fmtDist(dist) : '—'} />
           </Field>
-          <Field label="SOC ก่อนชาร์จ (%)">
+          <Field label={t('SOC ก่อนชาร์จ (%)')}>
             <input type="number" min="0" max="100" step="any" inputMode="decimal"
               value={form.socBefore} onChange={(e) => set('socBefore', e.target.value)} />
           </Field>
-          <Field label="SOC หลังชาร์จ (%)">
+          <Field label={t('SOC หลังชาร์จ (%)')}>
             <input type="number" min="0" max="100" step="any" inputMode="decimal"
               value={form.socAfter} onChange={(e) => set('socAfter', e.target.value)} />
           </Field>
-          <Field label="SOC ที่เพิ่มขึ้น (%)">
+          <Field label={t('SOC ที่เพิ่มขึ้น (%)')}>
             <input type="text" className="calc" readOnly value={socGain !== null ? `+${socGain}` : '—'} />
           </Field>
           <Field
-            label="อัตราสิ้นเปลืองจากหน้าปัด"
-            help="ค่าที่รถแสดงบนหน้าปัด · ทศนิยมได้ไม่เกิน 2 ตำแหน่ง · หน่วยที่เลือกจะถูกจำไว้ใช้ครั้งถัดไป"
+            label={t('อัตราสิ้นเปลืองจากหน้าปัด')}
+            help={t('ค่าที่รถแสดงบนหน้าปัด · ทศนิยมได้ไม่เกิน 2 ตำแหน่ง · หน่วยที่เลือกจะถูกจำไว้ใช้ครั้งถัดไป')}
             style={{ gridColumn: 'span 2' }}
           >
             <div style={{ display: 'flex', gap: 6 }}>
@@ -310,7 +310,7 @@ export default function AddPage() {
                 value={dashUnit}
                 onChange={(e) => changeDashUnit(e.target.value)}
                 style={{ width: 132, flex: 'none' }}
-                title="หน่วยของค่าที่อ่านจากหน้าปัด"
+                title={t('หน่วยของค่าที่อ่านจากหน้าปัด')}
               >
                 {Object.keys(DASH_UNITS).map((u) => (
                   <option key={u} value={u}>{u}</option>
@@ -322,21 +322,21 @@ export default function AddPage() {
       </div>
 
       <div className="form-sec">
-        <h4>ข้อมูลพลังงานและค่าใช้จ่าย</h4>
+        <h4>{t('ข้อมูลพลังงานและค่าใช้จ่าย')}</h4>
         <div className="form-grid">
-          <Field label="พลังงานที่ชาร์จ (kWh)">
+          <Field label={t('พลังงานที่ชาร์จ (kWh)')}>
             <input type="number" min="0" step="any" inputMode="decimal" placeholder="24.5" required
               value={form.kwh} onChange={(e) => set('kwh', e.target.value)} />
           </Field>
-          <Field label="ราคา / kWh (บาท)">
+          <Field label={t('ราคา / kWh (บาท)')}>
             <input type="number" min="0" step="any" inputMode="decimal" placeholder="7.50"
               value={form.price} onChange={(e) => set('price', e.target.value)} />
           </Field>
-          <Field label="ค่าบริการเพิ่มเติม (บาท)">
+          <Field label={t('ค่าบริการเพิ่มเติม (บาท)')}>
             <input type="number" min="0" step="any" inputMode="decimal" placeholder="0"
               value={form.fee} onChange={(e) => set('fee', e.target.value)} />
           </Field>
-          <Field label="ค่าใช้จ่ายรวม (บาท)" help="คำนวณอัตโนมัติ — แก้ทับได้ถ้ายอดจริงต่างจากนี้">
+          <Field label={t('ค่าใช้จ่ายรวม (บาท)')} help={t('คำนวณอัตโนมัติ — แก้ทับได้ถ้ายอดจริงต่างจากนี้')}>
             <input type="number" min="0" step="any" inputMode="decimal" className="calc"
               placeholder={autoTotal ? autoTotal.toFixed(2) : '0.00'}
               value={form.total} onChange={(e) => set('total', e.target.value)} />
@@ -345,13 +345,13 @@ export default function AddPage() {
       </div>
 
       <div className="form-sec">
-        <h4>รูปแนบ &amp; หมายเหตุ</h4>
+        <h4>{t('รูปแนบและหมายเหตุ')}</h4>
         <div style={{ marginBottom: 14 }}>
           <ImageUploader imageIds={form.images} onChange={(ids) => set('images', ids)} />
-          <p className="help" style={{ marginTop: 8 }}>แนบสลิปธนาคาร หรือภาพหน้าจอจากแอปชาร์จได้หลายรูป</p>
+          <p className="help" style={{ marginTop: 8 }}>{t('แนบสลิปธนาคาร หรือภาพหน้าจอจากแอปชาร์จได้หลายรูป')}</p>
         </div>
-        <Field label="หมายเหตุ">
-          <textarea placeholder="เช่น ชาร์จค้างคืน, ได้ส่วนลดโปรโมชั่น"
+        <Field label={t('หมายเหตุ')}>
+          <textarea placeholder={t('เช่น ชาร์จค้างคืน, ได้ส่วนลดโปรโมชั่น')}
             value={form.note} onChange={(e) => set('note', e.target.value)} />
         </Field>
       </div>
@@ -379,10 +379,10 @@ export default function AddPage() {
               })
             }
           >
-            <Icon name="trash" />ลบรายการนี้
+            <Icon name="trash" />{t('ลบรายการนี้')}
           </button>
         ) : null}
-        <button type="button" className="btn" onClick={resetForm}>ล้างฟอร์ม</button>
+        <button type="button" className="btn" onClick={resetForm}>{t('ล้างฟอร์ม')}</button>
         <button type="submit" className="btn btn-primary">
           <Icon name="check" />
           {editing ? 'บันทึกการแก้ไข' : 'บันทึกการชาร์จ'}

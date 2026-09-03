@@ -9,7 +9,7 @@ import { Field, Modal } from './ui';
 import { useStore } from './store';
 
 export default function CostModal({ cost, onClose }) {
-  const { cars, activeCar, saveCost, deleteCost, confirm, toast } = useStore();
+  const { cars, activeCar, saveCost, deleteCost, confirm, toast, t } = useStore();
   const [form, setForm] = useState(() => ({
     cat: cost?.cat || 'maintenance',
     date: cost?.date || todayISO(),
@@ -54,42 +54,42 @@ export default function CostModal({ cost, onClose }) {
                 })
               }
             >
-              <Icon name="trash" />ลบ
+              <Icon name="trash" />{t('ลบ')}
             </button>
           ) : null}
-          <button type="button" className="btn" onClick={onClose}>ยกเลิก</button>
-          <button type="submit" className="btn btn-primary">บันทึก</button>
+          <button type="button" className="btn" onClick={onClose}>{t('ยกเลิก')}</button>
+          <button type="submit" className="btn btn-primary">{t('บันทึก')}</button>
         </>
       }
     >
       <div className="form-grid">
-        <Field label="ประเภท">
+        <Field label={t('ประเภท')}>
           <select value={form.cat} onChange={(e) => set('cat', e.target.value)}>
             {Object.entries(COST_CATS).map(([k, v]) => (
               <option key={k} value={k}>{v.label}</option>
             ))}
           </select>
         </Field>
-        <Field label="วันที่">
+        <Field label={t('วันที่')}>
           <input type="date" required value={form.date} onChange={(e) => set('date', e.target.value)} />
         </Field>
-        <Field label="จำนวนเงิน (บาท)">
+        <Field label={t('จำนวนเงิน (บาท)')}>
           <input type="number" min="0" step="any" inputMode="decimal" required
             value={form.amount} onChange={(e) => set('amount', e.target.value)} />
         </Field>
-        <Field label="รถ">
+        <Field label={t('รถ')}>
           <select value={form.carId} onChange={(e) => set('carId', e.target.value)}>
             {cars.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </Field>
-        <Field label="รายละเอียด" style={{ gridColumn: '1 / -1' }}>
-          <input type="text" placeholder="เช่น เช็คระยะ 20,000 km"
+        <Field label={t('รายละเอียด')} style={{ gridColumn: '1 / -1' }}>
+          <input type="text" placeholder={t('เช่น เช็คระยะ 20,000 km')}
             value={form.note} onChange={(e) => set('note', e.target.value)} />
         </Field>
       </div>
 
       <div className="mt">
-        <div className="sm muted" style={{ marginBottom: 8, fontWeight: 550 }}>รูปแนบ</div>
+        <div className="sm muted" style={{ marginBottom: 8, fontWeight: 550 }}>{t('รูปแนบ')}</div>
         <ImageUploader imageIds={form.images} onChange={(ids) => set('images', ids)} />
       </div>
     </Modal>

@@ -1,20 +1,22 @@
 /**
- * สร้างไฟล์แบรนด์ทั้งชุดจากภาพเดียว doc/Gemini_Generated_Image_oe17k3oe17k3oe17.jpg
- * ภาพนั้นแบ่งสองช่อง: ช่อง A คือไอคอนแอป · ช่อง B คือชื่อแบรนด์พร้อมสโลแกน
+ * สร้างไฟล์แบรนด์ทั้งชุดจาก doc/Fav_Icon.jpg และ doc/Wordmark.jpg
+ *
+ * ผลลัพธ์
+ *   ไอคอน  — favicon, ไอคอน PWA, maskable, apple-touch
+ *   ชื่อแบรนด์ — สี่แบบ: มี/ไม่มีสโลแกน คูณ สำหรับพื้นสว่าง/พื้นเข้ม
+ *   ที่ต้องมีรุ่นพื้นเข้มเพราะคำว่า "Kilo" เป็นกรมท่าเข้ม วางบนแถบข้างสีเข้มจะจมหายไป
  *
  * ทำไมต้องแปลง JPEG เป็น PNG ก่อน (ดูคำสั่งท้ายไฟล์)
  *   เครื่องนี้ไม่มี Node จริงและไม่มีไลบรารีรูป การเขียนตัวถอด JPEG เอง
  *   (huffman + DCT + upsampling) ไม่คุ้มแรง ส่วน PNG ถอดเองได้ง่าย
  *   แค่ inflate แล้วย้อน row filter ตามสูตรในสเปก
  *
- * รัน: node doc/make-brand.js <ไฟล์ png ต้นทาง> <โฟลเดอร์ public>
+ * รัน: node doc/make-brand.js <icon.png> <wordmark.png> <โฟลเดอร์ public>
  */
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 
-const SRC = process.argv[2];
-const OUT = process.argv[3] || path.join(__dirname, '..', 'public');
 
 /* ------------------------------- PNG encoder ------------------------------- */
 const CRC_TABLE = (() => {
@@ -267,31 +269,29 @@ module.exports = { decodePng, encodePng, resize, crop, contentBox, compose };
 
 /* ------------------------- ลงมือทำ (เฉพาะตอนรันตรงๆ) ------------------------- */
 if (require.main === module) {
-  const sheet = decodePng(fs.readFileSync(SRC));
-  console.log(`ภาพต้นฉบับ ${sheet.w}x${sheet.h}`);
+  const ICON_SRC = process.argv[2];
+  const WORD_SRC = process.argv[3];
+  const OUT_DIR = process.argv[4] || path.join(__dirname, '..', 'public');
 
-  const mid = Math.round(sheet.w / 2);
-  const bg = px(sheet, 4, 4);                  // มุมซ้ายบนเป็นพื้นเปล่าแน่นอน
-  // เริ่มหาจาก y=150 ลงมา เพื่อข้ามตัวอักษร A กับ B ที่กำกับช่องไว้
-  const TOP = 150;
+  /* =============================== ไอคอนแอป =============================== */
+  const iconSheet = decodePng(fs.readFileSync(ICON_SRC));
+  const iconBg = px(iconSheet, 4, 4);
+  // tolerance แน่น (60) ไม่งั้นเงาจางใต้ไอคอนจะถูกนับเป็นเนื้อภาพ กรอบจะเบี้ยว
+  const boxA = contentBox(iconSheet, { x0: 0, y0: 0, x1: iconSheet.w, y1: iconSheet.h }, iconBg, 60);
+  console.log(`ไอคอน  x ${boxA.x0}..${boxA.x1} · y ${boxA.y0}..${boxA.y1}`);
 
-  /* ---------- ช่อง A: ไอคอนแอป ---------- */
-  // ใช้ tolerance แน่น (60) เพื่อไม่ให้เงาจางใต้ไอคอนถูกนับเป็นเนื้อภาพ
-  const boxA = contentBox(sheet, { x0: 0, y0: TOP, x1: mid, y1: sheet.h }, bg, 60);
-  console.log(`ช่อง A  x ${boxA.x0}..${boxA.x1} · y ${boxA.y0}..${boxA.y1}`);
-
-  // ตัดเข้ามาอีกเล็กน้อย ทิ้งขอบสว่างที่เกิดจากการ anti-alias ระหว่างไอคอนกับพื้นในภาพต้นฉบับ
-  const inset = Math.round(Math.min(boxA.x1 - boxA.x0, boxA.y1 - boxA.y0) * 0.035);   // เงาใต้ไอคอนตกไปทางขวาล่าง ต้องตัดเผื่อ
-  let icon = crop(sheet, {
+  // ตัดเข้ามาอีก เพราะขอบที่ anti-alias กับพื้นสว่างติดมาเป็นเส้นขอบสว่างรอบไอคอน
+  // และเงายังตกไปทางขวาล่างด้วย เห็นชัดมากตอนย่อ
+  const inset = Math.round(Math.min(boxA.x1 - boxA.x0, boxA.y1 - boxA.y0) * 0.05);
+  let icon = crop(iconSheet, {
     x0: boxA.x0 + inset, y0: boxA.y0 + inset, x1: boxA.x1 - inset, y1: boxA.y1 - inset,
   });
-  // ทำให้เป็นจตุรัสเป๊ะ เพราะกรอบที่ตรวจได้อาจคลาดกัน 1-2 พิกเซล
   const side = Math.min(icon.w, icon.h);
   icon = resize(icon, side, side);
 
-  // สีพื้นของไอคอน สุ่มจากมุมซ้ายบนด้านในซึ่งเป็นพื้นล้วน
   const NAVY = px(icon, Math.round(side * 0.12), Math.round(side * 0.1)).slice(0, 3);
   console.log(`สีพื้นไอคอน #${NAVY.map((v) => v.toString(16).padStart(2, '0')).join('')}`);
+  // รัศมีกว้างกว่าของต้นฉบับเล็กน้อย จะได้กินเข้าไปในเนื้อ ไม่เหลือมุมสว่างค้าง
   fillOutsideRounded(icon, 0.25, NAVY);
   fs.writeFileSync(path.join(__dirname, 'brand-icon.png'), encodePng(icon.w, icon.h, icon.data));
 
@@ -305,30 +305,126 @@ if (require.main === module) {
   ];
   for (const [name, size, radius, ratio] of files) {
     const { buf } = compose(icon, size, radius, ratio, NAVY);
-    fs.writeFileSync(path.join(OUT, name), buf);
-    console.log(`${name.padEnd(24)} ${size}x${size}  ${String(buf.length).padStart(6)} bytes`);
+    fs.writeFileSync(path.join(OUT_DIR, name), buf);
+    console.log(`${name.padEnd(26)} ${size}x${size}  ${String(buf.length).padStart(6)} bytes`);
   }
-
-  // favicon — Next รับ app/icon.png ตรงๆ ไม่ต้องใช้ .ico
   const fav = compose(icon, 128, 0.25, 1, NAVY);
   fs.writeFileSync(path.join(__dirname, '..', 'app', 'icon.png'), fav.buf);
-  console.log(`app/icon.png             128x128  ${String(fav.buf.length).padStart(6)} bytes`);
+  console.log(`app/icon.png               128x128  ${String(fav.buf.length).padStart(6)} bytes`);
 
-  /* ---------- ช่อง B: ชื่อแบรนด์ + สโลแกน ---------- */
-  // 70 คือจุดที่จับตัวอักษรสโลแกนสีเทาอ่อนได้ (ห่างจากพื้นราว 165) แต่ไม่ไปจับพื้นที่ไล่เฉดจางๆ
-  const boxB = contentBox(sheet, { x0: mid, y0: TOP, x1: sheet.w, y1: sheet.h }, bg, 70);
-  console.log(`ช่อง B  x ${boxB.x0}..${boxB.x1} · y ${boxB.y0}..${boxB.y1}`);
+  /* ============================== ชื่อแบรนด์ ============================== */
+  const wordSheet = decodePng(fs.readFileSync(WORD_SRC));
+  const wordBg = px(wordSheet, 4, 4);
+  // 70 จับตัวอักษรสโลแกนสีเทาอ่อนได้ (ห่างจากพื้นราว 165) แต่ไม่ไปจับพื้นที่ไล่เฉดจางๆ
+  const boxB = contentBox(wordSheet, { x0: 0, y0: 0, x1: wordSheet.w, y1: wordSheet.h }, wordBg, 70);
+  console.log(`ชื่อแบรนด์  x ${boxB.x0}..${boxB.x1} · y ${boxB.y0}..${boxB.y1}`);
 
-  const word = crop(sheet, boxB);
-  // ทำพื้นให้โปร่งใสตามความสว่าง ตัวอักษรเข้มจึงทึบ พื้นสว่างจึงหายไป
-  // ใช้วิธีนี้แทน flood fill เพราะตัวอักษรมีช่องปิดข้างใน (o, e) ที่ flood fill เข้าไม่ถึง
-  for (let i = 0; i < word.w * word.h; i++) {
-    const d = i * 4;
-    const lum = (word.data[d] * 0.299 + word.data[d + 1] * 0.587 + word.data[d + 2] * 0.114);
-    const bgLum = (bg[0] * 0.299 + bg[1] * 0.587 + bg[2] * 0.114);
-    const a = Math.min(1, Math.max(0, (bgLum - lum) / (bgLum * 0.55)));
-    word.data[d + 3] = Math.round(a * 255);
+  /**
+   * แยกเนื้อภาพเป็น "แถบข้อความ" ตามแนวนอน
+   *
+   * ใช้วิธีนี้แทนการมองหาช่องว่างที่กว้างที่สุด เพราะในไฟล์ต้นฉบับมีเงาจางอยู่ใต้โลโก้
+   * ช่องว่างที่กว้างที่สุดจึงกลายเป็นช่องระหว่างสโลแกนกับเงา ไม่ใช่ระหว่างชื่อกับสโลแกน
+   * พอแยกเป็นแถบแล้ว แถบแรกคือชื่อ แถบที่สองคือสโลแกน ที่เหลือเป็นเงา ทิ้งไปได้
+   */
+  function textBands(img, box, bg, tol, minGap = 6, minHeight = 10) {
+    const tol2 = tol * tol;
+    const ink = [];
+    for (let y = box.y0; y <= box.y1; y++) {
+      let has = false;
+      for (let x = box.x0; x <= box.x1 && !has; x++) if (dist2(px(img, x, y), bg) > tol2) has = true;
+      ink.push(has);
+    }
+    const bands = [];
+    let start = -1;
+    let gap = 0;
+    for (let i = 0; i <= ink.length; i++) {
+      if (i < ink.length && ink[i]) {
+        if (start < 0) start = i;
+        gap = 0;
+      } else if (start >= 0) {
+        gap++;
+        if (gap >= minGap || i === ink.length) {
+          const end = i - gap;
+          if (end - start + 1 >= minHeight) bands.push({ y0: box.y0 + start, y1: box.y0 + end });
+          start = -1;
+          gap = 0;
+        }
+      }
+    }
+    return bands;
   }
-  fs.writeFileSync(path.join(__dirname, 'brand-wordmark.png'), encodePng(word.w, word.h, word.data));
-  console.log(`brand-wordmark.png       ${word.w}x${word.h}`);
+
+  /** ขอบซ้าย-ขวาที่แคบที่สุดที่ยังครอบแถบที่เลือกไว้ครบ (ไม่เอาความกว้างของเงามาด้วย) */
+  function xBoundsOf(img, box, bandList, bg, tol) {
+    const tol2 = tol * tol;
+    let x0 = box.x1;
+    let x1 = -1;
+    for (const b of bandList) {
+      for (let y = b.y0; y <= b.y1; y++) {
+        for (let x = box.x0; x <= box.x1; x++) {
+          if (dist2(px(img, x, y), bg) <= tol2) continue;
+          if (x < x0) x0 = x;
+          if (x > x1) x1 = x;
+        }
+      }
+    }
+    return { x0, x1 };
+  }
+
+  const bands = textBands(wordSheet, boxB, wordBg, 70);
+  console.log(`แถบข้อความ ${bands.length} แถบ: ${bands.map((b) => `${b.y0}-${b.y1}`).join(' · ')}`);
+  if (bands.length < 2) throw new Error('แยกชื่อกับสโลแกนออกจากกันไม่ได้');
+  const [bandWord, bandTag] = bands;
+  const xw = xBoundsOf(wordSheet, boxB, [bandWord], wordBg, 70);
+  const xf = xBoundsOf(wordSheet, boxB, [bandWord, bandTag], wordBg, 70);
+
+  /** ทำพื้นให้โปร่งใสตามความสว่าง — ใช้แทน flood fill เพราะตัวอักษรมีช่องปิดข้างใน (o, e) */
+  function keyOutBackground(img, bg) {
+    const bgLum = bg[0] * 0.299 + bg[1] * 0.587 + bg[2] * 0.114;
+    for (let i = 0; i < img.w * img.h; i++) {
+      const d = i * 4;
+      const lum = img.data[d] * 0.299 + img.data[d + 1] * 0.587 + img.data[d + 2] * 0.114;
+      img.data[d + 3] = Math.round(255 * Math.min(1, Math.max(0, (bgLum - lum) / (bgLum * 0.55))));
+    }
+    return img;
+  }
+
+  /**
+   * ทำรุ่นสำหรับพื้นหลังสีเข้ม — คำว่า "Kilo" เป็นกรมท่าเข้ม วางบนพื้นเข้มจะจมหายไป
+   * แยกด้วย "ค่าความสด" (ช่องสีที่แรงที่สุด) ไม่ใช่ความสว่างรวม
+   * เพราะน้ำเงินสดของ EV มีความสว่างรวมต่ำพอๆ กับกรมท่า (ราว 103 กับ 33)
+   * ถ้าใช้ความสว่างจะไปทำให้ EV ซีดตามไปด้วย
+   * แต่ค่าความสดต่างกันชัด: กรมท่า 64 · น้ำเงิน EV 240 · เขียว EV 210 · เทาสโลแกน 140
+   */
+  function forDarkBackground(img, light = [0xf1, 0xf5, 0xf9]) {
+    const out = { w: img.w, h: img.h, data: Buffer.from(img.data) };
+    for (let i = 0; i < img.w * img.h; i++) {
+      const d = i * 4;
+      if (out.data[d + 3] === 0) continue;
+      const v = Math.max(out.data[d], out.data[d + 1], out.data[d + 2]);
+      const t = Math.min(1, Math.max(0, (165 - v) / 60));   // ไล่ระดับ กันขอบแข็ง
+      if (t <= 0) continue;
+      for (let c = 0; c < 3; c++) out.data[d + c] = Math.round(out.data[d + c] * (1 - t) + light[c] * t);
+    }
+    return out;
+  }
+
+  const wordOnly = keyOutBackground(
+    crop(wordSheet, { x0: xw.x0, x1: xw.x1, y0: bandWord.y0, y1: bandWord.y1 }), wordBg
+  );
+  const wordFull = keyOutBackground(
+    crop(wordSheet, { x0: xf.x0, x1: xf.x1, y0: bandWord.y0, y1: bandTag.y1 }), wordBg
+  );
+  const outs = [
+    ['wordmark.png', wordOnly],
+    ['wordmark-on-dark.png', forDarkBackground(wordOnly)],
+    ['wordmark-tagline.png', wordFull],
+    ['wordmark-tagline-on-dark.png', forDarkBackground(wordFull)],
+  ];
+  for (const [name, img] of outs) {
+    fs.writeFileSync(path.join(OUT_DIR, name), encodePng(img.w, img.h, img.data));
+    console.log(`${name.padEnd(26)} ${img.w}x${img.h}`);
+  }
+  // เก็บไว้ให้ make-og.js ใช้ด้วย
+  fs.writeFileSync(path.join(__dirname, 'brand-wordmark.png'), encodePng(wordFull.w, wordFull.h, wordFull.data));
 }

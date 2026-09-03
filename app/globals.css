@@ -131,6 +131,19 @@ a{color:inherit;text-decoration:none}
 .sb-scroll{flex:1;display:flex;flex-direction:column;padding:0 12px}
 .brand{display:flex;align-items:center;gap:11px;padding:20px 20px 18px}
 .brand .mark{width:34px;height:34px;border-radius:10px;flex:none;display:block}   /* เป็นรูปโลโก้แล้ว ไม่ต้องมีพื้นหลังสี */
+
+/* ชื่อแบรนด์แบบรูปภาพ — วาดสองรูปแล้วซ่อนตัวที่ไม่ตรงธีม
+   ทำด้วย CSS เพราะธีมถูกตั้งที่ <html data-theme> ก่อนหน้าเว็ปวาด
+   ถ้ามาเลือกใน React จะเห็นรูปผิดสีวาบหนึ่งตอนโหลด */
+.wordmark{display:block}
+.wordmark-swap{display:inline-flex}
+.wordmark-swap img{display:block}
+.wordmark-swap .on-dark{display:none}
+:root[data-theme="dark"] .wordmark-swap .on-light{display:none}
+:root[data-theme="dark"] .wordmark-swap .on-dark{display:block}
+/* ชื่อแบรนด์บนแดชบอร์ดกับหน้าล็อกอิน */
+.dash-brand{margin-bottom:16px}
+.login-wordmark{margin-bottom:18px}
 .brand b{font-size:14px;letter-spacing:.02em;display:block;line-height:1.2;text-transform:uppercase;color:#fff}
 .brand span{font-size:11px;color:var(--sidebar-muted)}
 

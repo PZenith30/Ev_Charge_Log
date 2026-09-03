@@ -61,7 +61,7 @@ export function BudgetBanner({ over, budget, avg }) {
       <div className="alert danger">
         <Icon name="alert" />
         <div>
-          <div className="t1">ค่าใช้จ่ายเฉลี่ยต่อเดือนเกินงบประมาณ</div>
+          <div className="t1">{t('ค่าใช้จ่ายเฉลี่ยต่อเดือนเกินงบประมาณ')}</div>
           <div className="t2">
             เฉลี่ย {money0(avg)} / เดือน · งบที่ตั้งไว้ {money0(budget)} · เกิน {money0(avg - budget)}
           </div>
@@ -73,7 +73,7 @@ export function BudgetBanner({ over, budget, avg }) {
     <div className="alert">
       <Icon name="check" style={{ color: 'var(--accent)' }} />
       <div>
-        <div className="t1">ค่าใช้จ่ายอยู่ในงบประมาณ</div>
+        <div className="t1">{t('ค่าใช้จ่ายอยู่ในงบประมาณ')}</div>
         <div className="t2">เฉลี่ย {money0(avg)} / เดือน · งบ {money0(budget)}</div>
       </div>
     </div>
@@ -88,7 +88,7 @@ const Row = ({ k, children }) => (
 );
 
 export function SessionDetail({ session: s, onClose, onEdit }) {
-  const { carName, confirm, deleteSession, setLightbox, toast } = useStore();
+  const { carName, confirm, deleteSession, setLightbox, toast, t } = useStore();
   const [imgs, setImgs] = useState([]);
   const ids = (s.images || []).join(',');
 
@@ -121,11 +121,11 @@ export function SessionDetail({ session: s, onClose, onEdit }) {
               })
             }
           >
-            <Icon name="trash" />ลบ
+            <Icon name="trash" />{t('ลบ')}
           </button>
-          <button type="button" className="btn" onClick={onClose}>ปิด</button>
+          <button type="button" className="btn" onClick={onClose}>{t('ปิด')}</button>
           <button type="button" className="btn btn-primary" onClick={onEdit}>
-            <Icon name="edit" />แก้ไข
+            <Icon name="edit" />{t('แก้ไข')}
           </button>
         </>
       }
@@ -172,14 +172,14 @@ export function SessionDetail({ session: s, onClose, onEdit }) {
 
       {s.note ? (
         <div className="mt">
-          <div className="sm faint" style={{ marginBottom: 4 }}>หมายเหตุ</div>
+          <div className="sm faint" style={{ marginBottom: 4 }}>{t('หมายเหตุ')}</div>
           <p className="sm">{s.note}</p>
         </div>
       ) : null}
 
       {imgs.length ? (
         <div className="mt">
-          <div className="sm faint" style={{ marginBottom: 8 }}>รูปแนบ</div>
+          <div className="sm faint" style={{ marginBottom: 8 }}>{t('รูปแนบ')}</div>
           <div className="thumbs">
             {imgs.map((r) => (
               <div className="thumb" key={r.id}>

@@ -21,7 +21,7 @@ import { fmt, fmt0, fmt1 } from '@/lib/format';
 const PIN_COLORS = ['var(--accent)', 'var(--dc)', 'var(--purple)', 'var(--warn)', 'var(--faint)'];
 
 export default function StationsPage() {
-  const { toast, setQuickDraft } = useStore();
+  const { toast, setQuickDraft, t } = useStore();
   const router = useRouter();
 
   const [loc, setLoc] = useState(null);
@@ -183,7 +183,7 @@ export default function StationsPage() {
           </div>
 
           <div className="sm" style={{ lineHeight: 1.9 }}>
-            <b>วิธีตั้งค่า</b>
+            <b>{t('วิธีตั้งค่า')}</b>
             <br />
             1. สมัครคีย์ฟรีที่{' '}
             <a href="https://openchargemap.org/site/develop/api" target="_blank" rel="noopener noreferrer">
@@ -191,19 +191,19 @@ export default function StationsPage() {
             </a>{' '}
             (ไม่ต้องผูกบัตร)
             <br />
-            2. Vercel → Project Settings → Environment Variables เพิ่มตัวแปร
+            {t('2. Vercel → Project Settings → Environment Variables เพิ่มตัวแปร')}
             <pre
               style={{
                 background: 'var(--surface-3)', padding: '10px 12px', borderRadius: 'var(--r-sm)',
                 fontSize: 12.5, overflowX: 'auto', margin: '8px 0',
               }}
-            >OPENCHARGEMAP_API_KEY = คีย์ที่ได้มา</pre>
+            >{t('OPENCHARGEMAP_API_KEY = คีย์ที่ได้มา')}</pre>
             3. กด <b>Redeploy</b> (ตัวแปรใหม่จะมีผลต่อเมื่อ deploy รอบถัดไป)
           </div>
 
           <div className="mt">
             <button type="button" className="btn" onClick={() => search(loc, radius)} disabled={busy}>
-              <Icon name="refresh" />ลองใหม่
+              <Icon name="refresh" />{t('ลองใหม่')}
             </button>
           </div>
         </div>
@@ -218,8 +218,8 @@ export default function StationsPage() {
         <div className="card-body" style={{ paddingBottom: 0 }}>
           <div ref={placeRef} style={{ position: 'relative' }}>
             <Field
-              label="ค้นหาสถานที่"
-              help="พิมพ์ชื่อสถานที่ ห้าง อำเภอ หรือจังหวัด แล้วเลือกจากรายการ"
+              label={t('ค้นหาสถานที่')}
+              help={t('พิมพ์ชื่อสถานที่ ห้าง อำเภอ หรือจังหวัด แล้วเลือกจากรายการ')}
             >
               <div style={{ display: 'flex', gap: 8 }}>
                 <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
@@ -234,7 +234,7 @@ export default function StationsPage() {
                         pickPlace(places[0]);
                       }
                     }}
-                    placeholder="เช่น เซ็นทรัลลาดพร้าว, อำเภอเมืองขอนแก่น"
+                    placeholder={t('เช่น เซ็นทรัลลาดพร้าว, อำเภอเมืองขอนแก่น')}
                     spellCheck={false}
                   />
                   {placeBusy ? (
@@ -242,7 +242,7 @@ export default function StationsPage() {
                       className="sm faint"
                       style={{ position: 'absolute', right: 11, top: '50%', transform: 'translateY(-50%)' }}
                     >
-                      กำลังค้น…
+                      {t('กำลังค้น…')}
                     </span>
                   ) : null}
                 </div>
@@ -283,7 +283,7 @@ export default function StationsPage() {
 
         {/* ---------- ตัวกรอง ---------- */}
         <div className="filters">
-          <Field label="หรือเลือกเมือง">
+          <Field label={t('หรือเลือกเมือง')}>
             <select value={isPresetCity ? loc.name : ''} onChange={(e) => pickCity(e.target.value)}>
               {/* ตำแหน่งจาก GPS หรือจากการค้นหาไม่มีในรายการ จึงต้องมี option ว่างไว้แสดงชื่อ */}
               {isPresetCity ? null : <option value="">{loc?.name || '— เลือกเมือง —'}</option>}
@@ -292,29 +292,29 @@ export default function StationsPage() {
               ))}
             </select>
           </Field>
-          <Field label="รัศมี">
+          <Field label={t('รัศมี')}>
             <select value={radius} onChange={(e) => setRadius(Number(e.target.value))}>
               {RADIUS_OPTIONS.map((r) => (
                 <option key={r} value={r}>{r} km</option>
               ))}
             </select>
           </Field>
-          <Field label="ประเภท">
+          <Field label={t('ประเภท')}>
             <select value={type} onChange={(e) => setType(e.target.value)}>
-              <option value="">ทั้งหมด</option>
-              <option value="AC">มีหัว AC</option>
-              <option value="DC">มีหัว DC</option>
+              <option value="">{t('ทั้งหมด')}</option>
+              <option value="AC">{t('มีหัว AC')}</option>
+              <option value="DC">{t('มีหัว DC')}</option>
             </select>
           </Field>
-          <Field label="กำลังไฟขั้นต่ำ (kW)">
+          <Field label={t('กำลังไฟขั้นต่ำ (kW)')}>
             <input
-              type="number" min="0" step="any" inputMode="decimal" placeholder="ไม่จำกัด"
+              type="number" min="0" step="any" inputMode="decimal" placeholder={t('ไม่จำกัด')}
               value={minPower} onChange={(e) => setMinPower(e.target.value)}
             />
           </Field>
-          <Field label="กรองรายการ" style={{ gridColumn: 'span 2' }}>
+          <Field label={t('กรองรายการ')} style={{ gridColumn: 'span 2' }}>
             <input
-              type="text" placeholder="ชื่อสถานี ผู้ให้บริการ หรือชนิดหัวชาร์จ" spellCheck={false}
+              type="text" placeholder={t('ชื่อสถานี ผู้ให้บริการ หรือชนิดหัวชาร์จ')} spellCheck={false}
               value={filter} onChange={(e) => setFilter(e.target.value)}
             />
           </Field>
@@ -333,7 +333,7 @@ export default function StationsPage() {
             </span>
           </h3>
           <button type="button" className="btn btn-sm" onClick={() => search(loc, radius)} disabled={busy || !loc}>
-            <Icon name="refresh" />ค้นใหม่
+            <Icon name="refresh" />{t('ค้นใหม่')}
           </button>
         </div>
 
@@ -389,10 +389,10 @@ export default function StationsPage() {
                   <div className="r" style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
                     <div className="a">{s.distanceKm !== null ? `${fmt(s.distanceKm, 1)} km` : '—'}</div>
                     <a className="btn btn-sm" href={mapsLink(s)} target="_blank" rel="noopener noreferrer">
-                      <Icon name="map-pin" />แผนที่
+                      <Icon name="map-pin" />{t('แผนที่')}
                     </a>
                     <button type="button" className="btn btn-sm btn-ghost" onClick={() => logHere(s)}>
-                      <Icon name="plus" />บันทึกที่นี่
+                      <Icon name="plus" />{t('บันทึกที่นี่')}
                     </button>
                   </div>
                 </div>
@@ -425,12 +425,12 @@ export default function StationsPage() {
 
       {shown.length ? (
         <div className="stats mt">
-          <Stat tone="accent" icon="map-pin" label="สถานีที่พบ" value={fmt0(shown.length)} unit="แห่ง"
+          <Stat tone="accent" icon="map-pin" label={t('สถานีที่พบ')} value={fmt0(shown.length)} unit={t('แห่ง')}
             detail={loc ? `รอบ ${loc.name}` : null} />
-          <Stat tone="dc" icon="bolt" label="มีหัว DC" value={fmt0(dcCount)} unit="แห่ง"
+          <Stat tone="dc" icon="bolt" label={t('มีหัว DC')} value={fmt0(dcCount)} unit={t('แห่ง')}
             detail={`จากทั้งหมด ${shown.length} แห่ง`} />
-          <Stat tone="warn" icon="gauge" label="กำลังไฟสูงสุด" value={fastest ? fmt1(fastest) : '—'} unit="kW" />
-          <Stat tone="purple" icon="road" label="ใกล้ที่สุด" value={nearest !== null ? fmt(nearest, 1) : '—'} unit="km" />
+          <Stat tone="warn" icon="gauge" label={t('กำลังไฟสูงสุด')} value={fastest ? fmt1(fastest) : '—'} unit="kW" />
+          <Stat tone="purple" icon="road" label={t('ใกล้ที่สุด')} value={nearest !== null ? fmt(nearest, 1) : '—'} unit="km" />
         </div>
       ) : null}
     </>

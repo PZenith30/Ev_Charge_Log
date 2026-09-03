@@ -11,7 +11,7 @@ import { fmt, fmt0, fmt1, fmtDist, fmtDuration, money, money0, n, shortNum, thDa
 import { download, sessionsToCsv } from '@/lib/exporters';
 
 export default function ReportPage() {
-  const { sessions, costs, activeCar, showAllCars, carName, toast } = useStore();
+  const { sessions, costs, activeCar, showAllCars, carName, toast, t } = useStore();
   const [mode, setMode] = useState('month');
   const [period, setPeriod] = useState('');
 
@@ -59,11 +59,11 @@ export default function ReportPage() {
   const controls = (
     <div className="card no-print">
       <div className="card-head">
-        <h3>สร้างรายงาน</h3>
+        <h3>{t('สร้างรายงาน')}</h3>
         <select value={mode} onChange={(e) => setMode(e.target.value)}
           style={{ width: 'auto', fontSize: 13.5, padding: '6px 30px 6px 10px' }}>
-          <option value="month">รายเดือน</option>
-          <option value="year">รายปี</option>
+          <option value="month">{t('รายเดือน')}</option>
+          <option value="year">{t('รายปี')}</option>
         </select>
         <select value={period} onChange={(e) => setPeriod(e.target.value)}
           style={{ width: 'auto', fontSize: 13.5, padding: '6px 30px 6px 10px' }}>
@@ -72,14 +72,14 @@ export default function ReportPage() {
               <option key={p} value={p}>{mode === 'year' ? `ปี ${thYear(p)}` : thMonthLong(p)}</option>
             ))
           ) : (
-            <option value="">— ไม่มีข้อมูล —</option>
+            <option value="">{t('— ไม่มีข้อมูล —')}</option>
           )}
         </select>
         <button type="button" className="btn btn-sm" onClick={exportCsv}>
           <Icon name="download" />CSV
         </button>
         <button type="button" className="btn btn-sm btn-primary" onClick={() => window.print()}>
-          <Icon name="print" />พิมพ์ / บันทึก PDF
+          <Icon name="print" />{t('พิมพ์ / บันทึก PDF')}
         </button>
       </div>
     </div>
@@ -90,7 +90,7 @@ export default function ReportPage() {
       <>
         {controls}
         <div className="card mt">
-          <EmptyState message="ยังไม่มีข้อมูลสำหรับสร้างรายงาน" />
+          <EmptyState message={t('ยังไม่มีข้อมูลสำหรับสร้างรายงาน')} />
         </div>
       </>
     );
@@ -115,7 +115,7 @@ export default function ReportPage() {
               </p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div className="faint sm">ต้นทุนรวมในงวด</div>
+              <div className="faint sm">{t('ต้นทุนรวมในงวด')}</div>
               <div style={{ fontSize: 24, fontWeight: 680, letterSpacing: '-.02em' }}>
                 {money0(sum.cost + otherTotal)}
               </div>
@@ -123,16 +123,16 @@ export default function ReportPage() {
           </div>
 
           <div className="stats">
-            <Stat icon="bolt" label="จำนวนครั้ง" value={fmt0(sum.count)} unit="ครั้ง"
+            <Stat icon="bolt" label={t('จำนวนครั้ง')} value={fmt0(sum.count)} unit={t('ครั้ง')}
               detail={`AC ${sum.ac} · DC ${sum.dc}`} />
-            <Stat icon="battery" label="พลังงาน" value={fmt1(sum.kwh)} unit="kWh"
+            <Stat icon="battery" label={t('พลังงาน')} value={fmt1(sum.kwh)} unit="kWh"
               detail={sum.avgPrice !== null ? `เฉลี่ย ${fmt(sum.avgPrice, 2)} ฿/kWh` : null} />
-            <Stat icon="road" label="ระยะทาง" value={fmtDist(sum.dist)} unit="km"
+            <Stat icon="road" label={t('ระยะทาง')} value={fmtDist(sum.dist)} unit="km"
               detail={sum.eff !== null ? `${fmt(sum.eff, 2)} km/kWh · ${fmt0(sum.eff100)} km/100kWh` : null} />
-            <Stat icon="coin" label="ค่าชาร์จ" value={money0(sum.cost)}
+            <Stat icon="coin" label={t('ค่าชาร์จ')} value={money0(sum.cost)}
               detail={sum.bahtKm !== null ? `${fmt(sum.bahtKm, 2)} ฿/km` : null} />
-            <Stat icon="wallet" label="ต้นทุนอื่น" value={money0(otherTotal)} detail={`${cList.length} รายการ`} />
-            <Stat icon="clock" label="เวลาชาร์จรวม" value={fmt1(sum.seconds / 3600)} unit="ชม."
+            <Stat icon="wallet" label={t('ต้นทุนอื่น')} value={money0(otherTotal)} detail={`${cList.length} รายการ`} />
+            <Stat icon="clock" label={t('เวลาชาร์จรวม')} value={fmt1(sum.seconds / 3600)} unit={t('ชม.')}
               detail={sum.seconds > 0 ? fmtDuration(sum.seconds) : 'ยังไม่ได้กรอกเวลาที่ใช้ชาร์จ'} />
           </div>
         </div>
@@ -140,14 +140,14 @@ export default function ReportPage() {
 
       {mode === 'year' && monthRows.length ? (
         <div className="card mt">
-          <div className="card-head"><h3>สรุปรายเดือน</h3></div>
+          <div className="card-head"><h3>{t('สรุปรายเดือน')}</h3></div>
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>เดือน</th><th className="num">ครั้ง</th><th className="num">kWh</th>
-                  <th className="num">ระยะทาง (km)</th><th className="num">km/kWh</th>
-                  <th className="num">ค่าชาร์จ</th><th className="num">ต้นทุนอื่น</th><th className="num">รวม</th>
+                  <th>{t('เดือน')}</th><th className="num">{t('ครั้ง')}</th><th className="num">kWh</th>
+                  <th className="num">{t('ระยะทาง (km)')}</th><th className="num">km/kWh</th>
+                  <th className="num">{t('ค่าชาร์จ')}</th><th className="num">{t('ต้นทุนอื่น')}</th><th className="num">{t('รวม')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -166,7 +166,7 @@ export default function ReportPage() {
               </tbody>
               <tfoot>
                 <tr>
-                  <td>รวมทั้งปี</td>
+                  <td>{t('รวมทั้งปี')}</td>
                   <td className="num">{sum.count}</td>
                   <td className="num">{fmt1(sum.kwh)}</td>
                   <td className="num">{fmtDist(sum.dist)}</td>
@@ -190,9 +190,9 @@ export default function ReportPage() {
             <table>
               <thead>
                 <tr>
-                  <th>วันที่</th><th>ประเภท</th><th>สถานี</th>
-                  <th className="num">kWh</th><th className="num">฿/kWh</th><th className="num">ระยะทาง</th>
-                  <th className="num">km/kWh</th><th className="num">฿/km</th><th className="num">รวม (฿)</th>
+                  <th>{t('วันที่')}</th><th>{t('ประเภท')}</th><th>{t('สถานี')}</th>
+                  <th className="num">kWh</th><th className="num">{t('฿/kWh')}</th><th className="num">{t('ระยะทาง')}</th>
+                  <th className="num">km/kWh</th><th className="num">{t('฿/km')}</th><th className="num">{t('รวม (฿)')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -212,7 +212,7 @@ export default function ReportPage() {
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={3}>รวม</td>
+                  <td colSpan={3}>{t('รวม')}</td>
                   <td className="num">{fmt(sum.kwh, 2)}</td>
                   <td className="num">{sum.avgPrice !== null ? fmt(sum.avgPrice, 2) : '—'}</td>
                   <td className="num">{fmtDist(sum.dist)}</td>
@@ -224,17 +224,17 @@ export default function ReportPage() {
             </table>
           </div>
         ) : (
-          <div className="card-body"><p className="sm faint">ไม่มีการชาร์จในงวดนี้</p></div>
+          <div className="card-body"><p className="sm faint">{t('ไม่มีการชาร์จในงวดนี้')}</p></div>
         )}
       </div>
 
       <div className="card mt">
-        <div className="card-head"><h3>ต้นทุนอื่นในงวด</h3></div>
+        <div className="card-head"><h3>{t('ต้นทุนอื่นในงวด')}</h3></div>
         {cList.length ? (
           <div className="table-wrap">
             <table>
               <thead>
-                <tr><th>วันที่</th><th>ประเภท</th><th>รายละเอียด</th><th className="num">จำนวนเงิน (฿)</th></tr>
+                <tr><th>{t('วันที่')}</th><th>{t('ประเภท')}</th><th>{t('รายละเอียด')}</th><th className="num">{t('จำนวนเงิน (฿)')}</th></tr>
               </thead>
               <tbody>
                 {cList.map((c) => (
@@ -247,18 +247,18 @@ export default function ReportPage() {
                 ))}
               </tbody>
               <tfoot>
-                <tr><td colSpan={3}>รวม</td><td className="num">{fmt(otherTotal, 2)}</td></tr>
+                <tr><td colSpan={3}>{t('รวม')}</td><td className="num">{fmt(otherTotal, 2)}</td></tr>
               </tfoot>
             </table>
           </div>
         ) : (
-          <div className="card-body"><p className="sm faint">ไม่มีต้นทุนอื่นในงวดนี้</p></div>
+          <div className="card-body"><p className="sm faint">{t('ไม่มีต้นทุนอื่นในงวดนี้')}</p></div>
         )}
       </div>
 
       <div className="charts">
         <div className="card">
-          <div className="card-head"><h3>พลังงานที่ชาร์จในงวด</h3></div>
+          <div className="card-head"><h3>{t('พลังงานที่ชาร์จในงวด')}</h3></div>
           <div className="card-body">
             <BarChart
               stacked
@@ -273,25 +273,25 @@ export default function ReportPage() {
                   {fmt1(n(sList[i].kwh))} kWh · {money(sTotal(sList[i]))}
                 </>
               )}
-              empty="ไม่มีการชาร์จในงวดนี้"
+              empty={t('ไม่มีการชาร์จในงวดนี้')}
             />
           </div>
         </div>
 
         <div className="card">
-          <div className="card-head"><h3>สัดส่วนต้นทุน</h3></div>
+          <div className="card-head"><h3>{t('สัดส่วนต้นทุน')}</h3></div>
           <div className="card-body">
             <DonutChart
-              unit="฿"
+              unit={t('฿')}
               center={shortNum(sum.cost + otherTotal)}
-              sub="บาทรวม"
+              sub={t('บาทรวม')}
               slices={[
                 { label: 'ค่าชาร์จ', value: sum.cost, color: 'var(--accent)' },
                 ...Object.entries(COST_CATS).map(([k, v]) => ({
                   label: v.label, value: byCat[k] || 0, color: v.color,
                 })),
               ]}
-              empty="ไม่มีค่าใช้จ่ายในงวดนี้"
+              empty={t('ไม่มีค่าใช้จ่ายในงวดนี้')}
             />
           </div>
         </div>

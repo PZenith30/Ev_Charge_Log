@@ -2,6 +2,7 @@
 /** เข้าสู่ระบบด้วย Supabase Auth — อีเมล + รหัสผ่าน พร้อมสมัครสมาชิกและลืมรหัสผ่าน */
 import { useState } from 'react';
 import Icon from './Icon';
+import Wordmark from './Wordmark';
 import { Field, PasswordInput } from './ui';
 import { useStore } from './store';
 
@@ -12,7 +13,7 @@ const MODES = {
 };
 
 export default function Login() {
-  const { signIn, signUp, resetPassword } = useStore();
+  const { signIn, signUp, resetPassword, t } = useStore();
   const [mode, setMode] = useState('signin');
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
@@ -71,15 +72,12 @@ export default function Login() {
   return (
     <div className="login-wrap">
       <form className="login-card" onSubmit={submit}>
-        {/* โลโก้จริงแทนไอคอนสายฟ้าเดิม ใช้ <img> ไม่ใช่ next/image เพราะเป็นไฟล์นิ่งขนาดคงที่ */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="login-mark" src="/icon-192.png" alt="" width="52" height="52" />
-        <div className="login-brand">KiloEV</div>
+        <Wordmark tagline height={62} className="login-wordmark" />
         <h1>{meta.title}</h1>
         <p className="sub">{meta.sub}</p>
 
         <div className="stack">
-          <Field label="อีเมล">
+          <Field label={t('อีเมล')}>
             <input
               type="email"
               value={email}
@@ -93,7 +91,7 @@ export default function Login() {
           </Field>
 
           {mode !== 'reset' ? (
-            <Field label="รหัสผ่าน" help={mode === 'signup' ? 'อย่างน้อย 6 ตัวอักษร' : null}>
+            <Field label={t('รหัสผ่าน')} help={mode === 'signup' ? 'อย่างน้อย 6 ตัวอักษร' : null}>
               <PasswordInput
                 value={pass}
                 onChange={(e) => setPass(e.target.value)}
@@ -103,7 +101,7 @@ export default function Login() {
           ) : null}
 
           {mode === 'signup' ? (
-            <Field label="ยืนยันรหัสผ่าน">
+            <Field label={t('ยืนยันรหัสผ่าน')}>
               <PasswordInput
                 value={pass2}
                 onChange={(e) => setPass2(e.target.value)}
@@ -134,20 +132,20 @@ export default function Login() {
           {mode === 'signin' ? (
             <>
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => go('reset')}>
-                ลืมรหัสผ่าน?
+                {t('ลืมรหัสผ่าน?')}
               </button>
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => go('signup')}>
-                ยังไม่มีบัญชี? สมัคร
+                {t('ยังไม่มีบัญชี? สมัคร')}
               </button>
             </>
           ) : (
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => go('signin')}>
-              ← กลับไปหน้าเข้าสู่ระบบ
+              {t('← กลับไปหน้าเข้าสู่ระบบ')}
             </button>
           )}
         </div>
 
-        <div className="login-hint">ข้อมูลของคุณถูกเก็บบน Supabase และเห็นได้เฉพาะบัญชีนี้</div>
+        <div className="login-hint">{t('ข้อมูลของคุณถูกเก็บบน Supabase และเห็นได้เฉพาะบัญชีนี้')}</div>
       </form>
     </div>
   );

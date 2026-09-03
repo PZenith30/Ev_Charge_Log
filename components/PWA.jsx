@@ -24,7 +24,7 @@ const isStandalone = () =>
   (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true);
 
 export default function PWA() {
-  const { toast } = useStore();
+  const { toast, t } = useStore();
   const [prompt, setPrompt] = useState(null);   // ตัว event ที่เก็บไว้เรียกตอนกดปุ่ม
   const [waiting, setWaiting] = useState(null); // service worker เวอร์ชันใหม่ที่รออยู่
   const [showIOS, setShowIOS] = useState(false);
@@ -117,9 +117,9 @@ export default function PWA() {
     return (
       <div className="pwa-bar">
         <Icon name="refresh" />
-        <span>มีเวอร์ชันใหม่พร้อมใช้งาน</span>
-        <button type="button" className="btn btn-sm btn-primary" onClick={update}>โหลดเลย</button>
-        <button type="button" className="btn btn-sm btn-ghost" onClick={() => setWaiting(null)}>ไว้ก่อน</button>
+        <span>{t('มีเวอร์ชันใหม่พร้อมใช้งาน')}</span>
+        <button type="button" className="btn btn-sm btn-primary" onClick={update}>{t('โหลดเลย')}</button>
+        <button type="button" className="btn btn-sm btn-ghost" onClick={() => setWaiting(null)}>{t('ไว้ก่อน')}</button>
       </div>
     );
   }
@@ -128,9 +128,9 @@ export default function PWA() {
     return (
       <div className="pwa-bar">
         <Icon name="download" />
-        <span>ติดตั้งเป็นแอปบนเครื่อง เปิดเร็วขึ้นและใช้เต็มจอ</span>
-        <button type="button" className="btn btn-sm btn-primary" onClick={install}>ติดตั้ง</button>
-        <button type="button" className="btn btn-sm btn-ghost" onClick={dismiss}>ไม่เอา</button>
+        <span>{t('ติดตั้งเป็นแอปบนเครื่อง เปิดเร็วขึ้นและใช้เต็มจอ')}</span>
+        <button type="button" className="btn btn-sm btn-primary" onClick={install}>{t('ติดตั้ง')}</button>
+        <button type="button" className="btn btn-sm btn-ghost" onClick={dismiss}>{t('ไม่เอา')}</button>
       </div>
     );
   }
@@ -140,9 +140,9 @@ export default function PWA() {
       <div className="pwa-bar">
         <Icon name="download" />
         <span>
-          ติดตั้งลงหน้าจอหลัก: กดปุ่มแชร์ใน Safari แล้วเลือก <b>เพิ่มไปยังหน้าจอโฮม</b>
+          ติดตั้งลงหน้าจอหลัก: กดปุ่มแชร์ใน Safari แล้วเลือก <b>{t('เพิ่มไปยังหน้าจอโฮม')}</b>
         </span>
-        <button type="button" className="btn btn-sm btn-ghost" onClick={dismiss}>รับทราบ</button>
+        <button type="button" className="btn btn-sm btn-ghost" onClick={dismiss}>{t('รับทราบ')}</button>
       </div>
     );
   }

@@ -22,7 +22,7 @@ const SORTERS = {
 };
 
 export default function HistoryPage() {
-  const { sessions, carName, setEditingId, toast } = useStore();
+  const { sessions, carName, setEditingId, toast, t } = useStore();
   const [f, setF] = useState(EMPTY_FILTERS);
   const [detail, setDetail] = useState(null);
   const router = useRouter();
@@ -62,38 +62,38 @@ export default function HistoryPage() {
     <>
       <div className="card">
         <div className="filters">
-          <Field label="ค้นหา" style={{ gridColumn: 'span 2' }}>
-            <input type="text" placeholder="สถานี, หมายเหตุ, วันที่…" spellCheck={false}
+          <Field label={t('ค้นหา')} style={{ gridColumn: 'span 2' }}>
+            <input type="text" placeholder={t('สถานี, หมายเหตุ, วันที่…')} spellCheck={false}
               value={f.q} onChange={(e) => set('q', e.target.value)} />
           </Field>
-          <Field label="ตั้งแต่วันที่">
+          <Field label={t('ตั้งแต่วันที่')}>
             <input type="date" value={f.from} onChange={(e) => set('from', e.target.value)} />
           </Field>
-          <Field label="ถึงวันที่">
+          <Field label={t('ถึงวันที่')}>
             <input type="date" value={f.to} onChange={(e) => set('to', e.target.value)} />
           </Field>
-          <Field label="ประเภท">
+          <Field label={t('ประเภท')}>
             <select value={f.type} onChange={(e) => set('type', e.target.value)}>
-              <option value="">ทั้งหมด</option>
+              <option value="">{t('ทั้งหมด')}</option>
               <option value="AC">AC</option>
               <option value="DC">DC</option>
             </select>
           </Field>
-          <Field label="ค่าใช้จ่ายต่ำสุด">
+          <Field label={t('ค่าใช้จ่ายต่ำสุด')}>
             <input type="number" min="0" step="any" inputMode="decimal" placeholder="0"
               value={f.cmin} onChange={(e) => set('cmin', e.target.value)} />
           </Field>
-          <Field label="ค่าใช้จ่ายสูงสุด">
-            <input type="number" min="0" step="any" inputMode="decimal" placeholder="ไม่จำกัด"
+          <Field label={t('ค่าใช้จ่ายสูงสุด')}>
+            <input type="number" min="0" step="any" inputMode="decimal" placeholder={t('ไม่จำกัด')}
               value={f.cmax} onChange={(e) => set('cmax', e.target.value)} />
           </Field>
-          <Field label="เรียงตาม">
+          <Field label={t('เรียงตาม')}>
             <select value={f.sort} onChange={(e) => set('sort', e.target.value)}>
-              <option value="date-desc">วันที่ ล่าสุด → เก่า</option>
-              <option value="date-asc">วันที่ เก่า → ล่าสุด</option>
-              <option value="cost-desc">ค่าใช้จ่าย มาก → น้อย</option>
-              <option value="kwh-desc">พลังงาน มาก → น้อย</option>
-              <option value="eff-desc">Efficiency ดี → แย่</option>
+              <option value="date-desc">{t('วันที่ ล่าสุด → เก่า')}</option>
+              <option value="date-asc">{t('วันที่ เก่า → ล่าสุด')}</option>
+              <option value="cost-desc">{t('ค่าใช้จ่าย มาก → น้อย')}</option>
+              <option value="kwh-desc">{t('พลังงาน มาก → น้อย')}</option>
+              <option value="eff-desc">{t('Efficiency ดี → แย่')}</option>
             </select>
           </Field>
         </div>
@@ -106,7 +106,7 @@ export default function HistoryPage() {
             </span>
           </h3>
           <button type="button" className="btn btn-sm btn-ghost" onClick={() => setF(EMPTY_FILTERS)}>
-            ล้างตัวกรอง
+            {t('ล้างตัวกรอง')}
           </button>
           <button type="button" className="btn btn-sm" onClick={exportCsv}>
             <Icon name="download" />CSV
@@ -118,16 +118,16 @@ export default function HistoryPage() {
             <table>
               <thead>
                 <tr>
-                  <th>วันที่ / เวลา</th>
-                  <th>ประเภท</th>
-                  <th>สถานี</th>
+                  <th>{t('วันที่ / เวลา')}</th>
+                  <th>{t('ประเภท')}</th>
+                  <th>{t('สถานี')}</th>
                   <th className="num">kWh</th>
-                  <th className="num">฿/kWh</th>
-                  <th className="num">รวม (฿)</th>
-                  <th className="num">ระยะทาง</th>
+                  <th className="num">{t('฿/kWh')}</th>
+                  <th className="num">{t('รวม (฿)')}</th>
+                  <th className="num">{t('ระยะทาง')}</th>
                   <th className="num">SOC</th>
                   <th className="num">km/kWh</th>
-                  <th className="num">฿/km</th>
+                  <th className="num">{t('฿/km')}</th>
                   <th />
                 </tr>
               </thead>
@@ -144,7 +144,7 @@ export default function HistoryPage() {
                       <td><TypePill type={s.type} /></td>
                       <td>
                         {s.station || '—'}
-                        {s.images?.length ? <span className="faint" title="มีรูปแนบ"> 🖼</span> : null}
+                        {s.images?.length ? <span className="faint" title={t('มีรูปแนบ')}> 🖼</span> : null}
                       </td>
                       <td className="num">{fmt(n(s.kwh), 2)}</td>
                       <td className="num">{pk !== null ? fmt(pk, 2) : '—'}</td>
@@ -157,7 +157,7 @@ export default function HistoryPage() {
                         <button
                           type="button"
                           className="btn btn-icon btn-ghost btn-sm"
-                          title="แก้ไข"
+                          title={t('แก้ไข')}
                           onClick={(e) => { e.stopPropagation(); edit(s.id); }}
                         >
                           <Icon name="edit" />
@@ -187,7 +187,7 @@ export default function HistoryPage() {
             message={sessions.length ? 'ไม่พบรายการที่ตรงกับตัวกรอง' : 'ยังไม่มีประวัติการชาร์จ'}
             action={
               sessions.length ? null : (
-                <Link href="/add" className="btn btn-primary btn-sm">บันทึกการชาร์จครั้งแรก</Link>
+                <Link href="/add" className="btn btn-primary btn-sm">{t('บันทึกการชาร์จครั้งแรก')}</Link>
               )
             }
           />

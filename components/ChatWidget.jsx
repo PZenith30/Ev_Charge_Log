@@ -190,7 +190,7 @@ export default function ChatWidget() {
 
   if (!chatOpen) {
     return (
-      <button type="button" className="chat-fab" onClick={() => setChatOpen(true)} title="ถามผู้ช่วย AI">
+      <button type="button" className="chat-fab" onClick={() => setChatOpen(true)} title={t('ถามผู้ช่วย AI')}>
         <Icon name="chat" />
       </button>
     );
@@ -199,19 +199,19 @@ export default function ChatWidget() {
   const hasError = messages.some((m) => m.error);
 
   return (
-    <div className="chat-panel" role="dialog" aria-label="ผู้ช่วย AI">
+    <div className="chat-panel" role="dialog" aria-label={t('ผู้ช่วย AI')}>
       <div className="chat-head">
         <span className="ic"><Icon name="sparkle" /></span>
         <div className="t">
-          <b>ผู้ช่วย AI</b>
-          <span>รู้จักเว็ปนี้และข้อมูลการชาร์จของคุณ</span>
+          <b>{t('ผู้ช่วย AI')}</b>
+          <span>{t('รู้จักเว็ปนี้และข้อมูลการชาร์จของคุณ')}</span>
         </div>
         {messages.length ? (
-          <button type="button" className="btn btn-icon btn-ghost" onClick={clearChat} title="ล้างบทสนทนา">
+          <button type="button" className="btn btn-icon btn-ghost" onClick={clearChat} title={t('ล้างบทสนทนา')}>
             <Icon name="trash" />
           </button>
         ) : null}
-        <button type="button" className="btn btn-icon btn-ghost" onClick={() => setChatOpen(false)} title="ปิด">
+        <button type="button" className="btn btn-icon btn-ghost" onClick={() => setChatOpen(false)} title={t('ปิด')}>
           <Icon name="x" />
         </button>
       </div>
@@ -220,9 +220,9 @@ export default function ChatWidget() {
         {!messages.length ? (
           <div>
             <p className="chat-intro">
-              ถามอะไรก็ได้เกี่ยวกับการชาร์จรถของคุณ หรือวิธีใช้เว็ปนี้
+              {t('ถามอะไรก็ได้เกี่ยวกับการชาร์จรถของคุณ หรือวิธีใช้เว็ปนี้')}
               <br />
-              คำถามและข้อมูลสรุปจะถูกส่งไปประมวลผลที่ Google (Gemini) ปิดการส่งข้อมูลได้ที่ด้านล่าง
+              {t('คำถามและข้อมูลสรุปจะถูกส่งไปประมวลผลที่ Google (Gemini) ปิดการส่งข้อมูลได้ที่ด้านล่าง')}
             </p>
             <div className="chat-suggest">
               {SUGGESTIONS.map((s) => (
@@ -253,7 +253,7 @@ export default function ChatWidget() {
               <>
                 <pre>{diag}</pre>
                 <button type="button" className="btn btn-sm btn-ghost" onClick={copyDiag}>
-                  <Icon name="copy" />คัดลอกผลตรวจ
+                  <Icon name="copy" />{t('คัดลอกผลตรวจ')}
                 </button>
               </>
             ) : null}
@@ -266,25 +266,25 @@ export default function ChatWidget() {
           <textarea
             ref={inputRef}
             rows={1}
-            placeholder="พิมพ์คำถาม… (Enter ส่ง · Shift+Enter ขึ้นบรรทัดใหม่)"
+            placeholder={t('พิมพ์คำถาม… (Enter ส่ง · Shift+Enter ขึ้นบรรทัดใหม่)')}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
             disabled={busy}
           />
           {busy ? (
-            <button type="button" className="chat-send" onClick={stop} title="หยุด">
+            <button type="button" className="chat-send" onClick={stop} title={t('หยุด')}>
               <Icon name="stop" />
             </button>
           ) : (
-            <button type="button" className="chat-send" onClick={() => send()} disabled={!input.trim()} title="ส่ง">
+            <button type="button" className="chat-send" onClick={() => send()} disabled={!input.trim()} title={t('ส่ง')}>
               <Icon name="send" />
             </button>
           )}
         </div>
         <label className="chat-share">
           <input type="checkbox" checked={shareData} onChange={(e) => toggleShare(e.target.checked)} />
-          ส่งข้อมูลการชาร์จของฉันให้ AI (ปิดแล้วจะตอบได้แค่วิธีใช้เว็ป)
+          {t('ส่งข้อมูลการชาร์จของฉันให้ AI (ปิดแล้วจะตอบได้แค่วิธีใช้เว็ป)')}
         </label>
       </div>
     </div>

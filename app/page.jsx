@@ -8,6 +8,7 @@ import { Stat, EmptyState, Trend, TypePill } from '@/components/ui';
 import { BarChart, DonutChart, LineChart, Sparkline } from '@/components/Charts';
 import { AlertBanner, BudgetBanner, SessionDetail } from '@/components/SessionViews';
 import CarPhoto from '@/components/CarPhoto';
+import Wordmark from '@/components/Wordmark';
 import Icon from '@/components/Icon';
 import {
   monthlyTotals, sDist, sEff, sKwh100, sPricePerKwh, sTotal, summarize,
@@ -49,7 +50,7 @@ function dailyTotals(list) {
 export default function DashboardPage() {
   const {
     sessions, costs, periodSessions, periodCosts, prevSessions, prevCosts,
-    period, activeCar, due, budgetOver, setEditingId,
+    period, activeCar, due, budgetOver, setEditingId, t
   } = useStore();
   const [detail, setDetail] = useState(null);
   const [grain, setGrain] = useState('day');
@@ -83,11 +84,11 @@ export default function DashboardPage() {
     return (
       <div className="card">
         <EmptyState
-          message="ยังไม่มีข้อมูล — เริ่มจากเพิ่มรถของคุณ แล้วบันทึกการชาร์จครั้งแรก"
+          message={t('ยังไม่มีข้อมูล — เริ่มจากเพิ่มรถของคุณ แล้วบันทึกการชาร์จครั้งแรก')}
           action={
             <div className="rowflex" style={{ justifyContent: 'center' }}>
-              <Link href="/account" className="btn btn-sm">เพิ่มรถ</Link>
-              <Link href="/add" className="btn btn-primary btn-sm">บันทึกการชาร์จ</Link>
+              <Link href="/account" className="btn btn-sm">{t('เพิ่มรถ')}</Link>
+              <Link href="/add" className="btn btn-primary btn-sm">{t('บันทึกการชาร์จ')}</Link>
             </div>
           }
         />
@@ -112,6 +113,11 @@ export default function DashboardPage() {
 
   return (
     <>
+      {/* ชื่อแบรนด์บนสุดของแดชบอร์ด — ไม่ใส่สโลแกน สโลแกนใช้เฉพาะหน้าล็อกอิน */}
+      <div className="dash-brand">
+        <Wordmark height={40} />
+      </div>
+
       {budgetOver || activeDue.length ? (
         <div className="stack" style={{ marginBottom: 16 }}>
           {budgetOver ? <BudgetBanner over budget={budgetOver.budget} avg={budgetOver.avg} /> : null}
@@ -122,22 +128,22 @@ export default function DashboardPage() {
       {/* ---------------- Summary cards ---------------- */}
       <div className="stats">
         <Stat
-          tone="accent" icon="battery" label="การชาร์จทั้งหมด"
-          value={fmt0(sum.count)} unit="ครั้ง"
+          tone="accent" icon="battery" label={t('การชาร์จทั้งหมด')}
+          value={fmt0(sum.count)} unit={t('ครั้ง')}
           detail={<Trend pct={pctChange(sum.count, prev.count)} label={cmpLabel} />}
         />
         <Stat
-          tone="dc" icon="bolt" label="พลังงานรวม"
+          tone="dc" icon="bolt" label={t('พลังงานรวม')}
           value={fmt(sum.kwh, 2)} unit="kWh"
           detail={<Trend pct={pctChange(sum.kwh, prev.kwh)} label={cmpLabel} />}
         />
         <Stat
-          tone="purple" icon="coin" label="ค่าใช้จ่ายรวม"
+          tone="purple" icon="coin" label={t('ค่าใช้จ่ายรวม')}
           value={money0(sum.cost + otherCost)}
           detail={<Trend pct={pctChange(sum.cost + otherCost, prev.cost + prevOtherCost)} label={cmpLabel} invert />}
         />
         <Stat
-          tone="warn" icon="road" label="ระยะทางรวม"
+          tone="warn" icon="road" label={t('ระยะทางรวม')}
           value={fmtDist(sum.dist)} unit="km"
           detail={<Trend pct={pctChange(sum.dist, prev.dist)} label={cmpLabel} />}
         />
@@ -147,14 +153,14 @@ export default function DashboardPage() {
       <div className="charts split">
         <div className="card">
           <div className="card-head">
-            <h3>พลังงานที่ชาร์จ<span className="hint">หน่วย kWh</span></h3>
+            <h3>พลังงานที่ชาร์จ<span className="hint">{t('หน่วย kWh')}</span></h3>
             <select
               value={grain}
               onChange={(e) => setGrain(e.target.value)}
               style={{ width: 'auto', fontSize: 13, padding: '6px 30px 6px 10px' }}
             >
-              <option value="day">รายวัน</option>
-              <option value="month">รายเดือน</option>
+              <option value="day">{t('รายวัน')}</option>
+              <option value="month">{t('รายเดือน')}</option>
             </select>
           </div>
           <div className="card-body">
@@ -164,29 +170,29 @@ export default function DashboardPage() {
               color="var(--accent)"
               height={250}
               tip={chartTip}
-              empty="ยังไม่มีการชาร์จในช่วงเวลานี้"
+              empty={t('ยังไม่มีการชาร์จในช่วงเวลานี้')}
             />
           </div>
         </div>
 
         <div className="stack-col">
           <div className="card">
-            <div className="card-head"><h3>สัดส่วนสถานีชาร์จ</h3></div>
+            <div className="card-head"><h3>{t('สัดส่วนสถานีชาร์จ')}</h3></div>
             <div className="card-body">
               <DonutChart
                 center={fmt0(sum.count)}
-                sub="ครั้ง"
+                sub={t('ครั้ง')}
                 unit=""
                 slices={stations.slice(0, 5).map((s, i) => ({
                   label: s.name, value: s.count, color: STATION_COLORS[i % STATION_COLORS.length],
                 }))}
-                empty="ยังไม่มีข้อมูลสถานี"
+                empty={t('ยังไม่มีข้อมูลสถานี')}
               />
             </div>
           </div>
 
           <div className="card">
-            <div className="card-head plain"><h3>ค่าใช้จ่ายเฉลี่ย</h3></div>
+            <div className="card-head plain"><h3>{t('ค่าใช้จ่ายเฉลี่ย')}</h3></div>
             <div className="card-body" style={{ paddingTop: 10 }}>
               <div style={{ fontSize: 28, fontWeight: 690, letterSpacing: '-.025em' }}>
                 {sum.avgPrice !== null ? money(sum.avgPrice) : '—'}
@@ -206,7 +212,7 @@ export default function DashboardPage() {
       {/* ---------------- สถานะรถ + สถานีที่ใช้บ่อย ---------------- */}
       <div className="charts half">
         <div className="card">
-          <div className="card-head"><h3>สถานะรถปัจจุบัน</h3></div>
+          <div className="card-head"><h3>{t('สถานะรถปัจจุบัน')}</h3></div>
           <div className="card-body">
             {activeCar ? (
               <>
@@ -216,19 +222,19 @@ export default function DashboardPage() {
                       {soc !== null ? fmt0(soc) : '—'}<small> %</small>
                     </div>
                     <div className="km">{estRange !== null ? `${fmt0(estRange)} km` : '—'}</div>
-                    <div className="cap">ระยะทางที่วิ่งได้</div>
+                    <div className="cap">{t('ระยะทางที่วิ่งได้')}</div>
                   </div>
                   <div className="art"><CarPhoto car={activeCar} soc={soc} rounded={14} showCredit /></div>
                 </div>
                 <div className="vmini">
                   <div>
-                    <div className="k">แบตเตอรี่</div>
+                    <div className="k">{t('แบตเตอรี่')}</div>
                     <div className="v">
                       {isNum(activeCar.batt) ? fmt1(Number(activeCar.batt)) : '—'}<small>kWh</small>
                     </div>
                   </div>
                   <div>
-                    <div className="k">การใช้พลังงานเฉลี่ย</div>
+                    <div className="k">{t('การใช้พลังงานเฉลี่ย')}</div>
                     <div className="v">
                       {sum.kwh100 !== null ? fmt1(sum.kwh100) : '—'}<small>kWh/100km</small>
                     </div>
@@ -247,8 +253,8 @@ export default function DashboardPage() {
               </>
             ) : (
               <EmptyState
-                message="ยังไม่ได้เลือกรถ"
-                action={<Link href="/account" className="btn btn-primary btn-sm">เพิ่มรถ</Link>}
+                message={t('ยังไม่ได้เลือกรถ')}
+                action={<Link href="/account" className="btn btn-primary btn-sm">{t('เพิ่มรถ')}</Link>}
               />
             )}
           </div>
@@ -256,8 +262,8 @@ export default function DashboardPage() {
 
         <div className="card">
           <div className="card-head">
-            <h3>สถานีที่ใช้บ่อย</h3>
-            <Link href="/history" className="btn btn-sm btn-ghost">ดูทั้งหมด</Link>
+            <h3>{t('สถานีที่ใช้บ่อย')}</h3>
+            <Link href="/history" className="btn btn-sm btn-ghost">{t('ดูทั้งหมด')}</Link>
           </div>
           <div className="card-body">
             {stations.length ? (
@@ -280,7 +286,7 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <EmptyState message="ยังไม่มีข้อมูลสถานีในช่วงเวลานี้" />
+              <EmptyState message={t('ยังไม่มีข้อมูลสถานีในช่วงเวลานี้')} />
             )}
           </div>
         </div>
@@ -289,7 +295,7 @@ export default function DashboardPage() {
       {/* ---------------- แนวโน้มอัตราสิ้นเปลือง ---------------- */}
       <div className="card mt">
         <div className="card-head">
-          <h3>แนวโน้มอัตราสิ้นเปลือง<span className="hint">คำนวณจากระยะทาง ÷ พลังงานที่ชาร์จ</span></h3>
+          <h3>แนวโน้มอัตราสิ้นเปลือง<span className="hint">{t('คำนวณจากระยะทาง ÷ พลังงานที่ชาร์จ')}</span></h3>
         </div>
         <div className="card-body">
           <BarChart
@@ -306,7 +312,7 @@ export default function DashboardPage() {
                 </>
               );
             }}
-            empty="ต้องกรอกเลขไมล์ก่อน/หลังชาร์จจึงจะคำนวณได้"
+            empty={t('ต้องกรอกเลขไมล์ก่อน/หลังชาร์จจึงจะคำนวณได้')}
           />
         </div>
       </div>
@@ -314,22 +320,22 @@ export default function DashboardPage() {
       {/* ---------------- ประวัติการชาร์จล่าสุด ---------------- */}
       <div className="card mt">
         <div className="card-head">
-          <h3>ประวัติการชาร์จล่าสุด</h3>
-          <Link href="/history" className="btn btn-sm btn-ghost">ดูทั้งหมด</Link>
+          <h3>{t('ประวัติการชาร์จล่าสุด')}</h3>
+          <Link href="/history" className="btn btn-sm btn-ghost">{t('ดูทั้งหมด')}</Link>
         </div>
         {periodSessions.length ? (
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>วันที่</th>
-                  <th>สถานีชาร์จ</th>
-                  <th>ประเภท</th>
-                  <th className="num">% เริ่มต้น</th>
-                  <th className="num">% สิ้นสุด</th>
-                  <th className="num">พลังงาน (kWh)</th>
-                  <th className="num">ค่าใช้จ่าย (฿)</th>
-                  <th className="num">ระยะทาง (km)</th>
+                  <th>{t('วันที่')}</th>
+                  <th>{t('สถานีชาร์จ')}</th>
+                  <th>{t('ประเภท')}</th>
+                  <th className="num">{t('% เริ่มต้น')}</th>
+                  <th className="num">{t('% สิ้นสุด')}</th>
+                  <th className="num">{t('พลังงาน (kWh)')}</th>
+                  <th className="num">{t('ค่าใช้จ่าย (฿)')}</th>
+                  <th className="num">{t('ระยะทาง (km)')}</th>
                   <th />
                 </tr>
               </thead>
@@ -348,7 +354,7 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         className="btn btn-icon btn-ghost btn-sm"
-                        title="แก้ไข"
+                        title={t('แก้ไข')}
                         onClick={(e) => { e.stopPropagation(); setEditingId(s.id); router.push('/add'); }}
                       >
                         <Icon name="edit" />
@@ -361,8 +367,8 @@ export default function DashboardPage() {
           </div>
         ) : (
           <EmptyState
-            message="ไม่มีการชาร์จในช่วงเวลาที่เลือก"
-            action={<Link href="/add" className="btn btn-primary btn-sm">บันทึกการชาร์จ</Link>}
+            message={t('ไม่มีการชาร์จในช่วงเวลาที่เลือก')}
+            action={<Link href="/add" className="btn btn-primary btn-sm">{t('บันทึกการชาร์จ')}</Link>}
           />
         )}
       </div>

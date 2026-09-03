@@ -11,7 +11,7 @@ import { isNum, n, nOrNull, todayISO } from '@/lib/format';
 import { lastOdo } from '@/lib/calc';
 
 export default function SidebarQuickAdd() {
-  const { data, cars, activeCar, settings, saveSession, setQuickOpen, setQuickDraft, toast } = useStore();
+  const { data, cars, activeCar, settings, saveSession, setQuickOpen, setQuickDraft, toast, t } = useStore();
   const [socBefore, setSocBefore] = useState('');
   const [socAfter, setSocAfter] = useState('');
   const [kwh, setKwh] = useState('');
@@ -57,12 +57,12 @@ export default function SidebarQuickAdd() {
       <div className="hd">
         <div className="t">
           <b>Quick Add</b>
-          <span>บันทึกการชาร์จล่าสุด</span>
+          <span>{t('บันทึกการชาร์จล่าสุด')}</span>
         </div>
         <button
           type="button"
           className="add"
-          title="กรอกแบบละเอียด"
+          title={t('กรอกแบบละเอียด')}
           onClick={() => {
             // ยกค่าที่พิมพ์ค้างไว้ไปให้ Quick Add ต่อ จะได้ไม่ต้องกรอกซ้ำ
             setQuickDraft({ carId, socBefore, socAfter, kwh });
@@ -74,17 +74,17 @@ export default function SidebarQuickAdd() {
       </div>
 
       <div className="sb-field">
-        <label htmlFor="sq-a">% เริ่มต้น</label>
+        <label htmlFor="sq-a">{t('% เริ่มต้น')}</label>
         <input id="sq-a" type="number" min="0" max="100" step="any" inputMode="decimal" placeholder="20"
           value={socBefore} onChange={(e) => setSocBefore(e.target.value)} />
       </div>
       <div className="sb-field">
-        <label htmlFor="sq-b">% สิ้นสุด</label>
+        <label htmlFor="sq-b">{t('% สิ้นสุด')}</label>
         <input id="sq-b" type="number" min="0" max="100" step="any" inputMode="decimal" placeholder="90"
           value={socAfter} onChange={(e) => setSocAfter(e.target.value)} />
       </div>
       <div className="sb-field">
-        <label htmlFor="sq-k">พลังงาน</label>
+        <label htmlFor="sq-k">{t('พลังงาน')}</label>
         <input id="sq-k" type="number" min="0" step="any" inputMode="decimal" placeholder="32.45 kWh"
           value={kwh} onChange={(e) => setKwh(e.target.value)} />
       </div>

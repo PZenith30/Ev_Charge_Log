@@ -7,7 +7,7 @@ import { useStore } from './store';
 
 /** max = จำนวนรูปสูงสุด (ค่าเริ่มต้นไม่จำกัด) · ครบแล้วปุ่มเพิ่มจะซ่อน */
 export default function ImageUploader({ imageIds = [], onChange, max = Infinity, hint }) {
-  const { setLightbox, toast } = useStore();
+  const { setLightbox, toast, t } = useStore();
   const [recs, setRecs] = useState([]);
   const [busy, setBusy] = useState(false);
   const inputRef = useRef(null);
@@ -57,7 +57,7 @@ export default function ImageUploader({ imageIds = [], onChange, max = Infinity,
             {/* รูปเก็บเป็น data: URL ใน IndexedDB จึงใช้ <img> ตรงๆ แทน next/image */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={r.dataUrl} alt={r.name || 'รูปแนบ'} onClick={() => setLightbox(r.dataUrl)} />
-            <button type="button" className="del" onClick={() => remove(r.id)} aria-label="ลบรูป">
+            <button type="button" className="del" onClick={() => remove(r.id)} aria-label={t('ลบรูป')}>
               ×
             </button>
           </div>

@@ -8,7 +8,7 @@ import { Field, Modal } from './ui';
 import { useStore } from './store';
 
 export default function AlertModal({ item, onClose }) {
-  const { cars, activeCar, settings, saveAlert, deleteAlert, confirm, toast } = useStore();
+  const { cars, activeCar, settings, saveAlert, deleteAlert, confirm, toast, t } = useStore();
   const [form, setForm] = useState(() => ({
     type: item?.type || 'maintenance',
     carId: item?.carId || (activeCar ? activeCar.id : cars[0]?.id || ''),
@@ -52,35 +52,35 @@ export default function AlertModal({ item, onClose }) {
                 })
               }
             >
-              <Icon name="trash" />ลบ
+              <Icon name="trash" />{t('ลบ')}
             </button>
           ) : null}
-          <button type="button" className="btn" onClick={onClose}>ยกเลิก</button>
-          <button type="submit" className="btn btn-primary">บันทึก</button>
+          <button type="button" className="btn" onClick={onClose}>{t('ยกเลิก')}</button>
+          <button type="submit" className="btn btn-primary">{t('บันทึก')}</button>
         </>
       }
     >
       <div className="form-grid">
-        <Field label="ประเภท">
+        <Field label={t('ประเภท')}>
           <select value={form.type} onChange={(e) => set('type', e.target.value)}>
             {Object.entries(ALERT_TYPES).map(([k, v]) => (
               <option key={k} value={k}>{v.label}</option>
             ))}
           </select>
         </Field>
-        <Field label="รถ">
+        <Field label={t('รถ')}>
           <select value={form.carId} onChange={(e) => set('carId', e.target.value)}>
             {cars.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </Field>
-        <Field label="หัวข้อ" style={{ gridColumn: '1 / -1' }}>
-          <input type="text" placeholder="เช่น เช็คระยะ 40,000 km"
+        <Field label={t('หัวข้อ')} style={{ gridColumn: '1 / -1' }}>
+          <input type="text" placeholder={t('เช่น เช็คระยะ 40,000 km')}
             value={form.title} onChange={(e) => set('title', e.target.value)} />
         </Field>
-        <Field label="ครบกำหนดวันที่">
+        <Field label={t('ครบกำหนดวันที่')}>
           <input type="date" required value={form.due} onChange={(e) => set('due', e.target.value)} />
         </Field>
-        <Field label="เตือนล่วงหน้า (วัน)">
+        <Field label={t('เตือนล่วงหน้า (วัน)')}>
           <input type="number" min="0" step="any" inputMode="decimal"
             value={form.advance} onChange={(e) => set('advance', e.target.value)} />
         </Field>

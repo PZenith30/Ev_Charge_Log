@@ -7,7 +7,7 @@ import { useDismiss } from './ui';
 import { useStore } from './store';
 
 export default function DateRangePicker() {
-  const { period, setPeriod, range } = useStore();
+  const { period, setPeriod, range, t } = useStore();
   const [open, setOpen] = useState(false);
   const [from, setFrom] = useState(range.from || '');
   const [to, setTo] = useState(range.to || '');
@@ -31,7 +31,7 @@ export default function DateRangePicker() {
 
   return (
     <div ref={boxRef} style={{ position: 'relative' }}>
-      <button type="button" className="btn" onClick={() => setOpen((o) => !o)} title="เลือกช่วงเวลา">
+      <button type="button" className="btn" onClick={() => setOpen((o) => !o)} title={t('เลือกช่วงเวลา')}>
         <Icon name="calendar" />
         <span>{rangeText(period.key, range)}</span>
         <Icon name="chevron-down" style={{ width: 14, height: 14, opacity: 0.6 }} />
@@ -55,7 +55,7 @@ export default function DateRangePicker() {
 
           <div className="menu-sep" />
           <div style={{ padding: '2px 7px 4px' }}>
-            <div className="menu-label" style={{ padding: '0 4px 8px' }}>กำหนดเอง</div>
+            <div className="menu-label" style={{ padding: '0 4px 8px' }}>{t('กำหนดเอง')}</div>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={{ fontSize: 13, padding: '6px 8px' }} />
               <span className="faint">–</span>
@@ -68,7 +68,7 @@ export default function DateRangePicker() {
               onClick={applyCustom}
               disabled={!from || !to}
             >
-              ใช้ช่วงนี้
+              {t('ใช้ช่วงนี้')}
             </button>
           </div>
         </div>

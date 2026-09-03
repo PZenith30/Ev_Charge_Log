@@ -11,7 +11,7 @@ import { useStore } from './store';
 const BRANDS = Object.keys(EV_DATA);
 
 export default function CarModal({ car, onClose }) {
-  const { saveCar, deleteCar, confirm, toast, data } = useStore();
+  const { saveCar, deleteCar, confirm, toast, data, t } = useStore();
 
   // ถ้ายี่ห้อ/รุ่นเดิมไม่อยู่ในลิสต์ ให้เข้าโหมด "อื่นๆ" พร้อมข้อความเดิม
   const initialBrandKnown = car?.brand && BRANDS.includes(car.brand);
@@ -116,28 +116,28 @@ export default function CarModal({ car, onClose }) {
                 )
               }
             >
-              <Icon name="trash" />ลบรถ
+              <Icon name="trash" />{t('ลบรถ')}
             </button>
           ) : null}
-          <button type="button" className="btn" onClick={onClose}>ยกเลิก</button>
-          <button type="submit" className="btn btn-primary">บันทึก</button>
+          <button type="button" className="btn" onClick={onClose}>{t('ยกเลิก')}</button>
+          <button type="submit" className="btn btn-primary">{t('บันทึก')}</button>
         </>
       }
     >
       <div className="form-grid">
-        <Field label="ชื่อรถ (ตั้งเอง)" style={{ gridColumn: '1 / -1' }}>
-          <input type="text" required placeholder="เช่น รถบ้าน, คันสีขาว"
+        <Field label={t('ชื่อรถ (ตั้งเอง)')} style={{ gridColumn: '1 / -1' }}>
+          <input type="text" required placeholder={t('เช่น รถบ้าน, คันสีขาว')}
             value={form.name} onChange={(e) => set('name', e.target.value)} />
         </Field>
 
-        <Field label="ยี่ห้อ">
+        <Field label={t('ยี่ห้อ')}>
           <select value={form.brand} onChange={(e) => chooseBrand(e.target.value)}>
-            <option value="">— เลือกยี่ห้อ —</option>
+            <option value="">{t('— เลือกยี่ห้อ —')}</option>
             {BRANDS.map((b) => <option key={b} value={b}>{b}</option>)}
           </select>
         </Field>
 
-        <Field label="รุ่น">
+        <Field label={t('รุ่น')}>
           <select
             value={modelKnown ? form.model : form.model ? OTHER : ''}
             onChange={(e) => chooseModel(e.target.value)}
@@ -150,37 +150,37 @@ export default function CarModal({ car, onClose }) {
         </Field>
 
         {needBrandOther ? (
-          <Field label="ระบุยี่ห้อเอง">
+          <Field label={t('ระบุยี่ห้อเอง')}>
             <input type="text" value={form.brandOther} onChange={(e) => set('brandOther', e.target.value)} />
           </Field>
         ) : null}
         {needModelOther ? (
-          <Field label="ระบุรุ่นเอง">
+          <Field label={t('ระบุรุ่นเอง')}>
             <input type="text" value={form.modelOther} onChange={(e) => set('modelOther', e.target.value)} />
           </Field>
         ) : null}
 
-        <Field label="ความจุแบตเตอรี่ (kWh)">
+        <Field label={t('ความจุแบตเตอรี่ (kWh)')}>
           <input type="number" min="0" step="any" inputMode="decimal"
             value={form.batt} onChange={(e) => set('batt', e.target.value)} />
         </Field>
-        <Field label="ระยะทางที่วิ่งได้ (km)">
+        <Field label={t('ระยะทางที่วิ่งได้ (km)')}>
           <input type="number" min="0" step="any" inputMode="decimal"
             value={form.range} onChange={(e) => set('range', e.target.value)} />
         </Field>
-        <Field label="เลขไมล์ปัจจุบัน (km)" help="ใช้เป็นค่าตั้งต้นของการชาร์จครั้งแรก">
+        <Field label={t('เลขไมล์ปัจจุบัน (km)')} help={t('ใช้เป็นค่าตั้งต้นของการชาร์จครั้งแรก')}>
           <input type="number" min="0" step="any" inputMode="decimal"
             value={form.odo} onChange={(e) => set('odo', e.target.value)} />
         </Field>
-        <Field label="ทะเบียน">
-          <input type="text" placeholder="ไม่บังคับ"
+        <Field label={t('ทะเบียน')}>
+          <input type="text" placeholder={t('ไม่บังคับ')}
             value={form.plate} onChange={(e) => set('plate', e.target.value)} />
         </Field>
       </div>
 
       <div className="mt">
         <div className="rowflex" style={{ marginBottom: 10 }}>
-          <div className="sm muted" style={{ flex: 1, fontWeight: 550 }}>รูปรถ</div>
+          <div className="sm muted" style={{ flex: 1, fontWeight: 550 }}>{t('รูปรถ')}</div>
           <button type="button" className="btn btn-sm" onClick={searchPhoto} disabled={searching}>
             <Icon name={searching ? 'clock' : 'search'} />
             {searching ? 'กำลังค้น…' : 'ค้นรูปจากอินเทอร์เน็ต'}
@@ -191,8 +191,8 @@ export default function CarModal({ car, onClose }) {
           <div className="thumbs">
             <div className="thumb">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={form.photo} alt="รูปรถจากอินเทอร์เน็ต" />
-              <button type="button" className="del" onClick={() => set('photo', null)} aria-label="ลบรูป">
+              <img src={form.photo} alt={t('รูปรถจากอินเทอร์เน็ต')} />
+              <button type="button" className="del" onClick={() => set('photo', null)} aria-label={t('ลบรูป')}>
                 ×
               </button>
             </div>
@@ -200,16 +200,16 @@ export default function CarModal({ car, onClose }) {
         ) : (
           <ImageUploader
             max={1}
-            hint="เลือกรูปรถของคุณ"
+            hint={t('เลือกรูปรถของคุณ')}
             imageIds={form.photo ? [form.photo] : []}
             onChange={(ids) => set('photo', ids[0] || null)}
           />
         )}
 
         <p className="help" style={{ marginTop: 8 }}>
-          ใช้แสดงในแถบเมนูและการ์ดสถานะรถ · รูปที่อัปโหลดเองจะตรงกับรถคันจริงที่สุด
+          {t('ใช้แสดงในแถบเมนูและการ์ดสถานะรถ · รูปที่อัปโหลดเองจะตรงกับรถคันจริงที่สุด')}
           <br />
-          ถ้าไม่ใส่ ระบบจะลองค้นรูปประกอบของรุ่นนี้จาก Wikipedia ให้เอง ไม่เจอจึงใช้ภาพวาดแทน
+          {t('ถ้าไม่ใส่ ระบบจะลองค้นรูปประกอบของรุ่นนี้จาก Wikipedia ให้เอง ไม่เจอจึงใช้ภาพวาดแทน')}
         </p>
       </div>
     </Modal>

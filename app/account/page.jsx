@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@/components/store';
 import { CollapsibleCard, EmptyState, Field } from '@/components/ui';
 import CarModal from '@/components/CarModal';
+import { LANGS } from '@/lib/i18n';
 import Icon from '@/components/Icon';
 import { lastOdo, summarize } from '@/lib/calc';
 import { fmt0, fmt1, fmtDist, isNum, money0, uuid } from '@/lib/format';
@@ -15,9 +16,9 @@ import { clearLegacy, migrateLegacy } from '@/lib/legacy';
 
 export default function AccountPage() {
   const {
-    user, data, cars, settings, setSettings, wipeAll, reload,
+    user, data, cars, settings, setSettings, wipeAll, reload, lang, setLang,
     confirm, toast, logout, sessions, setPwOpen,
-    legacyFound, setLegacyFound,
+    legacyFound, setLegacyFound, t
   } = useStore();
 
   const [editing, setEditing] = useState(undefined);
@@ -135,7 +136,7 @@ export default function AccountPage() {
             <div className="alert warn">
               <Icon name="upload" />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="t1">พบข้อมูลเดิมที่เก็บไว้ในเบราว์เซอร์เครื่องนี้</div>
+                <div className="t1">{t('พบข้อมูลเดิมที่เก็บไว้ในเบราว์เซอร์เครื่องนี้')}</div>
                 <div className="t2">
                   {legacyFound.cars.length} คัน · {legacyFound.sessions.length} การชาร์จ · {legacyFound.costs.length} ต้นทุน
                   {' '}(รวม {legacyCount} รายการ) — ย้ายขึ้นบัญชี Supabase เพื่อใช้ข้ามเครื่องได้
@@ -159,7 +160,7 @@ export default function AccountPage() {
                   })
                 }
               >
-                ไม่ต้องย้าย ลบทิ้ง
+                {t('ไม่ต้องย้าย ลบทิ้ง')}
               </button>
             </div>
           </div>
@@ -168,11 +169,11 @@ export default function AccountPage() {
 
       <CollapsibleCard
         id="acc-cars"
-        title="รถของฉัน"
-        hint="เพิ่มได้หลายคัน · สลับคันที่ดูข้อมูลได้จากแถบด้านบน"
+        title={t('รถของฉัน')}
+        hint={t('เพิ่มได้หลายคัน · สลับคันที่ดูข้อมูลได้จากแถบด้านบน')}
         actions={
           <button type="button" className="btn btn-sm btn-primary" onClick={() => setEditing(null)}>
-            <Icon name="plus" />เพิ่มรถ
+            <Icon name="plus" />{t('เพิ่มรถ')}
           </button>
         }
       >
@@ -194,7 +195,7 @@ export default function AccountPage() {
                 <div className="body">
                   <div className="t1">
                     {c.name}
-                    {settings.activeCar === c.id ? <span className="pill pill-ok" style={{ marginLeft: 8 }}>ใช้งานอยู่</span> : null}
+                    {settings.activeCar === c.id ? <span className="pill pill-ok" style={{ marginLeft: 8 }}>{t('ใช้งานอยู่')}</span> : null}
                   </div>
                   <div className="t2">{spec}</div>
                 </div>
@@ -207,10 +208,10 @@ export default function AccountPage() {
           })}
           {!cars.length ? (
             <EmptyState
-              message="ยังไม่มีรถ — เพิ่มรถคันแรกเพื่อเริ่มบันทึกการชาร์จ"
+              message={t('ยังไม่มีรถ — เพิ่มรถคันแรกเพื่อเริ่มบันทึกการชาร์จ')}
               action={
                 <button type="button" className="btn btn-primary btn-sm" onClick={() => setEditing(null)}>
-                  เพิ่มรถคันแรก
+                  {t('เพิ่มรถคันแรก')}
                 </button>
               }
             />
@@ -218,28 +219,36 @@ export default function AccountPage() {
         </div>
       </CollapsibleCard>
 
-      <CollapsibleCard id="acc-defaults" title="ค่าเริ่มต้นและธีม" className="mt">
+      <CollapsibleCard id="acc-defaults" title={t('ค่าเริ่มต้นและธีม')} className="mt">
         <div className="card-body">
           <div className="form-grid">
-            <Field label="ราคาเริ่มต้น AC (฿/kWh)" help="ใช้เติมให้อัตโนมัติตอนบันทึกการชาร์จ">
+            <Field label={t('ราคาเริ่มต้น AC (฿/kWh)')} help={t('ใช้เติมให้อัตโนมัติตอนบันทึกการชาร์จ')}>
               <input type="number" min="0" step="any" inputMode="decimal" placeholder="4.50"
                 value={priceAC} onChange={(e) => setPriceAC(e.target.value)} />
             </Field>
-            <Field label="ราคาเริ่มต้น DC (฿/kWh)">
+            <Field label={t('ราคาเริ่มต้น DC (฿/kWh)')}>
               <input type="number" min="0" step="any" inputMode="decimal" placeholder="7.50"
                 value={priceDC} onChange={(e) => setPriceDC(e.target.value)} />
             </Field>
-            <Field label="ธีม">
+            <Field label={t('ธีม')}>
               <select value={settings.theme || 'auto'} onChange={(e) => setSettings({ theme: e.target.value })}>
-                <option value="auto">ตามระบบ</option>
-                <option value="light">สว่าง</option>
-                <option value="dark">มืด</option>
+                <option value="auto">{t('ตามระบบ')}</option>
+                <option value="light">{t('สว่าง')}</option>
+                <option value="dark">{t('มืด')}</option>
+              </select>
+            </Field>
+            {/* ภาษาเก็บในเครื่อง ไม่ได้เก็บลง Supabase จึงไม่ต้องกดบันทึก มีผลทันที */}
+            <Field label={t('ภาษา')} help={t('ตั้งแยกในแต่ละเครื่อง · มีผลทันทีโดยไม่ต้องกดบันทึก')}>
+              <select value={lang} onChange={(e) => setLang(e.target.value)}>
+                {LANGS.map((l) => (
+                  <option key={l.code} value={l.code}>{l.label}</option>
+                ))}
               </select>
             </Field>
           </div>
           <div className="mt">
             <button type="button" className="btn btn-primary" onClick={saveDefaults}>
-              <Icon name="check" />บันทึก
+              <Icon name="check" />{t('บันทึก')}
             </button>
           </div>
         </div>
@@ -247,15 +256,15 @@ export default function AccountPage() {
 
       <CollapsibleCard
         id="acc-data"
-        title="ข้อมูลของคุณ"
-        hint="เก็บบน Supabase · เข้าถึงได้จากทุกเครื่องที่ล็อกอินบัญชีนี้"
+        title={t('ข้อมูลของคุณ')}
+        hint={t('เก็บบน Supabase · เข้าถึงได้จากทุกเครื่องที่ล็อกอินบัญชีนี้')}
         className="mt"
       >
         <div className="card-body">
           <div className="alert" style={{ marginBottom: 14 }}>
             <Icon name="inbox" style={{ color: 'var(--accent)' }} />
             <div>
-              <div className="t1">สรุปข้อมูลในบัญชี</div>
+              <div className="t1">{t('สรุปข้อมูลในบัญชี')}</div>
               <div className="t2">
                 {data.sessions.length} การชาร์จ · {data.costs.length} ต้นทุน · {cars.length} คัน · {usage.images} รูป
                 <br />
@@ -266,17 +275,17 @@ export default function AccountPage() {
 
           <div className="rowflex">
             <button type="button" className="btn" onClick={() => { exportBackup(data); toast('ส่งออกข้อมูลเรียบร้อย'); }}>
-              <Icon name="download" />ส่งออกข้อมูล (JSON)
+              <Icon name="download" />{t('ส่งออกข้อมูล (JSON)')}
             </button>
             <button type="button" className="btn" onClick={() => fileRef.current?.click()}>
-              <Icon name="upload" />นำเข้าจากไฟล์
+              <Icon name="upload" />{t('นำเข้าจากไฟล์')}
             </button>
             <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={handleImport} />
             <button type="button" className="btn" onClick={handleDemo}>
-              <Icon name="copy" />ใส่ข้อมูลตัวอย่าง
+              <Icon name="copy" />{t('ใส่ข้อมูลตัวอย่าง')}
             </button>
             <button type="button" className="btn btn-danger" onClick={handleWipe}>
-              <Icon name="trash" />ล้างข้อมูลทั้งหมด
+              <Icon name="trash" />{t('ล้างข้อมูลทั้งหมด')}
             </button>
           </div>
           <p className="sm faint mt">
@@ -286,25 +295,25 @@ export default function AccountPage() {
         </div>
       </CollapsibleCard>
 
-      <CollapsibleCard id="acc-user" title="บัญชีผู้ใช้" className="mt">
+      <CollapsibleCard id="acc-user" title={t('บัญชีผู้ใช้')} className="mt">
         <div className="card-body">
           <dl className="kv" style={{ maxWidth: 420 }}>
-            <dt>อีเมล</dt><dd style={{ wordBreak: 'break-all' }}>{user?.email}</dd>
-            <dt>เข้าสู่ระบบด้วย</dt><dd>Supabase Auth (อีเมล + รหัสผ่าน)</dd>
-            <dt>จำนวนการชาร์จที่บันทึก</dt><dd>{sessions.length}</dd>
+            <dt>{t('อีเมล')}</dt><dd style={{ wordBreak: 'break-all' }}>{user?.email}</dd>
+            <dt>{t('เข้าสู่ระบบด้วย')}</dt><dd>{t('Supabase Auth (อีเมล + รหัสผ่าน)')}</dd>
+            <dt>{t('จำนวนการชาร์จที่บันทึก')}</dt><dd>{sessions.length}</dd>
           </dl>
 
           <div className="rowflex mt">
             {/* ใช้หน้าต่างเดียวกับที่เรียกจากเมนูโปรไฟล์ จะได้ไม่มีฟอร์มซ้ำสองที่ */}
             <button type="button" className="btn" onClick={() => setPwOpen(true)}>
-              <Icon name="settings" />เปลี่ยนรหัสผ่าน
+              <Icon name="settings" />{t('เปลี่ยนรหัสผ่าน')}
             </button>
             <button
               type="button"
               className="btn"
               onClick={() => confirm('ออกจากระบบ', 'ต้องออกจากระบบตอนนี้เลยไหม ข้อมูลถูกบันทึกไว้บน Supabase แล้ว', logout)}
             >
-              <Icon name="logout" />ออกจากระบบ
+              <Icon name="logout" />{t('ออกจากระบบ')}
             </button>
           </div>
         </div>
