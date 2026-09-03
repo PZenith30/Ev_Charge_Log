@@ -23,7 +23,7 @@ const shareKey = 'evlog.chatShareData';
 
 export default function ChatWidget() {
   const store = useStore();
-  const { user, chatOpen, setChatOpen, toast } = store;
+  const { user, chatOpen, setChatOpen, toast, t } = store;
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');

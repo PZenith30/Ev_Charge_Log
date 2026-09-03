@@ -56,6 +56,7 @@ export function AlertBanner({ item }) {
 }
 
 export function BudgetBanner({ over, budget, avg }) {
+  const { t } = useStore();
   if (over) {
     return (
       <div className="alert danger">

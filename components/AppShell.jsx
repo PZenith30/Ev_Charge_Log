@@ -28,6 +28,7 @@ const isActive = (pathname, href) => (href === '/' ? pathname === '/' : pathname
 
 /** ยังไม่ได้ตั้งค่า env — บอกวิธีแก้แทนที่จะพังเงียบๆ */
 function SetupNotice() {
+  const { t } = useStore();
   return (
     <div className="login-wrap">
       <div className="login-card" style={{ maxWidth: 520 }}>
