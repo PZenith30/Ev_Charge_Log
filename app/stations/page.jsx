@@ -13,8 +13,8 @@ import { useStore } from '@/components/store';
 import { EmptyState, Field, Stat, useDismiss } from '@/components/ui';
 import Icon from '@/components/Icon';
 import {
-  CITY_PRESETS, RADIUS_OPTIONS, connectorSummary, fetchStations, geocode,
-  getCurrentPosition, mapsLink, matchStation, movedFar, readLastLocation, saveLastLocation,
+  CITY_PRESETS, RADIUS_OPTIONS, accuracyText, connectorSummary, fetchStations, geocode,
+  isCoarse, locateBest, mapsLink, matchStation, movedFar, readLastLocation, saveLastLocation,
 } from '@/lib/stations';
 import { fmt, fmt0, fmt1 } from '@/lib/format';
 
@@ -75,24 +75,25 @@ export default function StationsPage() {
     bootstrapped.current = true;
 
     const saved = readLastLocation();
-    if (saved) {
-      setLoc(saved);          // แสดงผลทันที ไม่ต้องรอ GPS
-      // ตำแหน่ง GPS ที่เก็บไว้อาจเก่าถ้าผู้ใช้เดินทางไปที่อื่น จึงเช็กซ้ำเงียบๆ
-      // ตอนนี้สิทธิ์อนุญาตไว้แล้วจึงไม่มีป๊อปอัพถามซ้ำ ถ้าขอไม่สำเร็จก็ใช้ค่าเดิมต่อ
-      if (saved.gps) {
-        getCurrentPosition()
-          .then((here) => { if (movedFar(here, saved)) useLocation(here); })
-          .catch(() => {});
-      }
+
+    // ผู้ใช้เลือกเมืองหรือค้นสถานที่ไว้เอง — เคารพตัวเลือกนั้น ไม่ไปขอ GPS ทับ
+    if (saved?.source === 'user') {
+      setLoc(saved);
       return;
     }
+
+    // ตำแหน่ง GPS เก่าใช้วาดหน้าจอไปก่อนไม่ให้ว่างเปล่า แต่ต้องขอใหม่เสมอ
+    // เพราะอาจเดินทางไปที่อื่นแล้ว หรือรอบก่อนได้ตำแหน่งหยาบมา
+    if (saved) setLoc(saved);
+
     setLocating(true);
-    getCurrentPosition()
-      .then((here) => useLocation(here))
-      .catch(() => {
+    locateBest()
+      .then((here) => { if (!saved || movedFar(here, saved)) useLocation(here); })
+      .catch((e) => {
+        if (saved) return;   // ขอใหม่ไม่ได้ ก็ใช้ค่าเดิมที่วาดไว้แล้วต่อไป
         // ไม่อนุญาตหรือหาไม่เจอ — เริ่มที่กรุงเทพฯ ไปก่อน แล้วให้เลือกเมืองหรือค้นหาเอง
         setLoc(CITY_PRESETS[0]);
-        toast('ยังไม่ได้ตำแหน่ง — เลือกเมืองหรือพิมพ์ค้นหาสถานที่ได้', true);
+        toast(e.message, true);
       })
       .finally(() => setLocating(false));
   }, [useLocation, toast]);
@@ -104,7 +105,11 @@ export default function StationsPage() {
   async function useMyLocation() {
     setLocating(true);
     try {
-      useLocation(await getCurrentPosition());
+      const here = await locateBest();
+      useLocation(here);
+      if (isCoarse(here.accuracyM)) {
+        toast(`ตำแหน่งที่ได้คลาดเคลื่อน ${accuracyText(here.accuracyM)} — ถ้าไม่ตรงให้พิมพ์ค้นหาสถานที่`, true);
+      }
     } catch (e) {
       toast(e.message, true);
     } finally {
@@ -136,12 +141,12 @@ export default function StationsPage() {
     setPlaceOpen(false);
     setPlace('');
     setPlaces([]);
-    useLocation({ name: p.name, lat: p.lat, lng: p.lng });
+    useLocation({ name: p.name, lat: p.lat, lng: p.lng, source: 'user' });
   }
 
   function pickCity(name) {
     const city = CITY_PRESETS.find((c) => c.name === name);
-    if (city) useLocation(city);
+    if (city) useLocation({ ...city, source: 'user' });
   }
 
   /** ไปหน้าบันทึกการชาร์จโดยเติมชื่อสถานีไว้ให้แล้ว */
@@ -319,7 +324,11 @@ export default function StationsPage() {
           <h3>
             {busy ? 'กำลังค้นหา…' : `พบ ${fmt0(shown.length)} สถานี`}
             <span className="hint">
-              {loc ? `รอบ ${loc.name} รัศมี ${radius} km` : 'ยังไม่ได้เลือกตำแหน่ง'}
+              {/* โชว์พิกัดจริงด้วย ผู้ใช้จะได้ตรวจเองได้ว่าค้นจากจุดไหน เวลาผลไม่ตรงกับที่คาด */}
+              {loc
+                ? `รอบ ${loc.name}${accuracyText(loc.accuracyM) ? ` (${accuracyText(loc.accuracyM)})` : ''} `
+                  + `· ${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)} · รัศมี ${radius} km`
+                : 'ยังไม่ได้เลือกตำแหน่ง'}
               {filter && stations.length !== shown.length ? ` · กรองจาก ${stations.length} รายการ` : ''}
             </span>
           </h3>
@@ -327,6 +336,22 @@ export default function StationsPage() {
             <Icon name="refresh" />ค้นใหม่
           </button>
         </div>
+
+        {/* เตือนเมื่อเบราว์เซอร์บอกเองว่าตำแหน่งหยาบ — ในเมืองพลาดเกิน 1 กม. ก็คนละย่านแล้ว */}
+        {loc && isCoarse(loc.accuracyM) ? (
+          <div className="card-body" style={{ paddingBottom: 0 }}>
+            <div className="alert warn">
+              <Icon name="alert" />
+              <div>
+                <div className="t1">ตำแหน่งที่ได้อาจคลาดเคลื่อน {accuracyText(loc.accuracyM)}</div>
+                <div className="t2">
+                  มักเกิดตอนอยู่ในอาคารหรือใช้คอมที่ไม่มี GPS เบราว์เซอร์จะเดาจาก WiFi หรือ IP แทน
+                  ถ้าสถานีที่ขึ้นไม่ใช่ย่านของคุณ ให้พิมพ์ชื่อย่านในช่องค้นหาสถานที่ด้านบน
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {error ? (
           <div className="card-body">
