@@ -18,8 +18,11 @@ const OUT = process.argv[2] || path.join(__dirname, '..', 'public');
 const W = 1200;
 const H = 630;
 
-const { MARK, BG, FG: GREEN } = require('./make-icons');   // ใช้พิกัดและสีชุดเดียวกับไอคอน
+const { decodePng, resize } = require('./make-icons-from-logo');
+
+const BG = [0x11, 0x18, 0x27];      // สีแถบข้างของแอป
 const TEXT = [0xf8, 0xfa, 0xfc];
+const ACCENT = [0x3b, 0x82, 0xf6];  // สีน้ำเงินเดียวกับสายฟ้าในโลโก้ ตรงกับโทเคน --dc ของแอปพอดี
 
 /* ------------------------------- PNG encoder ------------------------------- */
 const CRC_TABLE = (() => {
@@ -139,22 +142,19 @@ const groupW = MARK_SIZE + GAP + probe.width;
 const startX = Math.round((W - groupW) / 2);
 const midY = H / 2;
 
-const shapes = [
-  // โลโก้ — แปลงจากกริด 0..32 ให้เป็นขนาดจริง
-  ...MARK.map((p) => ({
-    poly: move(p, startX, midY - MARK_SIZE / 2, MARK_SIZE / 32),
-    color: GREEN,
-    sub: false,
-  })),
-  // ชื่อแอป — "Kilo" สีอ่อน "EV" สีเขียว ให้เน้นว่าเป็นแอปรถไฟฟ้า
-  ...layoutWord(
-    'KiloEV',
-    startX + MARK_SIZE + GAP,
-    midY - TEXT_SIZE / 2,
-    TEXT_SIZE,
-    (i) => (i >= 4 ? GREEN : TEXT)
-  ).shapes,
-];
+// โลโก้จริงแบบพื้นหลังโปร่งใส สร้างไว้โดย doc/make-icons-from-logo.js
+const logo = resize(decodePng(fs.readFileSync(path.join(__dirname, 'logo-cutout.png'))), MARK_SIZE);
+const logoX = startX;
+const logoY = Math.round(midY - MARK_SIZE / 2);
+
+// ชื่อแอป — "Kilo" สีอ่อน "EV" สีน้ำเงินตามสายฟ้าในโลโก้
+const shapes = layoutWord(
+  'KiloEV',
+  startX + MARK_SIZE + GAP,
+  midY - TEXT_SIZE / 2,
+  TEXT_SIZE,
+  (i) => (i >= 4 ? ACCENT : TEXT)
+).shapes;
 
 // เตรียมกรอบไว้ล่วงหน้า ไม่ต้องทดสอบทุกรูปกับทุกจุด
 const prepared = shapes.map((s) => ({ ...s, box: bbox(s.poly) }));
@@ -180,15 +180,25 @@ for (let y = 0; y < H; y++) {
         if (color) { hits++; r += color[0]; g += color[1]; b += color[2]; }
       }
     }
+    // ชั้นล่างสุดคือพื้นหลัง แล้ววางโลโก้ทับ ก่อนจะเอาตัวอักษรทับอีกที
+    const base = [BG[0], BG[1], BG[2]];
+    const lx = x - logoX;
+    const ly = y - logoY;
+    if (lx >= 0 && ly >= 0 && lx < MARK_SIZE && ly < MARK_SIZE) {
+      const s = (ly * MARK_SIZE + lx) * 4;
+      const a = logo.data[s + 3] / 255;
+      if (a > 0) for (let c = 0; c < 3; c++) base[c] = base[c] * (1 - a) + logo.data[s + c] * a;
+    }
+
     const total = SS * SS;
     const i = (y * W + x) * 3;
     if (!hits) {
-      rgb[i] = BG[0]; rgb[i + 1] = BG[1]; rgb[i + 2] = BG[2];
+      rgb[i] = Math.round(base[0]); rgb[i + 1] = Math.round(base[1]); rgb[i + 2] = Math.round(base[2]);
       continue;
     }
-    const f = hits / total;                       // สัดส่วนที่โดนรูปทับในพิกเซลนี้
+    const f = hits / total;                       // สัดส่วนที่โดนตัวอักษรทับในพิกเซลนี้
     const avg = [r / hits, g / hits, b / hits];
-    for (let c = 0; c < 3; c++) rgb[i + c] = Math.round(BG[c] * (1 - f) + avg[c] * f);
+    for (let c = 0; c < 3; c++) rgb[i + c] = Math.round(base[c] * (1 - f) + avg[c] * f);
   }
 }
 

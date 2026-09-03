@@ -14,7 +14,7 @@
 
 // ต้องเลื่อนเวอร์ชันนี้ทุกครั้งที่ไฟล์ใน PRECACHE หรือไอคอนเปลี่ยน
 // เพราะ activate ลบเฉพาะแคชที่ชื่อไม่ตรงกับเวอร์ชันปัจจุบัน ชื่อเดิม = แคชเก่ารอด
-const VERSION = 'v6';
+const VERSION = 'v7';
 const STATIC_CACHE = `evlog-static-${VERSION}`;
 const PAGE_CACHE = `evlog-pages-${VERSION}`;
 const OFFLINE_URL = '/offline.html';
