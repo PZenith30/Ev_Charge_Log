@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ออฟไลน์ — EV Charge Log</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100dvh; display: grid; place-items: center; padding: 24px;
+    background: #f7f9fc; color: #111827;
+    font-family: "Inter", "IBM Plex Sans Thai", "Sarabun", "Noto Sans Thai", "Leelawadee UI",
+      system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #0b1120; color: #e8edf5; }
+    .card { background: #151d2c; border-color: #25324a; }
+    .muted { color: #94a3b8; }
+  }
+  .card {
+    max-width: 380px; width: 100%; text-align: center;
+    background: #fff; border: 1px solid #e8edf3; border-radius: 18px;
+    padding: 32px 26px; box-shadow: 0 1px 3px rgba(17,24,39,.07);
+  }
+  .mark {
+    width: 56px; height: 56px; margin: 0 auto 18px; border-radius: 16px;
+    background: #22c55e; display: grid; place-items: center;
+  }
+  .mark svg { width: 30px; height: 30px; fill: #fff; }
+  h1 { font-size: 19px; margin: 0 0 8px; letter-spacing: -.01em; }
+  p { margin: 0; font-size: 14px; }
+  .muted { color: #64748b; }
+  button {
+    margin-top: 22px; width: 100%; padding: 11px; border: 0; border-radius: 10px;
+    background: #22c55e; color: #fff; font: inherit; font-weight: 600; cursor: pointer;
+  }
+  button:hover { background: #16a34a; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="mark">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M18 3 8 18h6l-1 11 11-15h-6z"/></svg>
+    </div>
+    <h1>ตอนนี้ออฟไลน์อยู่</h1>
+    <p class="muted">
+      ข้อมูลการชาร์จเก็บอยู่บน Supabase จึงต้องต่ออินเทอร์เน็ตถึงจะเปิดดูได้
+      <br><br>
+      ลองเช็ค Wi-Fi หรือเน็ตมือถือ แล้วกดลองใหม่
+    </p>
+    <button type="button" onclick="location.reload()">ลองใหม่</button>
+  </div>
+  <script>
+    // กลับเข้าแอปเองเมื่อเน็ตกลับมา
+    addEventListener('online', () => location.reload());
+  </script>
+</body>
+</html>

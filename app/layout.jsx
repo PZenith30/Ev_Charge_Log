@@ -4,6 +4,11 @@ import AppShell from '@/components/AppShell';
 
 export const metadata = {
   title: 'EV Charge Log — บันทึกการชาร์จรถไฟฟ้า',
+  applicationName: 'EV Charge Log',
+  // iOS ไม่อ่าน manifest จึงต้องบอกผ่าน meta ของตัวเองว่าเปิดแบบเต็มจอได้
+  appleWebApp: { capable: true, title: 'EV Charge', statusBarStyle: 'default' },
+  formatDetection: { telephone: false },
+  icons: { apple: '/apple-touch-icon.png' },
   description:
     'บันทึกการชาร์จรถ EV แต่ละครั้ง คำนวณระยะทาง ค่าใช้จ่าย และอัตราสิ้นเปลืองอัตโนมัติ พร้อมแดชบอร์ดและรายงานสรุป',
 };
@@ -12,7 +17,7 @@ export const viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#0f9f6e',
+  themeColor: '#22c55e',
 };
 
 /**

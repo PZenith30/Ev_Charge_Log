@@ -10,6 +10,7 @@ import QuickAdd from './QuickAdd';
 import CarPhoto from './CarPhoto';
 import ChangePasswordModal from './ChangePasswordModal';
 import ChatWidget from './ChatWidget';
+import PWA from './PWA';
 import DateRangePicker from './DateRangePicker';
 import ProfileMenu from './ProfileMenu';
 import SidebarQuickAdd from './SidebarQuickAdd';
@@ -244,6 +245,7 @@ export default function AppShell({ children }) {
       </button>
 
       <ChatWidget />
+      <PWA />
 
       {quickOpen ? <QuickAdd /> : null}
       {pwOpen ? <ChangePasswordModal onClose={() => setPwOpen(false)} /> : null}

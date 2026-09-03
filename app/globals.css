@@ -595,3 +595,22 @@ table.compact{min-width:0}
   .charts{grid-template-columns:1fr 1fr}
   @page{margin:14mm}
 }
+
+/* ============================ แถบ PWA (ติดตั้ง / อัปเดต) ============================ */
+.pwa-bar{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:20px;z-index:90;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;
+  max-width:min(560px,calc(100vw - 32px));padding:11px 15px;
+  background:var(--surface);border:1px solid var(--border);border-radius:99px;
+  box-shadow:var(--shadow-lg);font-size:13.5px;animation:up .22s ease
+}
+.pwa-bar > svg{width:18px;height:18px;flex:none;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.pwa-bar > span{flex:1;min-width:180px}
+
+@media (max-width:900px){
+  /* ยกขึ้นเหนือแถบเมนูล่างและปุ่มลอย ไม่ให้ทับกัน */
+  .pwa-bar{
+    bottom:calc(78px + env(safe-area-inset-bottom));border-radius:var(--r);
+    left:12px;right:12px;transform:none;max-width:none
+  }
+}
