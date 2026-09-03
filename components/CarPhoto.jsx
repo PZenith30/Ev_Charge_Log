@@ -10,14 +10,18 @@
 import { useEffect, useState } from 'react';
 import { imgMany } from '@/lib/storage';
 import { findCarImage, isRemoteImage } from '@/lib/carImages';
+import { cutoutCar } from '@/lib/cutout';
 import CarArt from './CarArt';
 
-export default function CarPhoto({ car, soc = null, rounded = 12, showCredit = false, autoFetch = true }) {
+export default function CarPhoto({
+  car, soc = null, rounded = 12, showCredit = false, autoFetch = true, cutout = true,
+}) {
   const photo = car?.photo || null;
   const brand = car?.brand || '';
   const model = car?.model || '';
 
   const [src, setSrc] = useState(null);
+  const [cut, setCut] = useState(null);        // รูปที่ตัดพื้นหลังแล้ว null = ตัดไม่ได้
   const [credit, setCredit] = useState(null);
   const [loading, setLoading] = useState(false);
   const [broken, setBroken] = useState(false); // <img> โหลดไม่ขึ้น
@@ -65,6 +69,15 @@ export default function CarPhoto({ car, soc = null, rounded = 12, showCredit = f
     return () => { alive = false; };
   }, [photo, brand, model, autoFetch]);
 
+  // ลองตัดพื้นหลังหลังได้ src มาแล้ว — ระหว่างรอจะเห็นรูปเต็มไปก่อน ไม่ค้างเป็นกล่องเปล่า
+  useEffect(() => {
+    setCut(null);
+    if (!src || !cutout) return undefined;
+    let alive = true;
+    cutoutCar(src).then((data) => { if (alive) setCut(data); });
+    return () => { alive = false; };
+  }, [src, cutout]);
+
   // ระหว่างรอลิงก์ของรูปที่มีอยู่จริง แสดงกล่องจางกันเลย์เอาต์กระตุก
   if (!src && loading) {
     return <div style={{ width: '100%', aspectRatio: '16 / 10', borderRadius: rounded, background: 'var(--surface-3)' }} />;
@@ -75,11 +88,13 @@ export default function CarPhoto({ car, soc = null, rounded = 12, showCredit = f
     <div style={{ width: '100%' }}>
       {/* signed URL หมดอายุได้ และรูปจาก Wikipedia เป็นโดเมนภายนอก จึงใช้ <img> ตรงๆ แทน next/image */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
+      {/* ตัดพื้นหลังได้แล้ววางบนสีพื้นของกล่อง (โปร่งใส) จึงเข้าธีมเองทั้งโหมดสว่าง มืด และแถบข้าง */}
       <img
-        src={src}
+        className={cut ? 'car-photo cut' : 'car-photo'}
+        src={cut || src}
         alt={car?.name ? `รูปรถ ${car.name}` : 'รูปรถ'}
         onError={() => setBroken(true)}
-        style={{ width: '100%', borderRadius: rounded, display: 'block', objectFit: 'cover' }}
+        style={{ borderRadius: cut ? 0 : rounded }}
       />
       {showCredit && credit ? (
         <a

@@ -322,6 +322,12 @@ a{color:inherit;text-decoration:none}
 .vstat .art{flex:1;min-width:180px;display:grid;place-items:center}
 .vstat .art svg,.vstat .art img{width:100%;max-width:280px;height:auto}
 .vstat .art img{aspect-ratio:16 / 10;object-fit:cover}
+
+/* รูปรถ — วางไว้หลังกฎของ .sb-car/.vstat เพราะความจำเพาะเท่ากัน ตัวหลังจึงชนะ */
+img.car-photo{display:block;width:100%;height:auto}
+/* ตัดพื้นหลังแล้ว: พื้นหลังโปร่งใสจึงเห็นสีพื้นของกล่องที่ครอบอยู่
+   ทำให้เข้าธีมเองทั้งโหมดสว่าง โหมดมืด และแถบข้างที่มืดตลอดเวลา */
+img.car-photo.cut{aspect-ratio:16 / 10;object-fit:contain;background:transparent}
 .vmini{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));margin-top:16px}
 .vmini > div{border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
 .vmini .k{font-size:11px;color:var(--faint);margin-bottom:5px}
