@@ -109,7 +109,7 @@ export default function ReportPage() {
         <div className="card-body">
           <div className="report-head">
             <div style={{ flex: 1, minWidth: 200 }}>
-              <h3 style={{ fontSize: 18 }}>EV Charge Log — {title}</h3>
+              <h3 style={{ fontSize: 18 }}>KiloEV — {title}</h3>
               <p className="sm faint" style={{ marginTop: 4 }}>
                 {carLabel} · ออกรายงานเมื่อ {thDate(todayISO(), 'long')}
               </p>

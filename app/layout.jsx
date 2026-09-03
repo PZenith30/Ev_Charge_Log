@@ -18,10 +18,10 @@ const SITE_URL =
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
-  title: 'EV Charge Log — บันทึกการชาร์จรถไฟฟ้า',
-  applicationName: 'EV Charge Log',
+  title: 'KiloEV — บันทึกการชาร์จรถไฟฟ้า',
+  applicationName: 'KiloEV',
   // iOS ไม่อ่าน manifest จึงต้องบอกผ่าน meta ของตัวเองว่าเปิดแบบเต็มจอได้
-  appleWebApp: { capable: true, title: 'EV Charge', statusBarStyle: 'default' },
+  appleWebApp: { capable: true, title: 'KiloEV', statusBarStyle: 'default' },
   formatDetection: { telephone: false },
   icons: { apple: '/apple-touch-icon.png' },
   description: DESCRIPTION,

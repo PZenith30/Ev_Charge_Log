@@ -1,4 +1,4 @@
-# EV Charge Log
+# KiloEV
 
 เว็ปแอปสำหรับบันทึกและวิเคราะห์การชาร์จรถยนต์ไฟฟ้า — Next.js 15 + React 19 ไม่มี dependency อื่น
 

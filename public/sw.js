@@ -1,5 +1,5 @@
 /**
- * Service Worker ของ EV Charge Log
+ * Service Worker ของ KiloEV
  *
  * เป้าหมายคือ "เปิดแอปได้เร็วและไม่ตายเมื่อเน็ตหลุด" ไม่ใช่ใช้งานเต็มรูปแบบออฟไลน์
  * เพราะข้อมูลทั้งหมดอยู่บน Supabase ซึ่งต้องต่อเน็ตอยู่ดี
@@ -14,7 +14,9 @@
 
 // ต้องเลื่อนเวอร์ชันนี้ทุกครั้งที่ไฟล์ใน PRECACHE หรือไอคอนเปลี่ยน
 // เพราะ activate ลบเฉพาะแคชที่ชื่อไม่ตรงกับเวอร์ชันปัจจุบัน ชื่อเดิม = แคชเก่ารอด
-const VERSION = 'v7';
+const VERSION = 'v8';
+// ชื่อแคชยังขึ้นต้นด้วย evlog- ตามเดิม แม้แอปจะเปลี่ยนชื่อแล้ว
+// ถ้าเปลี่ยน ตัว activate จะลบแคชเก่าไม่เจอ เพราะมันกรองจาก prefix นี้
 const STATIC_CACHE = `evlog-static-${VERSION}`;
 const PAGE_CACHE = `evlog-pages-${VERSION}`;
 const OFFLINE_URL = '/offline.html';

@@ -115,9 +115,10 @@ export default function AppShell({ children }) {
 
       <aside className="sidebar">
         <div className="brand">
-          <div className="mark"><Icon name="bolt" viewBox="0 0 32 32" /></div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="mark" src="/icon-192.png" alt="" width="34" height="34" />
           <div>
-            <b>EV Charge Log</b>
+            <b>KiloEV</b>
             <span>บันทึกการชาร์จรถไฟฟ้า</span>
           </div>
         </div>

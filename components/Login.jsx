@@ -71,9 +71,10 @@ export default function Login() {
   return (
     <div className="login-wrap">
       <form className="login-card" onSubmit={submit}>
-        <div className="login-mark">
-          <Icon name="bolt" viewBox="0 0 32 32" />
-        </div>
+        {/* โลโก้จริงแทนไอคอนสายฟ้าเดิม ใช้ <img> ไม่ใช่ next/image เพราะเป็นไฟล์นิ่งขนาดคงที่ */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="login-mark" src="/icon-192.png" alt="" width="52" height="52" />
+        <div className="login-brand">KiloEV</div>
         <h1>{meta.title}</h1>
         <p className="sub">{meta.sub}</p>
 

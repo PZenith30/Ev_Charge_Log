@@ -4,8 +4,8 @@
  */
 export default function manifest() {
   return {
-    name: 'EV Charge Log — บันทึกการชาร์จรถไฟฟ้า',
-    short_name: 'EV Charge',  // Android ตัดชื่อที่ยาวเกิน 12 ตัวบนหน้าจอโฮม
+    name: 'KiloEV — บันทึกการชาร์จรถไฟฟ้า',
+    short_name: 'KiloEV',  // Android ตัดชื่อที่ยาวเกิน 12 ตัวบนหน้าจอโฮม (KiloEV = 6 ตัว)
     description: 'บันทึกการชาร์จรถ EV คำนวณค่าใช้จ่ายและอัตราสิ้นเปลืองอัตโนมัติ พร้อมแดชบอร์ดและรายงาน',
     start_url: '/',
     scope: '/',
