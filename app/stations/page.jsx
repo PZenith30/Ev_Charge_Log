@@ -1,16 +1,20 @@
 'use client';
 /**
  * สถานีชาร์จใกล้ฉัน — ดึงจาก Open Charge Map ผ่าน Route Handler ของเราเอง
+ *
+ * ลำดับการเลือกจุดค้นหา: ตำแหน่งที่เคยใช้ล่าสุด > ขอตำแหน่งจริงจากเบราว์เซอร์ > กรุงเทพฯ
+ * ขอตำแหน่งตั้งแต่เปิดหน้า เพราะถ้าปล่อยให้เริ่มที่กรุงเทพฯ ผู้ใช้ต่างจังหวัดจะเห็นข้อมูลที่ไม่เกี่ยวเลย
+ *
  * ไม่มีแผนที่ในตัว แต่ละสถานีเปิดต่อใน Google Maps ได้ เพื่อไม่ต้องเพิ่ม dependency
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/components/store';
-import { EmptyState, Field, Stat } from '@/components/ui';
+import { EmptyState, Field, Stat, useDismiss } from '@/components/ui';
 import Icon from '@/components/Icon';
 import {
-  CITY_PRESETS, RADIUS_OPTIONS, connectorSummary, fetchStations,
-  getCurrentPosition, mapsLink, readLastLocation, saveLastLocation,
+  CITY_PRESETS, RADIUS_OPTIONS, connectorSummary, fetchStations, geocode,
+  getCurrentPosition, mapsLink, matchStation, movedFar, readLastLocation, saveLastLocation,
 } from '@/lib/stations';
 import { fmt, fmt0, fmt1 } from '@/lib/format';
 
@@ -22,8 +26,9 @@ export default function StationsPage() {
 
   const [loc, setLoc] = useState(null);
   const [radius, setRadius] = useState(15);
-  const [type, setType] = useState('');       // '' | AC | DC
+  const [type, setType] = useState('');
   const [minPower, setMinPower] = useState('');
+  const [filter, setFilter] = useState('');          // กรองรายการที่โหลดมาแล้ว
   const [stations, setStations] = useState([]);
   const [attribution, setAttribution] = useState('');
   const [busy, setBusy] = useState(false);
@@ -31,9 +36,12 @@ export default function StationsPage() {
   const [errorCode, setErrorCode] = useState(null);
   const [locating, setLocating] = useState(false);
 
-  useEffect(() => {
-    setLoc(readLastLocation() || CITY_PRESETS[0]);
-  }, []);
+  // ค้นสถานที่
+  const [place, setPlace] = useState('');
+  const [places, setPlaces] = useState([]);
+  const [placeOpen, setPlaceOpen] = useState(false);
+  const [placeBusy, setPlaceBusy] = useState(false);
+  const placeRef = useDismiss(placeOpen, useCallback(() => setPlaceOpen(false), []));
 
   const search = useCallback(async (target, dist) => {
     if (!target) return;
@@ -54,7 +62,41 @@ export default function StationsPage() {
     }
   }, []);
 
-  // ค้นใหม่ทุกครั้งที่เปลี่ยนตำแหน่งหรือรัศมี
+  /** ตั้งจุดค้นหาใหม่แล้วจำไว้ใช้ครั้งหน้า */
+  const useLocation = useCallback((next) => {
+    saveLastLocation(next);
+    setLoc(next);
+  }, []);
+
+  // เปิดหน้าครั้งแรก — ใช้ตำแหน่งที่เคยใช้ ถ้าไม่มีค่อยขอตำแหน่งจริง
+  const bootstrapped = useRef(false);
+  useEffect(() => {
+    if (bootstrapped.current) return;
+    bootstrapped.current = true;
+
+    const saved = readLastLocation();
+    if (saved) {
+      setLoc(saved);          // แสดงผลทันที ไม่ต้องรอ GPS
+      // ตำแหน่ง GPS ที่เก็บไว้อาจเก่าถ้าผู้ใช้เดินทางไปที่อื่น จึงเช็กซ้ำเงียบๆ
+      // ตอนนี้สิทธิ์อนุญาตไว้แล้วจึงไม่มีป๊อปอัพถามซ้ำ ถ้าขอไม่สำเร็จก็ใช้ค่าเดิมต่อ
+      if (saved.gps) {
+        getCurrentPosition()
+          .then((here) => { if (movedFar(here, saved)) useLocation(here); })
+          .catch(() => {});
+      }
+      return;
+    }
+    setLocating(true);
+    getCurrentPosition()
+      .then((here) => useLocation(here))
+      .catch(() => {
+        // ไม่อนุญาตหรือหาไม่เจอ — เริ่มที่กรุงเทพฯ ไปก่อน แล้วให้เลือกเมืองหรือค้นหาเอง
+        setLoc(CITY_PRESETS[0]);
+        toast('ยังไม่ได้ตำแหน่ง — เลือกเมืองหรือพิมพ์ค้นหาสถานที่ได้', true);
+      })
+      .finally(() => setLocating(false));
+  }, [useLocation, toast]);
+
   useEffect(() => {
     if (loc) search(loc, radius);
   }, [loc, radius, search]);
@@ -62,9 +104,7 @@ export default function StationsPage() {
   async function useMyLocation() {
     setLocating(true);
     try {
-      const here = await getCurrentPosition();
-      saveLastLocation(here);
-      setLoc(here);
+      useLocation(await getCurrentPosition());
     } catch (e) {
       toast(e.message, true);
     } finally {
@@ -72,11 +112,36 @@ export default function StationsPage() {
     }
   }
 
+  // หน่วงก่อนยิงค้นสถานที่ เพื่อไม่ให้รบกวนเซิร์ฟเวอร์อาสาสมัครของ OSM ทุกตัวอักษร
+  useEffect(() => {
+    const q = place.trim();
+    if (q.length < 2) {
+      setPlaces([]);
+      return undefined;
+    }
+    const id = setTimeout(() => {
+      setPlaceBusy(true);
+      geocode(q)
+        .then((list) => {
+          setPlaces(list);
+          setPlaceOpen(list.length > 0);
+        })
+        .catch((e) => toast(e.message, true))
+        .finally(() => setPlaceBusy(false));
+    }, 500);
+    return () => clearTimeout(id);
+  }, [place, toast]);
+
+  function pickPlace(p) {
+    setPlaceOpen(false);
+    setPlace('');
+    setPlaces([]);
+    useLocation({ name: p.name, lat: p.lat, lng: p.lng });
+  }
+
   function pickCity(name) {
     const city = CITY_PRESETS.find((c) => c.name === name);
-    if (!city) return;
-    saveLastLocation(city);
-    setLoc(city);
+    if (city) useLocation(city);
   }
 
   /** ไปหน้าบันทึกการชาร์จโดยเติมชื่อสถานีไว้ให้แล้ว */
@@ -89,12 +154,15 @@ export default function StationsPage() {
     if (type === 'DC' && !s.hasDC) return false;
     if (type === 'AC' && !s.hasAC) return false;
     if (minPower && (s.maxPowerKW ?? 0) < Number(minPower)) return false;
-    return true;
+    return matchStation(s, filter);
   });
 
+  const isPresetCity = CITY_PRESETS.some((c) => c.name === loc?.name);
   const dcCount = shown.filter((s) => s.hasDC).length;
   const fastest = shown.reduce((a, s) => Math.max(a, s.maxPowerKW || 0), 0);
-  const nearest = shown.length ? shown[0].distanceKm : null;
+  // หาค่าน้อยสุดเอง ไม่พึ่งว่า API จะเรียงตามระยะทางมาให้
+  const dists = shown.map((s) => s.distanceKm).filter((d) => Number.isFinite(d));
+  const nearest = dists.length ? Math.min(...dists) : null;
 
   // ยังไม่ได้ตั้งคีย์ — แสดงวิธีตั้งค่าให้ชัด แทนที่จะเป็นข้อความ error สั้นๆ
   if (errorCode === 'NO_KEY' || errorCode === 'BAD_KEY') {
@@ -128,12 +196,6 @@ export default function StationsPage() {
             3. กด <b>Redeploy</b> (ตัวแปรใหม่จะมีผลต่อเมื่อ deploy รอบถัดไป)
           </div>
 
-          <p className="sm faint mt">
-            ตัวแปรนี้ไม่มี <code>NEXT_PUBLIC_</code> นำหน้า เพราะถูกอ่านฝั่งเซิร์ฟเวอร์เท่านั้น คีย์จึงไม่หลุดไปกับหน้าเว็ป
-            <br />
-            หน้าอื่นของแอปใช้งานได้ตามปกติแม้ยังไม่ตั้งค่าตัวนี้
-          </p>
-
           <div className="mt">
             <button type="button" className="btn" onClick={() => search(loc, radius)} disabled={busy}>
               <Icon name="refresh" />ลองใหม่
@@ -147,12 +209,79 @@ export default function StationsPage() {
   return (
     <>
       <div className="card">
+        {/* ---------- ค้นหาสถานที่ ---------- */}
+        <div className="card-body" style={{ paddingBottom: 0 }}>
+          <div ref={placeRef} style={{ position: 'relative' }}>
+            <Field
+              label="ค้นหาสถานที่"
+              help="พิมพ์ชื่อสถานที่ ห้าง อำเภอ หรือจังหวัด แล้วเลือกจากรายการ"
+            >
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+                  <input
+                    type="text"
+                    value={place}
+                    onChange={(e) => setPlace(e.target.value)}
+                    onFocus={() => places.length && setPlaceOpen(true)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && places.length) {
+                        e.preventDefault();
+                        pickPlace(places[0]);
+                      }
+                    }}
+                    placeholder="เช่น เซ็นทรัลลาดพร้าว, อำเภอเมืองขอนแก่น"
+                    spellCheck={false}
+                  />
+                  {placeBusy ? (
+                    <span
+                      className="sm faint"
+                      style={{ position: 'absolute', right: 11, top: '50%', transform: 'translateY(-50%)' }}
+                    >
+                      กำลังค้น…
+                    </span>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={useMyLocation}
+                  disabled={locating || busy}
+                  style={{ flex: 'none' }}
+                >
+                  <Icon name={locating ? 'clock' : 'map-pin'} />
+                  <span className="hide-mobile">{locating ? 'กำลังหา…' : 'ตำแหน่งฉัน'}</span>
+                </button>
+              </div>
+            </Field>
+
+            {placeOpen && places.length ? (
+              <div className="menu" style={{ left: 0, right: 'auto', width: '100%', maxWidth: 460 }}>
+                {places.map((p, i) => (
+                  <button
+                    key={`${p.lat},${p.lng},${i}`}
+                    type="button"
+                    className="menu-item"
+                    onClick={() => pickPlace(p)}
+                    style={{ alignItems: 'flex-start' }}
+                  >
+                    <Icon name="map-pin" style={{ marginTop: 2 }} />
+                    <span style={{ minWidth: 0 }}>
+                      <b style={{ display: 'block', fontWeight: 600 }}>{p.name}</b>
+                      {p.detail ? <span className="sm faint">{p.detail}</span> : null}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        {/* ---------- ตัวกรอง ---------- */}
         <div className="filters">
-          <Field label="ตำแหน่งที่ใช้ค้น">
-            <select value={loc?.name || ''} onChange={(e) => pickCity(e.target.value)}>
-              {loc && !CITY_PRESETS.some((c) => c.name === loc.name) ? (
-                <option value={loc.name}>{loc.name}</option>
-              ) : null}
+          <Field label="หรือเลือกเมือง">
+            <select value={isPresetCity ? loc.name : ''} onChange={(e) => pickCity(e.target.value)}>
+              {/* ตำแหน่งจาก GPS หรือจากการค้นหาไม่มีในรายการ จึงต้องมี option ว่างไว้แสดงชื่อ */}
+              {isPresetCity ? null : <option value="">{loc?.name || '— เลือกเมือง —'}</option>}
               {CITY_PRESETS.map((c) => (
                 <option key={c.name} value={c.name}>{c.name}</option>
               ))}
@@ -178,20 +307,23 @@ export default function StationsPage() {
               value={minPower} onChange={(e) => setMinPower(e.target.value)}
             />
           </Field>
+          <Field label="กรองรายการ" style={{ gridColumn: 'span 2' }}>
+            <input
+              type="text" placeholder="ชื่อสถานี ผู้ให้บริการ หรือชนิดหัวชาร์จ" spellCheck={false}
+              value={filter} onChange={(e) => setFilter(e.target.value)}
+            />
+          </Field>
         </div>
 
         <div className="card-head">
           <h3>
             {busy ? 'กำลังค้นหา…' : `พบ ${fmt0(shown.length)} สถานี`}
             <span className="hint">
-              {loc ? `รอบ ${loc.name} รัศมี ${radius} km` : ''}
+              {loc ? `รอบ ${loc.name} รัศมี ${radius} km` : 'ยังไม่ได้เลือกตำแหน่ง'}
+              {filter && stations.length !== shown.length ? ` · กรองจาก ${stations.length} รายการ` : ''}
             </span>
           </h3>
-          <button type="button" className="btn btn-sm" onClick={useMyLocation} disabled={locating || busy}>
-            <Icon name={locating ? 'clock' : 'map-pin'} />
-            {locating ? 'กำลังหาตำแหน่ง…' : 'ใช้ตำแหน่งปัจจุบัน'}
-          </button>
-          <button type="button" className="btn btn-sm" onClick={() => search(loc, radius)} disabled={busy}>
+          <button type="button" className="btn btn-sm" onClick={() => search(loc, radius)} disabled={busy || !loc}>
             <Icon name="refresh" />ค้นใหม่
           </button>
         </div>
@@ -231,12 +363,7 @@ export default function StationsPage() {
                   </div>
                   <div className="r" style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
                     <div className="a">{s.distanceKm !== null ? `${fmt(s.distanceKm, 1)} km` : '—'}</div>
-                    <a
-                      className="btn btn-sm"
-                      href={mapsLink(s)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                    <a className="btn btn-sm" href={mapsLink(s)} target="_blank" rel="noopener noreferrer">
                       <Icon name="map-pin" />แผนที่
                     </a>
                     <button type="button" className="btn btn-sm btn-ghost" onClick={() => logHere(s)}>
@@ -253,11 +380,21 @@ export default function StationsPage() {
                 <a href="https://openchargemap.org" target="_blank" rel="noopener noreferrer">
                   openchargemap.org
                 </a>
+                {' · '}ค้นสถานที่โดย{' '}
+                <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">
+                  OpenStreetMap
+                </a>
               </p>
             ) : null}
           </div>
         ) : !busy && !error ? (
-          <EmptyState message="ยังไม่มีผลการค้นหา — เลือกตำแหน่งแล้วกดค้นใหม่" />
+          <EmptyState
+            message={
+              filter
+                ? `ไม่พบสถานีที่ตรงกับ "${filter}" — ลองล้างช่องกรองรายการ`
+                : 'ยังไม่มีผลการค้นหา — กด "ตำแหน่งฉัน" หรือพิมพ์ค้นหาสถานที่'
+            }
+          />
         ) : null}
       </div>
 
