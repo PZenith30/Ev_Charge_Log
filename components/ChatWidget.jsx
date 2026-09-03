@@ -23,12 +23,14 @@ const shareKey = 'evlog.chatShareData';
 
 export default function ChatWidget() {
   const store = useStore();
-  const { user, chatOpen, setChatOpen } = store;
+  const { user, chatOpen, setChatOpen, toast } = store;
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [shareData, setShareData] = useState(true);
+  const [diag, setDiag] = useState('');       // ผลตรวจการตั้งค่า แสดงเมื่อกดปุ่มเท่านั้น
+  const [diagBusy, setDiagBusy] = useState(false);
   const abortRef = useRef(null);
   const bodyRef = useRef(null);
   const inputRef = useRef(null);
@@ -78,6 +80,7 @@ export default function ChatWidget() {
   function clearChat() {
     stop();
     setMessages([]);
+    setDiag('');
   }
 
   async function send(text) {
@@ -154,6 +157,37 @@ export default function ChatWidget() {
     }
   }
 
+  /**
+   * ตรวจการตั้งค่า AI — ถาม GET /api/chat ว่าคีย์ใช้ได้ไหมและเห็นรุ่นอะไรบ้าง
+   * มีปุ่มนี้เพราะ endpoint บังคับแนบ token จึงเปิด URL ตรงๆ ในเบราว์เซอร์ไม่ได้
+   * และผู้ใช้ไม่ควรต้องวางโค้ดใน DevTools ซึ่งเป็นช่องทางที่มิจฉาชีพชอบหลอกให้ทำ
+   */
+  async function runDiagnostics() {
+    setDiagBusy(true);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+      if (!token) throw new Error('เซสชันหมดอายุ — กรุณาเข้าสู่ระบบใหม่');
+
+      const res = await fetch('/api/chat', { headers: { Authorization: `Bearer ${token}` } });
+      const json = await res.json().catch(() => ({ error: `อ่านผลไม่ได้ (HTTP ${res.status})` }));
+      setDiag(JSON.stringify(json, null, 2));
+    } catch (e) {
+      setDiag(`ตรวจไม่สำเร็จ: ${e.message}`);
+    } finally {
+      setDiagBusy(false);
+    }
+  }
+
+  async function copyDiag() {
+    try {
+      await navigator.clipboard.writeText(diag);
+      toast('คัดลอกผลตรวจแล้ว');
+    } catch {
+      toast('คัดลอกไม่ได้ — ลากคลุมข้อความแล้วคัดลอกเองได้', true);
+    }
+  }
+
   if (!chatOpen) {
     return (
       <button type="button" className="chat-fab" onClick={() => setChatOpen(true)} title="ถามผู้ช่วย AI">
@@ -161,6 +195,8 @@ export default function ChatWidget() {
       </button>
     );
   }
+
+  const hasError = messages.some((m) => m.error);
 
   return (
     <div className="chat-panel" role="dialog" aria-label="ผู้ช่วย AI">
@@ -205,6 +241,24 @@ export default function ChatWidget() {
             {busy && i === messages.length - 1 && m.role === 'model' ? <span className="chat-caret" /> : null}
           </div>
         ))}
+
+        {/* ขึ้นเฉพาะตอนตอบไม่สำเร็จ จะได้ไม่รกเวลาใช้งานปกติ */}
+        {hasError && !busy ? (
+          <div className="chat-diag">
+            <button type="button" className="btn btn-sm" onClick={runDiagnostics} disabled={diagBusy}>
+              <Icon name={diagBusy ? 'clock' : 'settings'} />
+              {diagBusy ? 'กำลังตรวจ…' : 'ตรวจการตั้งค่า AI'}
+            </button>
+            {diag ? (
+              <>
+                <pre>{diag}</pre>
+                <button type="button" className="btn btn-sm btn-ghost" onClick={copyDiag}>
+                  <Icon name="copy" />คัดลอกผลตรวจ
+                </button>
+              </>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <div className="chat-foot">

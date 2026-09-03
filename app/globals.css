@@ -486,6 +486,14 @@ table.compact{min-width:0}
 .chat-msg.me{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:5px}
 .chat-msg.ai{align-self:flex-start;background:var(--surface-3);border-bottom-left-radius:5px}
 .chat-msg.err{align-self:flex-start;background:var(--danger-soft);color:var(--danger)}
+
+/* กล่องตรวจการตั้งค่า AI — โผล่ใต้ข้อความ error เท่านั้น */
+.chat-diag{align-self:stretch;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.chat-diag pre{
+  width:100%;max-height:230px;overflow:auto;margin:0;
+  background:var(--surface-3);border:1px solid var(--border);border-radius:var(--r-sm);
+  padding:10px 12px;font-size:11.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word
+}
 .chat-caret{display:inline-block;width:7px;height:15px;background:var(--muted);vertical-align:-2px;margin-left:2px;animation:blink 1s step-end infinite}
 @keyframes blink{50%{opacity:0}}
 
