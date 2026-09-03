@@ -2,9 +2,8 @@
 /** บัญชี & รถของฉัน — จัดการรถ ค่าเริ่มต้น ธีม บัญชีผู้ใช้ และข้อมูลบน Supabase */
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@/components/store';
-import { CollapsibleCard, EmptyState, Field } from '@/components/ui';
+import { CollapsibleCard, EmptyState, Field, LangToggle } from '@/components/ui';
 import CarModal from '@/components/CarModal';
-import { LANGS } from '@/lib/i18n';
 import Icon from '@/components/Icon';
 import { lastOdo, summarize } from '@/lib/calc';
 import { fmt0, fmt1, fmtDist, isNum, money0, uuid } from '@/lib/format';
@@ -16,7 +15,7 @@ import { clearLegacy, migrateLegacy } from '@/lib/legacy';
 
 export default function AccountPage() {
   const {
-    user, data, cars, settings, setSettings, wipeAll, reload, lang, setLang,
+    user, data, cars, settings, setSettings, wipeAll, reload,
     confirm, toast, logout, sessions, setPwOpen,
     legacyFound, setLegacyFound, t
   } = useStore();
@@ -239,11 +238,7 @@ export default function AccountPage() {
             </Field>
             {/* ภาษาเก็บในเครื่อง ไม่ได้เก็บลง Supabase จึงไม่ต้องกดบันทึก มีผลทันที */}
             <Field label={t('ภาษา')} help={t('ตั้งแยกในแต่ละเครื่อง · มีผลทันทีโดยไม่ต้องกดบันทึก')}>
-              <select value={lang} onChange={(e) => setLang(e.target.value)}>
-                {LANGS.map((l) => (
-                  <option key={l.code} value={l.code}>{l.label}</option>
-                ))}
-              </select>
+              <LangToggle />
             </Field>
           </div>
           <div className="mt">

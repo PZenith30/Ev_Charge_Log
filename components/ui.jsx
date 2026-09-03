@@ -1,6 +1,7 @@
 'use client';
 /** ชิ้นส่วน UI ที่ใช้ซ้ำทั้งแอป — การ์ดสถิติ, modal, toast, ฟิลด์ฟอร์ม ฯลฯ */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { LANGS } from '@/lib/i18n';
 import Icon from './Icon';
 import { useStore } from './store';
 
@@ -185,6 +186,33 @@ export function PasswordInput({ value, onChange, autoComplete, placeholder = '�
 export function TypePill({ type }) {
   const t = type === 'DC' ? 'DC' : 'AC';
   return <span className={`pill pill-${t}`}>{t}</span>;
+}
+
+/**
+ * ปุ่มสลับภาษาแบบสองช่อง ใช้สไตล์ .seg เดียวกับปุ่มสลับ AC/DC
+ *
+ * ชื่อภาษาไม่แปลตามภาษาที่เลือก — เขียนด้วยภาษาของตัวเองเสมอ
+ * เพราะคนที่อ่านไทยไม่ออกต้องมองหาคำว่า English เจอ ถ้าแปลตามภาษาปัจจุบัน
+ * ผู้ใช้ที่เผลอสลับเป็นไทยจะหาทางกลับไม่เจอ
+ */
+export function LangToggle({ compact = false }) {
+  const { lang, setLang } = useStore();
+  return (
+    <div className="seg seg-lang">
+      {LANGS.map((l) => (
+        <button
+          key={l.code}
+          type="button"
+          className={lang === l.code ? 'on' : ''}
+          onClick={() => setLang(l.code)}
+          aria-pressed={lang === l.code}
+          lang={l.code}
+        >
+          {compact ? l.short : l.label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 /** ปุ่มสลับ AC / DC */

@@ -2,22 +2,19 @@
 /** ปุ่มโปรไฟล์บนแถบบน — กดแล้วมีเมนูลัด เปลี่ยนรหัสผ่าน สลับธีม สลับภาษา และออกจากระบบ */
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LANGS } from '@/lib/i18n';
 import Icon from './Icon';
-import { useDismiss } from './ui';
+import { LangToggle, useDismiss } from './ui';
 import { useStore } from './store';
 
 export default function ProfileMenu({ onChangePassword }) {
   const {
-    user, dark, toggleTheme, logout, alertCount, confirm, setQuickOpen, setChatOpen, lang, setLang, t,
+    user, dark, toggleTheme, logout, alertCount, confirm, setQuickOpen, setChatOpen, t,
   } = useStore();
   const [open, setOpen] = useState(false);
   const ref = useDismiss(open, useCallback(() => setOpen(false), []));
   const router = useRouter();
 
   const initials = (user?.email || '?').trim().charAt(0).toUpperCase();
-  // ปุ่มสลับภาษาแสดง "ภาษาที่จะเปลี่ยนไป" แบบเดียวกับปุ่มสลับธีม
-  const other = LANGS.find((l) => l.code !== lang) || LANGS[0];
 
   /** ปิดเมนูก่อนแล้วค่อยทำงาน เพื่อไม่ให้เมนูค้างทับ modal */
   const run = (fn) => () => {
@@ -83,9 +80,11 @@ export default function ProfileMenu({ onChangePassword }) {
             <Icon name={dark ? 'sun' : 'moon'} />
             {dark ? t('สลับเป็นโหมดสว่าง') : t('สลับเป็นโหมดมืด')}
           </button>
-          <button type="button" className="menu-item" role="menuitem" onClick={run(() => setLang(other.code))}>
-            <Icon name="globe" />{t('เปลี่ยนเป็น {lang}', { lang: other.label })}
-          </button>
+          {/* ไม่ปิดเมนูหลังกด เพราะผู้ใช้ควรเห็นเมนูเปลี่ยนภาษาทันทีว่ากดถูกตัวแล้ว */}
+          <div className="menu-lang">
+            <span><Icon name="globe" />{t('ภาษา')}</span>
+            <LangToggle compact />
+          </div>
 
           <div className="menu-sep" />
 
