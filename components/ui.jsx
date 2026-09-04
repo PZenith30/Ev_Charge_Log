@@ -137,13 +137,34 @@ export function EmptyState({ message, action }) {
   );
 }
 
-export function Field({ label, help, children, style }) {
+/**
+ * ช่องกรอกหนึ่งช่องพร้อมป้ายกำกับ
+ *
+ * required — เติมดอกจันแดงหลังป้าย บอกว่าไม่กรอกแล้วบันทึกไม่ได้
+ * error    — ข้อความสีแดงใต้ช่อง พร้อมทำกรอบช่องเป็นสีแดงด้วย
+ *            ขึ้นแทนที่ help ไม่ใช่ต่อท้าย เพราะสองบรรทัดซ้อนกันอ่านแล้วสับสน
+ *            ว่าอันไหนคือคำอธิบาย อันไหนคือสิ่งที่ต้องแก้
+ */
+export function Field({ label, help, error, required, children, style, className = '' }) {
   const { t } = useStore();
   return (
-    <div className="field" style={style}>
-      {label ? <label>{t(label)}</label> : null}
+    <div className={`field${error ? ' has-error' : ''}${className ? ` ${className}` : ''}`} style={style}>
+      {label ? (
+        <label>
+          {t(label)}
+          {required ? <span className="req" title={t('จำเป็นต้องกรอก')}>*</span> : null}
+        </label>
+      ) : null}
       {children}
-      {help ? <span className="help">{t(help)}</span> : null}
+      {error ? (
+        // role=alert ให้โปรแกรมอ่านหน้าจอประกาศทันทีที่ข้อความโผล่ ไม่ต้องรอผู้ใช้เลื่อนไปเจอเอง
+        <span className="err-msg" role="alert">
+          <Icon name="alert" />
+          {t(error)}
+        </span>
+      ) : help ? (
+        <span className="help">{t(help)}</span>
+      ) : null}
     </div>
   );
 }
@@ -236,7 +257,11 @@ export function TypeToggle({ value, onChange }) {
 /**
  * Modal มาตรฐาน — ถ้าส่ง onSubmit มา การ์ดจะเป็น <form> ให้ปุ่ม submit ทำงานได้
  */
-export function Modal({ title, onClose, onSubmit, footer, wide, children }) {
+/**
+ * noValidate — ปิดกล่องเตือนของเบราว์เซอร์ สำหรับฟอร์มที่ตรวจเองและมีข้อความสีแดงใต้ช่องอยู่แล้ว
+ * ถ้าไม่ปิด ค่าที่หลุด min/max จะเด้งกล่องของเบราว์เซอร์ซ้อนกับข้อความของเราเป็นสองชั้น
+ */
+export function Modal({ title, onClose, onSubmit, footer, wide, noValidate, children }) {
   const { t } = useStore();
   useEffect(() => {
     const onKey = (e) => {
@@ -254,6 +279,7 @@ export function Modal({ title, onClose, onSubmit, footer, wide, children }) {
   const Card = onSubmit ? 'form' : 'div';
   const cardProps = onSubmit
     ? {
+        noValidate,
         onSubmit: (e) => {
           e.preventDefault();
           onSubmit(e);

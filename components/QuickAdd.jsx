@@ -6,6 +6,7 @@ import { Field, Modal, TypeToggle } from './ui';
 import { useStore } from './store';
 import { isNum, n, nOrNull, todayISO, fmt, fmtDist, money } from '@/lib/format';
 import { lastOdo, sBahtKm, sDist, sEff, sTotal } from '@/lib/calc';
+import { fieldErrors, isSessionComplete, missingFields } from '@/lib/validate';
 
 export default function QuickAdd() {
   const {
@@ -25,6 +26,8 @@ export default function QuickAdd() {
   const [odo, setOdo] = useState(d.odo ?? '');
   const [socBefore, setSocBefore] = useState(d.socBefore ?? '');
   const [socAfter, setSocAfter] = useState(d.socAfter ?? '');
+  // เคยกดบันทึกแล้วหรือยัง — ข้อความ "ยังไม่ได้กรอก" รอจังหวะนี้ก่อนค่อยขึ้น
+  const [tried, setTried] = useState(false);
 
   useEffect(() => {
     if (quickDraft) setQuickDraft(null);
@@ -59,9 +62,25 @@ export default function QuickAdd() {
   const eff = sEff(draft);
   const bahtKm = sBahtKm(draft);
 
+  /* ---------------- การตรวจค่าที่กรอก ---------------- */
+  // ใช้กติกาชุดเดียวกับฟอร์มเต็ม จะได้ไม่มีกรณีที่บันทึกได้ที่หนึ่งแต่ไม่ได้อีกที่หนึ่ง
+  const vForm = {
+    carId, date, kwh, price, total: totalOverride,
+    odoBefore: odoBefore ?? '', odoAfter: odo, socBefore, socAfter,
+    fee: '', discount: '', dashEff: '',
+  };
+  const errors = fieldErrors(vForm);
+  const missing = missingFields(vForm);
+  const errFor = (k) => errors[k] || (tried ? missing[k] : null);
+  const hasError = Object.keys(errors).length > 0;
+  const complete = isSessionComplete({ kwh });
+
   function submit() {
-    if (!carId) return toast('กรุณาเพิ่มรถก่อนบันทึกการชาร์จ', true);
-    if (!isNum(kwh) || Number(kwh) <= 0) return toast('กรุณากรอกพลังงานที่ชาร์จ (kWh)', true);
+    setTried(true);
+    if (!cars.length) return toast('กรุณาเพิ่มรถก่อนบันทึกการชาร์จ', true);
+    if (Object.keys({ ...missing, ...errors }).length) {
+      return toast('ยังมีช่องที่ต้องแก้ ดูข้อความสีแดงใต้ช่องนั้น', true);
+    }
     saveSession({
       carId,
       date,
@@ -73,7 +92,8 @@ export default function QuickAdd() {
       odoAfter: nOrNull(odo),
       socBefore: nOrNull(socBefore),
       socAfter: nOrNull(socAfter),
-      kwh: Number(kwh),
+      // เว้นว่างได้ เก็บ 0 ไว้ก่อนแล้วใช้ 0 นี่เป็นตัวบอกว่ายังไม่ครบ (เหมือนฟอร์มเต็ม)
+      kwh: isNum(kwh) ? Number(kwh) : 0,
       price: nOrNull(price),
       fee: 0,
       discount: 0,
@@ -82,7 +102,7 @@ export default function QuickAdd() {
       note: '',
       images: [],
     });
-    toast('บันทึกการชาร์จเรียบร้อย');
+    toast(complete ? 'บันทึกการชาร์จเรียบร้อย' : 'บันทึกไว้แล้ว — ชาร์จเสร็จค่อยกลับมาเติมพลังงานที่ได้');
     setQuickOpen(false);
   }
 
@@ -91,6 +111,7 @@ export default function QuickAdd() {
       title={t('Quick Add — บันทึกด่วน')}
       onClose={() => setQuickOpen(false)}
       onSubmit={submit}
+      noValidate
       footer={
         <>
           <button
@@ -108,14 +129,14 @@ export default function QuickAdd() {
           <button type="button" className="btn" onClick={() => setQuickOpen(false)}>
             {t('ยกเลิก')}
           </button>
-          <button type="submit" className="btn btn-primary">
-            {t('บันทึก')}
+          <button type="submit" className="btn btn-primary" disabled={hasError}>
+            {complete ? t('บันทึก') : t('บันทึกไว้ก่อน')}
           </button>
         </>
       }
     >
       <div className="form-grid">
-        <Field label={t('รถ')}>
+        <Field label={t('รถ')} required error={errFor('carId')}>
           <select value={carId} onChange={(e) => setCarId(e.target.value)}>
             {cars.length === 0 ? <option value="">{t('— ยังไม่มีรถ —')}</option> : null}
             {cars.map((c) => (
@@ -123,21 +144,26 @@ export default function QuickAdd() {
             ))}
           </select>
         </Field>
-        <Field label={t('วันที่')}>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+        <Field label={t('วันที่')} required error={errFor('date')}>
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
         <Field label={t('ประเภทการชาร์จ')} style={{ gridColumn: '1 / -1' }}>
           <TypeToggle value={type} onChange={changeType} />
         </Field>
-        <Field label={t('พลังงาน (kWh)')}>
-          <input type="number" min="0" step="any" inputMode="decimal" required
+        {/* เว้นว่างได้ เผื่อจดไว้ก่อนเริ่มชาร์จ รายการจะขึ้นป้าย "ยังไม่ครบ" ในหน้าประวัติ */}
+        <Field
+          label={t('พลังงาน (kWh)')}
+          help={complete ? null : t('เว้นว่างไว้ก่อนได้ ชาร์จเสร็จค่อยกลับมากรอก')}
+          error={errFor('kwh')}
+        >
+          <input type="number" min="0" step="any" inputMode="decimal"
             value={kwh} onChange={(e) => setKwh(e.target.value)} placeholder="24.5" />
         </Field>
-        <Field label={t('ราคา / kWh (฿)')}>
+        <Field label={t('ราคา / kWh (฿)')} error={errFor('price')}>
           <input type="number" min="0" step="any" inputMode="decimal"
             value={price} onChange={(e) => setPrice(e.target.value)} placeholder="7.50" />
         </Field>
-        <Field label={t('ค่าใช้จ่ายรวม (฿)')} help={t('เว้นว่างไว้เพื่อใช้ค่าที่คำนวณให้')}>
+        <Field label={t('ค่าใช้จ่ายรวม (฿)')} help={t('เว้นว่างไว้เพื่อใช้ค่าที่คำนวณให้')} error={errFor('total')}>
           <input type="number" min="0" step="any" inputMode="decimal" className="calc"
             value={totalOverride} onChange={(e) => setTotalOverride(e.target.value)}
             placeholder={autoTotal ? autoTotal.toFixed(2) : '0.00'} />
@@ -145,15 +171,16 @@ export default function QuickAdd() {
         <Field
           label={t('เลขไมล์ปัจจุบัน (km)')}
           help={odoBefore !== null ? `ครั้งก่อน ${fmtDist(odoBefore)} km` : 'ยังไม่มีเลขไมล์ตั้งต้น'}
+          error={errFor('odoAfter')}
         >
           <input type="number" min="0" step="any" inputMode="decimal"
             value={odo} onChange={(e) => setOdo(e.target.value)} />
         </Field>
-        <Field label={t('SOC ก่อน (%)')}>
+        <Field label={t('SOC ก่อน (%)')} error={errFor('socBefore')}>
           <input type="number" min="0" max="100" step="any" inputMode="decimal"
             value={socBefore} onChange={(e) => setSocBefore(e.target.value)} />
         </Field>
-        <Field label={t('SOC หลัง (%)')}>
+        <Field label={t('SOC หลัง (%)')} error={errFor('socAfter')}>
           <input type="number" min="0" max="100" step="any" inputMode="decimal"
             value={socAfter} onChange={(e) => setSocAfter(e.target.value)} />
         </Field>

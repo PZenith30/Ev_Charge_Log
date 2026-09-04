@@ -469,6 +469,20 @@ img.car-photo.cut{aspect-ratio:16 / 10;object-fit:contain;background:transparent
 .field{display:flex;flex-direction:column;gap:6px;min-width:0}
 .field > label{font-size:12.5px;color:var(--muted);font-weight:550}
 .field .help{font-size:11.5px;color:var(--faint)}
+/* ดอกจันบอกช่องที่ต้องกรอก — เว้นระยะจากป้ายด้วย margin ไม่ใช่ช่องว่างในข้อความ
+   เพราะช่องว่างท้ายข้อความไทยจะหายไปตอนขึ้นบรรทัดใหม่ */
+.field > label .req{color:var(--danger-text);font-weight:700;margin-left:3px}
+/* ข้อความบอกจุดที่กรอกผิด */
+.field .err-msg{display:flex;align-items:flex-start;gap:5px;font-size:11.5px;color:var(--danger-text)}
+.field .err-msg svg{width:13px;height:13px;flex:none;margin-top:1.5px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.field.has-error input,.field.has-error select,.field.has-error textarea{border-color:var(--danger)}
+.field.has-error input:focus,.field.has-error select:focus,.field.has-error textarea:focus{
+  border-color:var(--danger);box-shadow:0 0 0 3px color-mix(in srgb,var(--danger) 18%,transparent)
+}
+/* คำอธิบายดอกจันที่หัวฟอร์ม */
+.req-note{display:flex;align-items:flex-start;gap:6px;margin:-6px 0 14px;font-size:11.5px;line-height:1.55;color:var(--faint)}
+.req-note svg{width:13px;height:13px;flex:none;margin-top:2.5px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.req-note b{color:var(--danger-text)}
 input[type=text],input[type=number],input[type=date],input[type=time],input[type=password],select,textarea{
   width:100%;padding:9px 11px;border:1px solid var(--border-strong);border-radius:var(--r-sm);
   background:var(--surface);outline:0;transition:border-color .13s,box-shadow .13s;font-size:14.5px

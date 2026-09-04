@@ -8,6 +8,7 @@ import { EmptyState, Field, TypePill } from '@/components/ui';
 import { SessionDetail } from '@/components/SessionViews';
 import Icon from '@/components/Icon';
 import { sBahtKm, sDist, sEff, sPricePerKwh, sSoc, sTotal, summarize } from '@/lib/calc';
+import { isSessionComplete } from '@/lib/validate';
 import { fmt, fmt0, fmt1, fmtDist, isNum, money0, n, thDate, todayISO } from '@/lib/format';
 import { download, sessionsToCsv } from '@/lib/exporters';
 import { rangeText } from '@/lib/period';
@@ -142,6 +143,11 @@ export default function HistoryPage() {
                       <td>
                         {s.station || '—'}
                         {s.images?.length ? <span className="faint" title={t('มีรูปแนบ')}> 🖼</span> : null}
+                        {/* รายการที่จดไว้ก่อนชาร์จแล้วยังไม่ได้กลับมาเติมพลังงาน
+                            ถ้าไม่ติดป้าย มันจะดูเหมือนการชาร์จ 0 kWh ธรรมดาจนหาไม่เจอ */}
+                        {isSessionComplete(s) ? null : (
+                          <span className="pill pill-warn" style={{ marginLeft: 6 }}>{t('ยังไม่ครบ')}</span>
+                        )}
                       </td>
                       <td className="num">{fmt(n(s.kwh), 2)}</td>
                       <td className="num">{pk !== null ? fmt(pk, 2) : '—'}</td>

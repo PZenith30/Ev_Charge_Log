@@ -9,6 +9,7 @@ import ImageUploader from '@/components/ImageUploader';
 import Icon from '@/components/Icon';
 import { fmt, fmt0, fmtDist, isNum, limitDecimals, money, n, nOrNull, splitDuration, todayISO } from '@/lib/format';
 import { lastOdo, sBahtKm, sDist, sEff, sEff100, sSoc, sTotal } from '@/lib/calc';
+import { fieldErrors, isSessionComplete, missingFields } from '@/lib/validate';
 import { DASH_DECIMALS, DASH_UNITS, DEFAULT_DASH_UNIT } from '@/lib/data';
 
 const blank = () => ({
@@ -29,6 +30,9 @@ export default function AddPage() {
   const editing = editingId ? data.sessions.find((s) => s.id === editingId) : null;
   const [form, setForm] = useState(blank);
   const [odoTouched, setOdoTouched] = useState(false);
+  // เคยกดบันทึกแล้วหรือยัง — ใช้ตัดสินว่าจะขึ้นข้อความ "ยังไม่ได้กรอก" ได้หรือยัง
+  // ถ้าขึ้นตั้งแต่เปิดหน้า ฟอร์มจะแดงทั้งที่ผู้ใช้ยังไม่ได้ทำอะไรผิดสักอย่าง
+  const [tried, setTried] = useState(false);
   // หน่วยของอัตราสิ้นเปลืองหน้าปัด — จำค่าที่เลือกไว้ครั้งล่าสุดจาก settings
   const [dashUnit, setDashUnit] = useState(settings.dashEffUnit || DEFAULT_DASH_UNIT);
 
@@ -144,11 +148,24 @@ export default function AddPage() {
   const eff100 = sEff100(draft);
   const bahtKm = sBahtKm(draft);
 
+  /* ---------------- การตรวจค่าที่กรอก ---------------- */
+  const errors = useMemo(() => fieldErrors(form), [form]);
+  const missing = useMemo(() => missingFields(form), [form]);
+  /** ข้อความใต้ช่อง — ค่าที่กรอกผิดขึ้นทันที ส่วน "ยังไม่ได้กรอก" รอจนกดบันทึกก่อน */
+  const errFor = (k) => errors[k] || (tried ? missing[k] : null);
+  const hasError = Object.keys(errors).length > 0;
+  /**
+   * บันทึกได้แม้ยังกรอกไม่ครบ เพราะการชาร์จใช้เวลานาน
+   * ข้อมูลอย่างสถานี ราคา/kWh เลขไมล์ SOC ก่อนชาร์จ ควรจดตอนถึงหัวชาร์จได้เลย
+   * แล้วค่อยกลับมาเติมพลังงานที่ชาร์จได้จริงตอนถอดสาย
+   */
+  const complete = isSessionComplete({ kwh: form.kwh });
+
   function submit(e) {
     e.preventDefault();
-    if (!form.carId) return toast('กรุณาเลือกรถ', true);
-    if (!form.date) return toast('กรุณาเลือกวันที่', true);
-    if (!isNum(form.kwh) || Number(form.kwh) <= 0) return toast('กรุณากรอกพลังงานที่ชาร์จ (kWh)', true);
+    setTried(true);
+    const stop = { ...missingFields(form), ...fieldErrors(form) };
+    if (Object.keys(stop).length) return toast('ยังมีช่องที่ต้องแก้ ดูข้อความสีแดงใต้ช่องนั้น', true);
 
     // กรอกเกิน 59 นาที/วินาทีได้ ผลรวมจะถูกปรับให้เป็น ชม./นาที/วินาที ตอนแสดงผลเอง
     const durationSec = Math.round(n(form.durH) * 3600 + n(form.durM) * 60 + n(form.durS));
@@ -169,7 +186,9 @@ export default function AddPage() {
       // เก็บเป็น km/kWh เสมอ แล้วจำหน่วยที่กรอกไว้เพื่อแสดงกลับให้ตรงกับที่ผู้ใช้อ่านจากหน้าปัด
       dashEff: isNum(form.dashEff) ? DASH_UNITS[dashUnit].toBase(Number(form.dashEff)) : null,
       dashEffUnit: dashUnit,
-      kwh: Number(form.kwh),
+      // ยังไม่ได้ชาร์จก็บันทึกได้ คอลัมน์ kwh ในฐานข้อมูลเป็น not null default 0 อยู่แล้ว
+      // จึงเก็บเป็น 0 ไว้ก่อน แล้วใช้ 0 นี่แหละเป็นตัวบอกว่า "ยังไม่ครบ"
+      kwh: isNum(form.kwh) ? Number(form.kwh) : 0,
       price: nOrNull(form.price),
       fee: nOrNull(form.fee),
       discount: nOrNull(form.discount),
@@ -177,13 +196,18 @@ export default function AddPage() {
       note: form.note.trim(),
       images: form.images,
     });
-    toast(editing ? 'แก้ไขรายการเรียบร้อย' : 'บันทึกการชาร์จเรียบร้อย');
+    toast(
+      complete
+        ? (editing ? 'แก้ไขรายการเรียบร้อย' : 'บันทึกการชาร์จเรียบร้อย')
+        : 'บันทึกไว้แล้ว — ชาร์จเสร็จค่อยกลับมาเติมพลังงานที่ได้'
+    );
     setEditingId(null);
     router.push('/history');
   }
 
   function resetForm() {
     setEditingId(null);
+    setTried(false);
     setForm({
       ...blank(),
       carId: form.carId,
@@ -213,7 +237,9 @@ export default function AddPage() {
   ];
 
   return (
-    <form className="card" style={{ maxWidth: 920 }} onSubmit={submit}>
+    // noValidate = ปิดกล่องเตือนของเบราว์เซอร์ ใช้ข้อความสีแดงใต้ช่องของเราแทน
+    // เพราะกล่องของเบราว์เซอร์ขึ้นทีละช่อง เป็นภาษาของระบบ และชี้ตำแหน่งไม่ชัดเท่า
+    <form className="card" style={{ maxWidth: 920 }} onSubmit={submit} noValidate>
       {editing ? (
         <div className="form-sec" style={{ paddingBottom: 0, borderBottom: 0 }}>
           <div className="alert warn">
@@ -229,14 +255,21 @@ export default function AddPage() {
 
       <div className="form-sec">
         <h4>{t('ข้อมูลพื้นฐาน')}</h4>
+        {/* บอกไว้ครั้งเดียวที่หัวฟอร์ม จะได้รู้ว่าที่เหลือเว้นว่างไว้ก่อนได้ */}
+        {/* ข้อความทั้งหมดอยู่ใน span เดียว ไม่แยกเป็นหลายชิ้นใน flex
+            ไม่งั้นดอกจันจะหลุดไปคนละบรรทัดกับคำว่า "ช่องที่มี" ตอนจอแคบ */}
+        <p className="req-note">
+          <Icon name="alert" />
+          <span>{t('ช่องที่มี')} <b>*</b> {t('ต้องกรอก · ช่องอื่นเว้นว่างไว้ก่อนแล้วกลับมาเติมทีหลังได้')}</span>
+        </p>
         <div className="form-grid">
-          <Field label={t('รถ')}>
-            <select value={form.carId} onChange={(e) => set('carId', e.target.value)} required>
+          <Field label={t('รถ')} required error={errFor('carId')}>
+            <select value={form.carId} onChange={(e) => set('carId', e.target.value)}>
               {cars.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </Field>
-          <Field label={t('วันที่')}>
-            <input type="date" value={form.date} onChange={(e) => set('date', e.target.value)} required />
+          <Field label={t('วันที่')} required error={errFor('date')}>
+            <input type="date" value={form.date} onChange={(e) => set('date', e.target.value)} />
           </Field>
           <Field
             label={t('เวลาที่ใช้ในการชาร์จ')}
@@ -275,23 +308,24 @@ export default function AddPage() {
         <div className="form-grid">
           <Field
             label={t('เลขไมล์ก่อนชาร์จ (km)')}
+            error={errFor('odoBefore')}
             help={!editing && prevOdo !== null ? `เติมอัตโนมัติจากครั้งก่อน (${fmtDist(prevOdo)} km)` : null}
           >
             <input type="number" min="0" step="any" inputMode="decimal" value={form.odoBefore}
               onChange={(e) => { setOdoTouched(true); set('odoBefore', e.target.value); }} />
           </Field>
-          <Field label={t('เลขไมล์หลังชาร์จ (km)')}>
+          <Field label={t('เลขไมล์หลังชาร์จ (km)')} error={errFor('odoAfter')}>
             <input type="number" min="0" step="any" inputMode="decimal"
               value={form.odoAfter} onChange={(e) => set('odoAfter', e.target.value)} />
           </Field>
           <Field label={t('ระยะทางที่วิ่งได้ (km)')}>
             <input type="text" className="calc" readOnly value={dist !== null ? fmtDist(dist) : '—'} />
           </Field>
-          <Field label={t('SOC ก่อนชาร์จ (%)')}>
+          <Field label={t('SOC ก่อนชาร์จ (%)')} error={errFor('socBefore')}>
             <input type="number" min="0" max="100" step="any" inputMode="decimal"
               value={form.socBefore} onChange={(e) => set('socBefore', e.target.value)} />
           </Field>
-          <Field label={t('SOC หลังชาร์จ (%)')}>
+          <Field label={t('SOC หลังชาร์จ (%)')} error={errFor('socAfter')}>
             <input type="number" min="0" max="100" step="any" inputMode="decimal"
               value={form.socAfter} onChange={(e) => set('socAfter', e.target.value)} />
           </Field>
@@ -301,6 +335,7 @@ export default function AddPage() {
           <Field
             label={t('อัตราสิ้นเปลืองจากหน้าปัด')}
             help={t('ค่าที่รถแสดงบนหน้าปัด · ทศนิยมได้ไม่เกิน 2 ตำแหน่ง · หน่วยที่เลือกจะถูกจำไว้ใช้ครั้งถัดไป')}
+            error={errFor('dashEff')}
             style={{ gridColumn: 'span 2' }}
           >
             <div style={{ display: 'flex', gap: 6 }}>
@@ -329,26 +364,33 @@ export default function AddPage() {
       <div className="form-sec">
         <h4>{t('ข้อมูลพลังงานและค่าใช้จ่าย')}</h4>
         <div className="form-grid">
-          <Field label={t('พลังงานที่ชาร์จ (kWh)')}>
-            <input type="number" min="0" step="any" inputMode="decimal" placeholder="24.5" required
+          {/* ช่องนี้เคยเป็นช่องบังคับ ทำให้จดข้อมูลตอนถึงหัวชาร์จไว้ก่อนไม่ได้เลย
+              ตอนนี้เว้นว่างได้ รายการจะถูกทำเครื่องหมาย "ยังไม่ครบ" ไว้จนกว่าจะกลับมาเติม */}
+          <Field
+            label={t('พลังงานที่ชาร์จ (kWh)')}
+            help={complete ? null : t('เว้นว่างไว้ก่อนได้ ชาร์จเสร็จค่อยกลับมากรอก')}
+            error={errFor('kwh')}
+          >
+            <input type="number" min="0" step="any" inputMode="decimal" placeholder="24.5"
               value={form.kwh} onChange={(e) => set('kwh', e.target.value)} />
           </Field>
-          <Field label={t('ราคา / kWh (บาท)')}>
+          <Field label={t('ราคา / kWh (บาท)')} error={errFor('price')}>
             <input type="number" min="0" step="any" inputMode="decimal" placeholder="7.50"
               value={form.price} onChange={(e) => set('price', e.target.value)} />
           </Field>
           {/* ค่าปรับกับส่วนลดวางคู่กัน เพราะเป็นสองตัวที่บวก/ลบยอดเหมือนกัน แค่คนละทาง */}
-          <Field label={t('ค่าปรับ (บาท)')} help={t('เช่น ค่าจอดเกินเวลาหลังชาร์จเต็ม')}>
+          <Field label={t('ค่าปรับ (บาท)')} help={t('เช่น ค่าจอดเกินเวลาหลังชาร์จเต็ม')} error={errFor('fee')}>
             <input type="number" min="0" step="any" inputMode="decimal" placeholder="0"
               value={form.fee} onChange={(e) => set('fee', e.target.value)} />
           </Field>
-          <Field label={t('ส่วนลด (บาท)')} help={t('เช่น โค้ดโปรโมชั่น หรือแต้มที่ใช้แลก')}>
+          <Field label={t('ส่วนลด (บาท)')} help={t('เช่น โค้ดโปรโมชั่น หรือแต้มที่ใช้แลก')} error={errFor('discount')}>
             <input type="number" min="0" step="any" inputMode="decimal" placeholder="0"
               value={form.discount} onChange={(e) => set('discount', e.target.value)} />
           </Field>
           <Field
             label={t('ค่าใช้จ่ายรวม (บาท)')}
             help={t('คำนวณอัตโนมัติ — แก้ทับได้ถ้ายอดจริงต่างจากนี้')}
+            error={errFor('total')}
             style={{ gridColumn: '1 / -1' }}
           >
             <div className="total-row">
@@ -391,6 +433,21 @@ export default function AddPage() {
         </Field>
       </div>
 
+      {/* อธิบายสถานะ "ยังไม่ครบ" ตรงจุดที่จะกดบันทึกพอดี ไม่ต้องเลื่อนกลับไปอ่านข้างบน */}
+      {!complete ? (
+        <div className="form-sec" style={{ paddingTop: 0, borderBottom: 0 }}>
+          <div className="alert">
+            <Icon name="clock" />
+            <div style={{ flex: 1 }}>
+              <div className="t1">{t('ยังไม่ได้กรอกพลังงานที่ชาร์จ')}</div>
+              <div className="t2">
+                {t('บันทึกไว้ก่อนได้เลย รายการจะถูกทำเครื่องหมาย "ยังไม่ครบ" ไว้ในหน้าประวัติ ชาร์จเสร็จค่อยกดแก้ไขมาเติม')}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="live">
         {liveItems.map(([k, v]) => (
           <div key={k}>
@@ -418,9 +475,12 @@ export default function AddPage() {
           </button>
         ) : null}
         <button type="button" className="btn" onClick={resetForm}>{t('ล้างฟอร์ม')}</button>
-        <button type="submit" className="btn btn-primary">
-          <Icon name="check" />
-          {editing ? 'บันทึกการแก้ไข' : 'บันทึกการชาร์จ'}
+        {/* ข้อความบนปุ่มบอกตรงๆ ว่ากำลังจะบันทึกแบบไหน จะได้ไม่เผลอคิดว่าจดครบแล้ว */}
+        <button type="submit" className="btn btn-primary" disabled={hasError}>
+          <Icon name={complete ? 'check' : 'clock'} />
+          {complete
+            ? (editing ? t('บันทึกการแก้ไข') : t('บันทึกการชาร์จ'))
+            : t('บันทึกไว้ก่อน')}
         </button>
       </div>
     </form>
