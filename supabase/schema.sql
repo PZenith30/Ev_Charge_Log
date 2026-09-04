@@ -41,7 +41,8 @@ create table if not exists public.charge_sessions (
   soc_after     numeric,
   kwh           numeric not null default 0,
   price         numeric,                    -- ราคา/kWh ที่กรอก
-  fee           numeric,                    -- ค่าบริการเพิ่มเติม
+  fee           numeric,                    -- ค่าปรับ (ชื่อคอลัมน์คงเดิมจากรุ่นก่อนที่เรียกว่าค่าบริการเพิ่มเติม)
+  discount      numeric,                    -- ส่วนลด
   total         numeric,                    -- ค่าใช้จ่ายรวม
   dash_eff      numeric,                    -- อัตราสิ้นเปลืองหน้าปัด เก็บเป็น km/kWh เสมอ
   dash_eff_unit text default 'km/kWh',      -- หน่วยที่ผู้ใช้กรอก ใช้แสดงกลับ

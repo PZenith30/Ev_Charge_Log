@@ -15,7 +15,7 @@ const blank = () => ({
   carId: '', date: todayISO(), type: 'AC', station: '',
   durH: '', durM: '', durS: '',
   odoBefore: '', odoAfter: '', socBefore: '', socAfter: '', dashEff: '',
-  kwh: '', price: '', fee: '', total: '', note: '', images: [],
+  kwh: '', price: '', fee: '', discount: '', total: '', note: '', images: [],
 });
 
 export default function AddPage() {
@@ -55,6 +55,7 @@ export default function AddPage() {
         kwh: editing.kwh ?? '',
         price: editing.price ?? '',
         fee: editing.fee ?? '',
+        discount: editing.discount ?? '',
         total: editing.total ?? '',
         note: editing.note || '',
         images: editing.images || [],
@@ -121,12 +122,15 @@ export default function AddPage() {
   }
 
   /* ---------------- ค่าที่คำนวณสด ---------------- */
-  const autoTotal = n(form.kwh) * n(form.price) + n(form.fee);
+  // ยอดที่คำนวณให้ — หนีบไม่ให้ติดลบเหมือนใน sTotal ส่วนลดเกินยอดแปลว่ากรอกผิด
+  const energyCost = n(form.kwh) * n(form.price);
+  const autoTotal = Math.max(0, energyCost + n(form.fee) - n(form.discount));
   const draft = {
     type: form.type,
     kwh: nOrNull(form.kwh),
     price: nOrNull(form.price),
     fee: nOrNull(form.fee),
+    discount: nOrNull(form.discount),
     total: isNum(form.total) ? Number(form.total) : autoTotal,
     odoBefore: nOrNull(form.odoBefore),
     odoAfter: nOrNull(form.odoAfter),
@@ -168,6 +172,7 @@ export default function AddPage() {
       kwh: Number(form.kwh),
       price: nOrNull(form.price),
       fee: nOrNull(form.fee),
+      discount: nOrNull(form.discount),
       total,
       note: form.note.trim(),
       images: form.images,
@@ -332,16 +337,46 @@ export default function AddPage() {
             <input type="number" min="0" step="any" inputMode="decimal" placeholder="7.50"
               value={form.price} onChange={(e) => set('price', e.target.value)} />
           </Field>
-          <Field label={t('ค่าบริการเพิ่มเติม (บาท)')}>
+          {/* ค่าปรับกับส่วนลดวางคู่กัน เพราะเป็นสองตัวที่บวก/ลบยอดเหมือนกัน แค่คนละทาง */}
+          <Field label={t('ค่าปรับ (บาท)')} help={t('เช่น ค่าจอดเกินเวลาหลังชาร์จเต็ม')}>
             <input type="number" min="0" step="any" inputMode="decimal" placeholder="0"
               value={form.fee} onChange={(e) => set('fee', e.target.value)} />
           </Field>
-          <Field label={t('ค่าใช้จ่ายรวม (บาท)')} help={t('คำนวณอัตโนมัติ — แก้ทับได้ถ้ายอดจริงต่างจากนี้')}>
-            <input type="number" min="0" step="any" inputMode="decimal" className="calc"
-              placeholder={autoTotal ? autoTotal.toFixed(2) : '0.00'}
-              value={form.total} onChange={(e) => set('total', e.target.value)} />
+          <Field label={t('ส่วนลด (บาท)')} help={t('เช่น โค้ดโปรโมชั่น หรือแต้มที่ใช้แลก')}>
+            <input type="number" min="0" step="any" inputMode="decimal" placeholder="0"
+              value={form.discount} onChange={(e) => set('discount', e.target.value)} />
+          </Field>
+          <Field
+            label={t('ค่าใช้จ่ายรวม (บาท)')}
+            help={t('คำนวณอัตโนมัติ — แก้ทับได้ถ้ายอดจริงต่างจากนี้')}
+            style={{ gridColumn: '1 / -1' }}
+          >
+            <div className="total-row">
+              <input type="number" min="0" step="any" inputMode="decimal" className="calc"
+                placeholder={autoTotal ? autoTotal.toFixed(2) : '0.00'}
+                value={form.total} onChange={(e) => set('total', e.target.value)} />
+              {/* ปุ่มนี้โผล่เฉพาะตอนแก้ทับไว้ จะได้กลับไปใช้ยอดที่คำนวณได้ในคลิกเดียว */}
+              {form.total !== '' ? (
+                <button type="button" className="btn btn-sm btn-ghost" onClick={() => set('total', '')}>
+                  <Icon name="refresh" />{t('ใช้ยอดที่คำนวณ')}
+                </button>
+              ) : null}
+            </div>
           </Field>
         </div>
+
+        {/* แสดงวิธีคิดยอดให้เห็นกับตา ผู้ใช้จะได้รู้ว่าตัวเลขมาจากไหนโดยไม่ต้องคิดเอง */}
+        {energyCost || n(form.fee) || n(form.discount) ? (
+          <div className="calc-line">
+            <span>{fmt(n(form.kwh), 2)} kWh × {fmt(n(form.price), 2)} = {money(energyCost)}</span>
+            {n(form.fee) ? <span className="up">+ {t('ค่าปรับ')} {money(n(form.fee))}</span> : null}
+            {n(form.discount) ? <span className="down">− {t('ส่วนลด')} {money(n(form.discount))}</span> : null}
+            <b>= {money(autoTotal)}</b>
+            {isNum(form.total) && Number(form.total) !== autoTotal ? (
+              <span className="warn">{t('แก้ยอดเองเป็น {v}', { v: money(Number(form.total)) })}</span>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <div className="form-sec">

@@ -152,7 +152,8 @@ export function SessionDetail({ session: s, onClose, onEdit }) {
         <dl className="kv">
           <Row k="พลังงานที่ชาร์จ">{fmt(n(s.kwh), 2)} kWh</Row>
           <Row k="ราคา / kWh ที่กรอก">{isNum(s.price) ? money(Number(s.price)) : '—'}</Row>
-          <Row k="ค่าบริการเพิ่มเติม">{money(n(s.fee))}</Row>
+          {n(s.fee) ? <Row k={t('ค่าปรับ')}>{money(n(s.fee))}</Row> : null}
+          {n(s.discount) ? <Row k={t('ส่วนลด')}>− {money(n(s.discount))}</Row> : null}
           <Row k="ค่าใช้จ่ายรวม">{money(sTotal(s))}</Row>
           <Row k="ราคาจริงต่อ kWh">
             {sPricePerKwh(s) !== null ? `${fmt(sPricePerKwh(s), 2)} ฿/kWh` : '—'}

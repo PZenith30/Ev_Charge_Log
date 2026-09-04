@@ -39,6 +39,7 @@ export default function SidebarQuickAdd() {
       kwh: Number(kwh),
       price,
       fee: null,
+      discount: null,
       total: n(kwh) * n(price),
       dashEff: null,
       dashEffUnit: settings.dashEffUnit || 'km/kWh',

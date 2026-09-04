@@ -1,5 +1,6 @@
 'use client';
 /** โครงหน้าจอหลัก — จัดการสถานะการเข้าสู่ระบบ การโหลดข้อมูล และเมนูทั้งหมด */
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NAV } from '@/lib/data';
@@ -68,6 +69,28 @@ function FullScreenMessage({ children }) {
 }
 
 export default function AppShell({ children }) {
+  /**
+   * สถานะหุบ/ขยายแถบข้าง
+   * ค่าจริงถูกตั้งที่ <html data-sidebar> โดยสคริปต์ใน layout ตั้งแต่ก่อนหน้าเว็ปวาด
+   * ตรงนี้เก็บ state ไว้แค่ให้ปุ่มรู้ว่าตอนนี้หุบอยู่ไหม จะได้สลับข้อความและไอคอนถูก
+   */
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  useEffect(() => {
+    setSidebarCollapsed(document.documentElement.getAttribute('data-sidebar') === 'collapsed');
+  }, []);
+  const toggleSidebar = useCallback(() => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      const el = document.documentElement;
+      if (next) el.setAttribute('data-sidebar', 'collapsed');
+      else el.removeAttribute('data-sidebar');
+      try {
+        localStorage.setItem('evlog.sidebarCollapsed', next ? '1' : '0');
+      } catch { /* โหมดส่วนตัวเขียนไม่ได้ ก็ไม่ต้องจำ */ }
+      return next;
+    });
+  }, []);
+
   const {
     phase, user, dataLoading, loadError, reload,
     cars, settings, viewAllCars, setActiveCar, activeCar, sessions,
@@ -119,15 +142,33 @@ export default function AppShell({ children }) {
         {/* แถบข้างเป็นสีเข้มเสมอไม่ว่าธีมไหน จึงระบุรุ่นพื้นเข้มไปตรงๆ ไม่ต้องวาดสองรูป */}
         <div className="brand">
           <Wordmark fixed="dark" height={30} />
+          {/* ตอนหุบเหลือแค่โลโก้ย่อ จะได้ยังรู้ว่าเป็นแอปอะไร */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="brand-mini" src="/icon-192.png" alt="KiloEV" width={32} height={32} />
+          <button
+            type="button"
+            className="sb-collapse"
+            onClick={toggleSidebar}
+            title={sidebarCollapsed ? t('ขยายแถบเมนู') : t('หุบแถบเมนู')}
+            aria-label={sidebarCollapsed ? t('ขยายแถบเมนู') : t('หุบแถบเมนู')}
+            aria-expanded={!sidebarCollapsed}
+          >
+            <Icon name="chevron-down" />
+          </button>
         </div>
 
         <div className="sb-scroll">
           {NAV.map((item, i) => (
             <div key={item.href}>
               {i === NAV.length - 1 ? <div className="nav-sep" /> : null}
-              <Link href={item.href} className={`navlink${isActive(pathname, item.href) ? ' active' : ''}`}>
+              {/* ตอนหุบเหลือแค่ไอคอน ใส่ title ไว้ให้ชี้แล้วรู้ว่าเมนูอะไร */}
+              <Link
+                href={item.href}
+                className={`navlink${isActive(pathname, item.href) ? ' active' : ''}`}
+                title={t(item.label)}
+              >
                 <Icon name={item.icon} />
-                {t(item.label)}
+                <span className="nav-label">{t(item.label)}</span>
                 {item.href === '/alerts' && alertCount > 0 ? <span className="badge">{alertCount}</span> : null}
               </Link>
             </div>
