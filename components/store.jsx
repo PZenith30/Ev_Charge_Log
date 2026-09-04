@@ -73,8 +73,14 @@ export function StoreProvider({ children }) {
   const [nameOpen, setNameOpen] = useState(false);
   const [viewAllCars, setViewAllCars] = useState(false);
   const [legacyFound, setLegacyFound] = useState(null);
-  // ช่วงเวลาที่เลือกบนแถบบน — ใช้ร่วมกันทั้งแดชบอร์ด สถิติ และหน้าวิเคราะห์
-  const [period, setPeriodState] = useState({ key: 'month', from: null, to: null });
+  /**
+   * ช่วงเวลาที่เลือกบนแถบบน — ใช้ร่วมกันทั้งแดชบอร์ด ประวัติ และหน้าต้นทุน
+   *
+   * เริ่มที่ "ทั้งหมด" ไม่ใช่ "เดือนนี้" เพราะการเปิดแดชบอร์ดต้นเดือนแล้วเห็นตัวเลขว่างเปล่า
+   * ทำให้เข้าใจผิดว่าข้อมูลหาย ทั้งที่แค่ยังไม่ได้ชาร์จในเดือนนั้น
+   * อยากดูเฉพาะเดือนค่อยเลือกเองที่แถบบน
+   */
+  const [period, setPeriodState] = useState({ key: 'all', from: null, to: null });
 
   const dataRef = useRef(data);
   dataRef.current = data;

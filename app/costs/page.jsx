@@ -47,7 +47,7 @@ export default function CostsPage() {
       <div className="stats">
         <Stat icon="wallet" label={t('ต้นทุนอื่นรวม')} value={money0(total)} detail={`${list.length} รายการ`} />
         <Stat icon="bolt" label={t('ค่าชาร์จรวม')} value={money0(chargeTotal)}
-          detail={rangeText(period.key, range)} />
+          detail={t(rangeText(period.key, range))} />
         <Stat icon="coin" label={t('ต้นทุนรวมทั้งหมด')} value={money0(total + chargeTotal)} detail="ค่าชาร์จ + ต้นทุนอื่น" />
         <Stat icon="car" label={t('ค่าไฟ / บำรุงรักษา')}
           value={`${money0(byCat.electric)} / ${money0(byCat.maintenance)}`}

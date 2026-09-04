@@ -98,7 +98,7 @@ export default function HistoryPage() {
           <h3>
             {fmt0(list.length)} {t('รายการ')}
             <span className="hint">
-              {t('ช่วง{range} — เปลี่ยนได้ที่แถบด้านบน', { range: rangeText(period.key, range) })} · 
+              {t('ช่วง{range} — เปลี่ยนได้ที่แถบด้านบน', { range: t(rangeText(period.key, range)) })} · 
               {fmt1(sum.kwh)} kWh · {money0(sum.cost)} · {fmtDist(sum.dist)} km
             </span>
           </h3>

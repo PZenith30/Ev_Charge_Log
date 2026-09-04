@@ -126,6 +126,25 @@ export default function DashboardPage() {
   const stations = useMemo(() => groupStations(periodSessions), [periodSessions]);
   const cmpLabel = comparisonLabel(period.key);
 
+  /**
+   * ช่วง "ทั้งหมด" ไม่มีช่วงก่อนหน้าให้เทียบตามนิยาม
+   * ถ้าปล่อยให้ <Trend> ทำงานตามปกติ การ์ดสรุปทั้งสี่ใบจะขึ้น "เทียบไม่ได้" พร้อมกัน
+   * ซึ่งเป็นค่าเริ่มต้นที่ทุกคนเห็นตอนเปิดแดชบอร์ด จึงบอกขอบเขตข้อมูลแทนว่าย้อนไปถึงเมื่อไหร่
+   */
+  const allTime = period.key === 'all';
+  const firstDate = useMemo(() => {
+    const dates = [...sessions, ...costs].map((x) => x.date).filter(Boolean);
+    return dates.length ? dates.reduce((a, b) => (a < b ? a : b)) : null;
+  }, [sessions, costs]);
+  const trend = (current, previous, invert = false) =>
+    allTime ? (
+      <span className="faint">
+        {firstDate ? t('ตั้งแต่ {d}', { d: thDate(firstDate) }) : t('ข้อมูลทั้งหมด')}
+      </span>
+    ) : (
+      <Trend pct={pctChange(current, previous)} label={cmpLabel} invert={invert} />
+    );
+
   const effPoints = useMemo(() => asc.filter((s) => sEff(s) !== null), [asc]);
   const priceTrend = useMemo(
     () => asc.map((s) => sPricePerKwh(s)).filter((v) => v !== null),
@@ -189,22 +208,22 @@ export default function DashboardPage() {
         <Stat
           tone="accent" icon="battery" label={t('การชาร์จทั้งหมด')}
           value={fmt0(sum.count)} unit={t('ครั้ง')}
-          detail={<Trend pct={pctChange(sum.count, prev.count)} label={cmpLabel} />}
+          detail={trend(sum.count, prev.count)}
         />
         <Stat
           tone="dc" icon="bolt" label={t('พลังงานรวม')}
           value={fmt(sum.kwh, 2)} unit="kWh"
-          detail={<Trend pct={pctChange(sum.kwh, prev.kwh)} label={cmpLabel} />}
+          detail={trend(sum.kwh, prev.kwh)}
         />
         <Stat
           tone="purple" icon="coin" label={t('ค่าใช้จ่ายรวม')}
           value={money0(sum.cost + otherCost)}
-          detail={<Trend pct={pctChange(sum.cost + otherCost, prev.cost + prevOtherCost)} label={cmpLabel} invert />}
+          detail={trend(sum.cost + otherCost, prev.cost + prevOtherCost, true)}
         />
         <Stat
           tone="warn" icon="road" label={t('ระยะทางรวม')}
           value={fmtDist(sum.dist)} unit="km"
-          detail={<Trend pct={pctChange(sum.dist, prev.dist)} label={cmpLabel} />}
+          detail={trend(sum.dist, prev.dist)}
         />
       </div>
 
@@ -258,7 +277,7 @@ export default function DashboardPage() {
                 <small style={{ fontSize: 14, fontWeight: 500, color: 'var(--muted)', marginLeft: 4 }}>/ kWh</small>
               </div>
               <div className="sm" style={{ marginTop: 6 }}>
-                <Trend pct={pctChange(sum.avgPrice, prev.avgPrice)} label={cmpLabel} invert />
+                {trend(sum.avgPrice, prev.avgPrice, true)}
               </div>
               <div style={{ marginTop: 10 }}>
                 <Sparkline values={priceTrend} color="var(--dc)" />

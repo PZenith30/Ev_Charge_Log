@@ -33,7 +33,9 @@ export default function DateRangePicker() {
     <div ref={boxRef} style={{ position: 'relative' }}>
       <button type="button" className="btn" onClick={() => setOpen((o) => !o)} title={t('เลือกช่วงเวลา')}>
         <Icon name="calendar" />
-        <span>{rangeText(period.key, range)}</span>
+        {/* rangeText คืน "ทั้งหมด"/"กำหนดเอง" หรือช่วงวันที่ — สองคำแรกมีคำแปลอยู่แล้ว
+            ส่วนช่วงวันที่ไม่มีในพจนานุกรม translate จึงคืนค่าเดิมกลับมาตามที่ออกแบบไว้ */}
+        <span>{t(rangeText(period.key, range))}</span>
         <Icon name="chevron-down" style={{ width: 14, height: 14, opacity: 0.6 }} />
       </button>
 
@@ -49,7 +51,7 @@ export default function DateRangePicker() {
               onClick={() => pick(p.key)}
             >
               <Icon name={period.key === p.key ? 'check' : 'calendar'} />
-              {p.label}
+              {t(p.label)}
             </button>
           ))}
 
