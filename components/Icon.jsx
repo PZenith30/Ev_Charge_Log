@@ -35,8 +35,6 @@ export function IconSprite() {
       <symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12.5 9.5 18 20 6.5" /></symbol>
       <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4 18a9 9 0 1 1 16 0" /><path d="M12 18l4-5.5" /></symbol>
       <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M3 13h5l1.5 3h5L16 13h5" /><path d="M5.4 5.5 3 13v5.5A1.5 1.5 0 0 0 4.5 20h15a1.5 1.5 0 0 0 1.5-1.5V13l-2.4-7.5A2 2 0 0 0 16.7 4H7.3a2 2 0 0 0-1.9 1.5z" /></symbol>
-      <symbol id="i-robot" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3.5" /><path d="M12 8V5" /><circle cx="12" cy="3.4" r="1.4" /><path d="M9.2 13h.01M14.8 13h.01" /><path d="M9.5 16.6h5" /><path d="M4 12.5H2.4M20 12.5h1.6" /></symbol>
-      <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.5 9.5 0 0 1-3.4-.6L3 21l1.8-5.2A8.3 8.3 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5z" /><path d="M8.8 11.5h.01M12.5 11.5h.01M16.2 11.5h.01" /></symbol>
       <symbol id="i-send" viewBox="0 0 24 24"><path d="M20.5 3.5 10.5 13.5" /><path d="M20.5 3.5 14 21l-3.5-7.5L3 10z" /></symbol>
       <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" /></symbol>
       <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" /><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" /></symbol>

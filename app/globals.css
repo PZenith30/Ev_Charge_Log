@@ -263,6 +263,9 @@ a{color:inherit;text-decoration:none}
 .fab:hover{transform:translateY(-2px);filter:brightness(1.06)}
 .fab:active{transform:translateY(0)}
 .fab svg{width:25px;height:25px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* ประกายเป็นรูปปิด ระบายทึบแล้วอ่านเป็นสัญลักษณ์ AI ชัดกว่าวาดเป็นเส้น
+   ไอคอนอื่นในชุดยังเป็นเส้นเหมือนเดิม เจาะจงเฉพาะตัวนี้ */
+.fab-chat svg{fill:currentColor;stroke:none}
 /* ซ่อนจากสายตาแต่ยังอยู่ในผังที่โปรแกรมอ่านหน้าจอไล่อ่าน */
 .fab span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 /* บันทึกด่วนเป็นงานหลักของแอป จึงใช้สีเน้น · แชทเป็นตัวช่วย จึงใช้สีรองที่ยังเด่นแต่ไม่แย่งกัน */
@@ -548,7 +551,7 @@ table.compact{min-width:0}
 }
 .chat-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex:none}
 .chat-head .ic{width:32px;height:32px;border-radius:9px;background:var(--accent-soft);color:var(--accent-text);display:grid;place-items:center;flex:none}
-.chat-head .ic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.chat-head .ic svg{width:18px;height:18px;fill:currentColor;stroke:none}
 .chat-head .t{flex:1;min-width:0}
 .chat-head b{font-size:14.5px;display:block;line-height:1.25}
 .chat-head span{font-size:11.5px;color:var(--faint)}

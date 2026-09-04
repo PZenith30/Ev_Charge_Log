@@ -52,7 +52,7 @@ export default function ProfileMenu({ onChangePassword }) {
 
           <div className="menu-label">{t('เมนูลัด')}</div>
           <button type="button" className="menu-item" role="menuitem" onClick={run(() => setChatOpen(true))}>
-            <Icon name="robot" />{t('ถามผู้ช่วย AI')}
+            <Icon name="sparkle" />{t('ถามผู้ช่วย AI')}
           </button>
           <button type="button" className="menu-item" role="menuitem" onClick={run(() => setQuickOpen(true))}>
             <Icon name="plus" />{t('บันทึกการชาร์จด่วน')}
