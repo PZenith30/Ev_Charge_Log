@@ -23,8 +23,10 @@ const SORTERS = {
 };
 
 export default function HistoryPage() {
-  // ใช้ periodSessions ไม่ใช่ sessions — ช่วงเวลามาจากตัวเลือกบนแถบบนที่เดียว
-  const { periodSessions, carName, setEditingId, toast, t, period, range } = useStore();
+  // periodSessions = รายการในช่วงเวลาที่เลือกบนแถบบน ใช้เป็นข้อมูลตั้งต้นของหน้านี้
+  // ส่วน sessions (ทั้งหมด) ใช้แค่แยกว่า "ไม่มีข้อมูลเลย" กับ "มีข้อมูลแต่ถูกกรองออกหมด"
+  // ซึ่งเป็นสองสถานะที่ต้องบอกผู้ใช้คนละแบบ
+  const { sessions, periodSessions, carName, setEditingId, toast, t, period, range } = useStore();
   const [f, setF] = useState(EMPTY_FILTERS);
   const [detail, setDetail] = useState(null);
   const router = useRouter();
