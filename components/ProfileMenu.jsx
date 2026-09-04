@@ -8,13 +8,13 @@ import { useStore } from './store';
 
 export default function ProfileMenu({ onChangePassword }) {
   const {
-    user, logout, alertCount, confirm, setQuickOpen, setChatOpen, t,
+    user, displayName, logout, alertCount, confirm, setQuickOpen, setChatOpen, setNameOpen, t,
   } = useStore();
   const [open, setOpen] = useState(false);
   const ref = useDismiss(open, useCallback(() => setOpen(false), []));
   const router = useRouter();
 
-  const initials = (user?.email || '?').trim().charAt(0).toUpperCase();
+  const initials = (displayName || '?').trim().charAt(0).toUpperCase();
 
   /** ปิดเมนูก่อนแล้วค่อยทำงาน เพื่อไม่ให้เมนูค้างทับ modal */
   const run = (fn) => () => {
@@ -34,20 +34,22 @@ export default function ProfileMenu({ onChangePassword }) {
         title={t('บัญชีผู้ใช้')}
       >
         <span className="tb-avatar">{initials}</span>
+        {/* แสดงชื่อผู้ใช้ ไม่ใช่อีเมล — อีเมลไปอยู่ใต้ชื่อในเมนูที่กดเปิดแทน */}
         <span
           className="hide-mobile"
           style={{ maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
         >
-          {user?.email}
+          {displayName}
         </span>
         <Icon name="chevron-down" style={{ width: 14, height: 14, opacity: 0.5 }} />
       </button>
 
       {open ? (
         <div className="menu" role="menu">
+          {/* ชื่อผู้ใช้เป็นบรรทัดหลัก อีเมลอยู่ใต้ชื่อ — ยังต้องเห็นได้ว่าล็อกอินด้วยบัญชีไหน */}
           <div className="menu-head">
-            <b>{user?.email}</b>
-            <span>{t('เข้าสู่ระบบด้วย Supabase Auth')}</span>
+            <b>{displayName}</b>
+            <span>{user?.email}</span>
           </div>
 
           <div className="menu-label">{t('เมนูลัด')}</div>
@@ -73,6 +75,9 @@ export default function ProfileMenu({ onChangePassword }) {
 
           <div className="menu-sep" />
 
+          <button type="button" className="menu-item" role="menuitem" onClick={run(() => setNameOpen(true))}>
+            <Icon name="user" />{t('ตั้งชื่อผู้ใช้')}
+          </button>
           <button type="button" className="menu-item" role="menuitem" onClick={run(onChangePassword)}>
             <Icon name="settings" />{t('เปลี่ยนรหัสผ่าน')}
           </button>

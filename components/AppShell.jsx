@@ -11,6 +11,7 @@ import Login from './Login';
 import QuickAdd from './QuickAdd';
 import CarPhoto from './CarPhoto';
 import ChangePasswordModal from './ChangePasswordModal';
+import DisplayNameModal from './DisplayNameModal';
 import ChatWidget from './ChatWidget';
 import PWA from './PWA';
 import DateRangePicker from './DateRangePicker';
@@ -93,7 +94,7 @@ export default function AppShell({ children }) {
   const {
     phase, user, dataLoading, loadError, reload,
     cars, settings, viewAllCars, setActiveCar, activeCar, sessions,
-    dark, toggleTheme, alertCount, quickOpen, setQuickOpen, pwOpen, setPwOpen, t,
+    dark, toggleTheme, alertCount, quickOpen, setQuickOpen, pwOpen, setPwOpen, nameOpen, setNameOpen, t,
   } = useStore();
   const pathname = usePathname();
 
@@ -283,6 +284,7 @@ export default function AppShell({ children }) {
 
       {quickOpen ? <QuickAdd /> : null}
       {pwOpen ? <ChangePasswordModal onClose={() => setPwOpen(false)} /> : null}
+      {nameOpen ? <DisplayNameModal onClose={() => setNameOpen(false)} /> : null}
       <ConfirmDialog />
       <Lightbox />
       <Toasts />

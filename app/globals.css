@@ -292,8 +292,19 @@ a{color:inherit;text-decoration:none}
   box-shadow:var(--shadow-lg);padding:6px;animation:pop .13s ease
 }
 .menu-head{padding:9px 11px 10px;border-bottom:1px solid var(--border);margin-bottom:6px}
-.menu-head b{display:block;font-size:13.5px;line-height:1.3;word-break:break-all}
-.menu-head span{font-size:11.5px;color:var(--faint)}
+.menu-head b{display:block;font-size:13.5px;line-height:1.3}
+/* อีเมลย้ายมาอยู่บรรทัดล่างแทนบรรทัดบน จึงย้าย word-break ตามมาด้วย
+   ไม่งั้นอีเมลยาวๆ จะดันเมนูให้กว้างเกินจอ */
+.menu-head span{display:block;font-size:11.5px;color:var(--faint);word-break:break-all}
+
+/* ตัวอย่างชื่อผู้ใช้ในหน้าต่างตั้งชื่อ — จำลองหน้าตาปุ่มโปรไฟล์มุมขวาบนที่ตอนนี้ถูกหน้าต่างบังอยู่ */
+.name-preview{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  background:var(--surface-3);border:1px solid var(--border);border-radius:var(--r-sm)
+}
+.name-preview > div{min-width:0}
+.name-preview b{display:block;font-size:14px;line-height:1.3;word-break:break-word}
+.name-preview span:not(.tb-avatar){display:block;font-size:11.5px;color:var(--faint);word-break:break-all}
 .menu-label{padding:6px 11px 4px;font-size:10.5px;font-weight:650;letter-spacing:.05em;text-transform:uppercase;color:var(--faint)}
 .menu-item{
   display:flex;align-items:center;gap:11px;width:100%;padding:9px 11px;border:0;background:none;

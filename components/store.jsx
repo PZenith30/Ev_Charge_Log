@@ -13,11 +13,14 @@ import * as db from '@/lib/db';
 import { setStorageUser, imgDel, gcImages } from '@/lib/storage';
 import { avgMonthlySpend, dueList, sortDesc } from '@/lib/calc';
 import { filterByRange, previousRange, resolveRange } from '@/lib/period';
-import { uuid } from '@/lib/format';
+import { displayNameOf, savedNameOf, uuid } from '@/lib/format';
 import { readLegacy } from '@/lib/legacy';
 import { DEFAULT_LANG, readLang, saveLang, setCurrentLang, translate } from '@/lib/i18n';
 
 const StoreCtx = createContext(null);
+
+/** ความยาวชื่อผู้ใช้สูงสุด — ยาวกว่านี้แถบบนก็ตัดด้วย ellipsis อยู่ดี */
+export const NAME_MAX = 40;
 
 export function useStore() {
   const ctx = useContext(StoreCtx);
@@ -66,6 +69,8 @@ export function StoreProvider({ children }) {
   const [pwOpen, setPwOpen] = useState(false);
   // แผงผู้ช่วย AI — เปิดจากปุ่มลอยหรือเมนูโปรไฟล์
   const [chatOpen, setChatOpen] = useState(false);
+  // หน้าต่างตั้งชื่อผู้ใช้ — เปิดได้ทั้งจากเมนูโปรไฟล์และหน้าบัญชี
+  const [nameOpen, setNameOpen] = useState(false);
   const [viewAllCars, setViewAllCars] = useState(false);
   const [legacyFound, setLegacyFound] = useState(null);
   // ช่วงเวลาที่เลือกบนแถบบน — ใช้ร่วมกันทั้งแดชบอร์ด สถิติ และหน้าวิเคราะห์
@@ -132,16 +137,23 @@ export function StoreProvider({ children }) {
   }, []);
 
   /* ---------------- เมื่อผู้ใช้เปลี่ยน ให้โหลด/ล้างข้อมูล ---------------- */
+  /**
+   * ผูกกับ user.id ไม่ใช่ตัว user ทั้งก้อน
+   * เพราะ Supabase สร้างอ็อบเจ็กต์ผู้ใช้ขึ้นใหม่ทุกครั้งที่ต่ออายุ token และทุกครั้งที่แก้โปรไฟล์
+   * ถ้าผูกทั้งก้อน แค่เปลี่ยนชื่อผู้ใช้ก็จะดึงข้อมูลใหม่ทั้งชุดและหน้าจอกระพริบเป็น "กำลังโหลด"
+   * ทั้งที่ยังเป็นผู้ใช้คนเดิมและข้อมูลไม่ได้เปลี่ยนอะไรเลย
+   */
+  const userId = user?.id ?? null;
   useEffect(() => {
-    setStorageUser(user?.id ?? null);
-    if (!user) {
+    setStorageUser(userId);
+    if (!userId) {
       setData(emptyState());
       setLegacyFound(null);
       return;
     }
-    reload(user.id);
+    reload(userId);
     setLegacyFound(readLegacy());
-  }, [user, reload]);
+  }, [userId, reload]);
 
   /* ---------------- ภาษา (ไทย / อังกฤษ) ---------------- */
   // อ่านจาก localStorage หลัง mount ไม่ใช่ตอนตั้งค่าเริ่มต้นของ state
@@ -207,6 +219,28 @@ export function StoreProvider({ children }) {
   const changePassword = useCallback(async (password) => {
     const { error } = await supabase.auth.updateUser({ password });
     return error ? authErrorText(error) : null;
+  }, []);
+
+  /* ---------------- ชื่อผู้ใช้ที่แสดงบนหน้าจอ ---------------- */
+  /**
+   * เก็บไว้ใน user_metadata ของ Supabase Auth ไม่ใช่ตาราง settings
+   *
+   * ตาราง settings เป็นคอลัมน์ตายตัว ถ้าเพิ่มคอลัมน์ใหม่แล้วผู้ใช้ยังไม่ได้รัน SQL
+   * การบันทึกค่าตั้งค่า "ทุกตัว" จะพังหมด ไม่ใช่แค่ชื่อ — ทางนี้ไม่ต้องรัน SQL เลย
+   * และชื่อจะติดตามไปทุกเครื่องที่ล็อกอินบัญชีเดียวกัน
+   */
+  // ผูก lang ไว้ด้วย เพราะคำสำรอง "ผู้ใช้" ต้องเปลี่ยนตามภาษาที่เลือก
+  const displayName = useMemo(() => displayNameOf(user), [user, lang]);
+  const savedName = savedNameOf(user);
+
+  const saveDisplayName = useCallback(async (name) => {
+    const { data: res, error } = await supabase.auth.updateUser({
+      data: { display_name: String(name || '').trim().slice(0, NAME_MAX) },
+    });
+    if (error) return authErrorText(error);
+    // อัปเดตทันทีไม่ต้องรอ onAuthStateChange จะได้เห็นชื่อใหม่บนแถบบนทันทีที่กดบันทึก
+    if (res?.user) setUser(res.user);
+    return null;
   }, []);
 
   const logout = useCallback(async () => {
@@ -442,6 +476,8 @@ export function StoreProvider({ children }) {
     quickDraft, setQuickDraft,
     pwOpen, setPwOpen,
     chatOpen, setChatOpen,
+    nameOpen, setNameOpen,
+    displayName, savedName, saveDisplayName,
     editingId, setEditingId,
     dark, toggleTheme, setSettings, setActiveCar,
     lang, setLang, t,

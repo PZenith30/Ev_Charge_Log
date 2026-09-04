@@ -16,7 +16,7 @@ import { clearLegacy, migrateLegacy } from '@/lib/legacy';
 export default function AccountPage() {
   const {
     user, data, cars, settings, setSettings, wipeAll, reload,
-    confirm, toast, logout, sessions, setPwOpen,
+    confirm, toast, logout, sessions, setPwOpen, setNameOpen, displayName, savedName,
     legacyFound, setLegacyFound, t
   } = useStore();
 
@@ -293,6 +293,11 @@ export default function AccountPage() {
       <CollapsibleCard id="acc-user" title={t('บัญชีผู้ใช้')} className="mt">
         <div className="card-body">
           <dl className="kv" style={{ maxWidth: 420 }}>
+            <dt>{t('ชื่อผู้ใช้')}</dt>
+            <dd>
+              {displayName}
+              {savedName ? null : <span className="sm faint"> · {t('ยังไม่ได้ตั้ง ใช้ชื่อจากอีเมลไปก่อน')}</span>}
+            </dd>
             <dt>{t('อีเมล')}</dt><dd style={{ wordBreak: 'break-all' }}>{user?.email}</dd>
             <dt>{t('เข้าสู่ระบบด้วย')}</dt><dd>{t('Supabase Auth (อีเมล + รหัสผ่าน)')}</dd>
             <dt>{t('จำนวนการชาร์จที่บันทึก')}</dt><dd>{sessions.length}</dd>
@@ -300,6 +305,9 @@ export default function AccountPage() {
 
           <div className="rowflex mt">
             {/* ใช้หน้าต่างเดียวกับที่เรียกจากเมนูโปรไฟล์ จะได้ไม่มีฟอร์มซ้ำสองที่ */}
+            <button type="button" className="btn" onClick={() => setNameOpen(true)}>
+              <Icon name="user" />{t('ตั้งชื่อผู้ใช้')}
+            </button>
             <button type="button" className="btn" onClick={() => setPwOpen(true)}>
               <Icon name="settings" />{t('เปลี่ยนรหัสผ่าน')}
             </button>
