@@ -17,16 +17,22 @@
   --faint:#5e6c81;
 
   --accent:#22c55e;          /* Electric Green */
-  /* สีตัวอักษรที่วางบนพื้นสีเน้น — ใช้เขียวเข้มเกือบดำทั้งสองธีม
-     ตัวอักษรขาวบนเขียวสดได้คอนทราสต์แค่ 2.3:1 (โหมดสว่าง) และ 1.6:1 (โหมดมืด)
-     ซึ่งต่ำกว่าเกณฑ์มาก จะให้ผ่านด้วยตัวขาวต้องทำเขียวเข้มจนเสียสีแบรนด์ */
-  --on-accent:#0a2e14;
+  /**
+   * เขียวสำหรับ "พื้นทึบ" ของปุ่ม แยกจาก --accent ที่ใช้กับกราฟและเส้นต่างๆ
+   *
+   * --accent (#22c55e) สดเกินกว่าจะรองตัวอักษรได้ ตัวขาวบนนั้นได้แค่ 2.3:1
+   * เคยแก้ด้วยการใช้ตัวอักษรเขียวเข้มเกือบดำ ผ่านเกณฑ์ก็จริง แต่ปุ่มดูหนักและทึบ
+   * จึงเปลี่ยนมาลดความสว่างของ "พื้น" แทน แล้วใช้ตัวขาว ได้ 5.0:1 และดูโปร่งกว่า
+   * ส่วนกราฟกับเส้นยังใช้เขียวสดเหมือนเดิม เพราะไม่ได้มีตัวอักษรวางทับ
+   */
+  --accent-fill:#15803d;
+  --on-accent:#ffffff;
   --on-danger:#ffffff;
   /* ปุ่มลอย "แชทกับ AI" — น้ำเงินเข้มพอให้ตัวขาวอ่านได้ 8.6:1
      ใช้ --dc ตรงๆ ไม่ได้ ตัวขาวบนนั้นได้แค่ 3.1:1 */
   --fab-chat-bg:#1d4ed8;
   --fab-chat-fg:#ffffff;
-  --accent-hover:#16a34a;
+  --accent-hover:#106634;   /* ต้องเข้มกว่า --accent-fill ไม่งั้นชี้แล้วปุ่มสว่างขึ้นและอ่านยากลง */
   --accent-soft:#dcfce7;
   --accent-text:#15803d;
 
@@ -78,6 +84,8 @@
 
   --accent:#4ade80;
   --accent-hover:#22c55e;
+  /* โหมดมืดพื้นหลังเข้มอยู่แล้ว เขียวสดจึงใช้เป็นพื้นปุ่มได้ และใช้ตัวอักษรเข้มทับ */
+  --accent-fill:#4ade80;
   --on-accent:#06230f;
   --on-danger:#3a0a0a;
   /* โหมดมืดกลับด้าน: พื้นน้ำเงินสว่าง ตัวอักษรน้ำเงินเข้มเกือบดำ */
@@ -269,7 +277,7 @@ a{color:inherit;text-decoration:none}
 /* ซ่อนจากสายตาแต่ยังอยู่ในผังที่โปรแกรมอ่านหน้าจอไล่อ่าน */
 .fab span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 /* บันทึกด่วนเป็นงานหลักของแอป จึงใช้สีเน้น · แชทเป็นตัวช่วย จึงใช้สีรองที่ยังเด่นแต่ไม่แย่งกัน */
-.fab-quick{bottom:90px;background:var(--accent);color:var(--on-accent)}
+.fab-quick{bottom:90px;background:var(--accent-fill);color:var(--on-accent)}
 .fab-chat{bottom:22px;background:var(--fab-chat-bg);color:var(--fab-chat-fg)}
 
 /* โปรไฟล์บนแถบบน */
@@ -323,8 +331,8 @@ a{color:inherit;text-decoration:none}
 .btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .btn:hover{background:var(--surface-3)}
 .btn:active{transform:scale(.985)}
-.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-.btn-primary:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
+.btn-primary{background:var(--accent-fill);border-color:var(--accent-fill);color:var(--on-accent)}
+.btn-primary:hover{background:var(--accent-hover);border-color:var(--accent-hover)}   /* --accent-hover เข้มกว่าพื้นปุ่มอยู่แล้วทั้งสองธีม */
 .btn-ghost{border-color:transparent;background:transparent;color:var(--muted)}
 .btn-ghost:hover{background:var(--surface-3);color:var(--text)}
 .btn-danger{color:var(--danger-text)}
@@ -558,7 +566,7 @@ table.compact{min-width:0}
 
 .chat-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
 .chat-msg{max-width:88%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
-.chat-msg.me{align-self:flex-end;background:var(--accent);color:var(--on-accent);border-bottom-right-radius:5px}
+.chat-msg.me{align-self:flex-end;background:var(--accent-fill);color:var(--on-accent);border-bottom-right-radius:5px}
 .chat-msg.ai{align-self:flex-start;background:var(--surface-3);border-bottom-left-radius:5px}
 .chat-msg.err{align-self:flex-start;background:var(--danger-soft);color:var(--danger-text)}
 
@@ -587,7 +595,7 @@ table.compact{min-width:0}
   border-radius:var(--r-sm);background:var(--surface)
 }
 .chat-send{
-  flex:none;width:40px;height:40px;border-radius:var(--r-sm);border:0;background:var(--accent);color:var(--on-accent);
+  flex:none;width:40px;height:40px;border-radius:var(--r-sm);border:0;background:var(--accent-fill);color:var(--on-accent);
   display:grid;place-items:center;cursor:pointer
 }
 .chat-send:hover{background:var(--accent-hover)}
