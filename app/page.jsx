@@ -11,26 +11,83 @@ import CarPhoto from '@/components/CarPhoto';
 import Wordmark from '@/components/Wordmark';
 import Icon from '@/components/Icon';
 import {
-  monthlyTotals, sDist, sEff, sKwh100, sPricePerKwh, sTotal, summarize,
+  groupStations, monthlyTotals, sDist, sEff, sKwh100, sPricePerKwh, sTotal, summarize,
 } from '@/lib/calc';
 import { comparisonLabel, pctChange } from '@/lib/period';
 import { fmt, fmt0, fmt1, fmtDist, isNum, money, money0, n, thDate, thMonth, thMonthLong } from '@/lib/format';
 
 const STATION_COLORS = ['var(--accent)', 'var(--dc)', 'var(--purple)', 'var(--warn)', 'var(--faint)'];
 
-/** จัดกลุ่มการชาร์จตามชื่อสถานี เรียงจากใช้บ่อยที่สุด */
-function groupStations(list) {
-  const map = new Map();
-  for (const s of list) {
-    const key = (s.station || '').trim() || 'ไม่ระบุสถานี';
-    if (!map.has(key)) map.set(key, { name: key, count: 0, kwh: 0, cost: 0, ac: 0, dc: 0 });
-    const g = map.get(key);
-    g.count += 1;
-    g.kwh += n(s.kwh);
-    g.cost += sTotal(s);
-    if (s.type === 'DC') g.dc += 1; else g.ac += 1;
-  }
-  return Array.from(map.values()).sort((a, b) => b.count - a.count);
+/**
+ * หนึ่งแถวในรายการสถานีที่ใช้บ่อย — กดแล้วกางดูรายละเอียดของสถานีนั้นได้
+ *
+ * ตอนกาง บรรทัดสรุปสั้นๆ จะหายไป เพราะแผงที่กางออกมามีตัวเลขชุดเดียวกันแบบละเอียดกว่า
+ * ถ้าปล่อยไว้ทั้งคู่จะเป็นตัวเลขซ้ำสองที่และแถวสูงเกินจำเป็น
+ */
+function StationRow({ station: g, index, color, open, onToggle, onEdit }) {
+  const { t } = useStore();
+  const panelId = `station-panel-${index}`;
+  const avgPrice = g.kwh > 0 ? g.cost / g.kwh : null;
+
+  return (
+    <div className={`station-row${open ? ' open' : ''}`}>
+      {/* ทั้งแถวเป็นปุ่มเดียว จะได้กดตรงไหนก็กางได้ ไม่ต้องเล็งเฉพาะตัวหนังสือ
+          และได้การใช้คีย์บอร์ดกับ aria-expanded มาในตัวโดยไม่ต้องเขียนเอง */}
+      <button
+        type="button"
+        className="station-main"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-controls={panelId}
+      >
+        <span className="station-pin" style={{ background: color }}>{index + 1}</span>
+        <div className="body">
+          <div className="t1">{g.name}</div>
+          {open ? null : (
+            <>
+              <div className="t2">{g.count} {t('ครั้ง')} · {fmt1(g.kwh)} kWh · {money0(g.cost)}</div>
+              <div className="t3">
+                <Icon name="bolt" viewBox="0 0 32 32" style={{ fill: 'currentColor', stroke: 'none' }} />
+                {g.ac ? `AC ${g.ac}` : ''}{g.ac && g.dc ? ' · ' : ''}{g.dc ? `DC ${g.dc}` : ''}
+                {avgPrice !== null ? ` · ${t('เฉลี่ย')} ${fmt(avgPrice, 2)} ฿/kWh` : ''}
+              </div>
+            </>
+          )}
+        </div>
+        <Icon name="chevron-down" className="chev" />
+      </button>
+
+      {open ? (
+        <div className="station-panel" id={panelId}>
+          <div className="st-mini">
+            <div><span>{t('จำนวนครั้ง')}</span><b>{g.count}</b></div>
+            <div><span>{t('พลังงานรวม')}</span><b>{fmt1(g.kwh)} kWh</b></div>
+            <div><span>{t('ค่าใช้จ่ายรวม')}</span><b>{money0(g.cost)}</b></div>
+            <div><span>{t('เฉลี่ยต่อครั้ง')}</span><b>{money0(g.cost / g.count)}</b></div>
+            <div><span>{t('ราคาเฉลี่ย')}</span><b>{avgPrice !== null ? `${fmt(avgPrice, 2)} ฿/kWh` : '—'}</b></div>
+            <div><span>AC / DC</span><b>{g.ac} / {g.dc}</b></div>
+          </div>
+
+          <div className="st-sess-head">
+            <span>{t('รายการชาร์จที่นี่')}</span>
+            <span>{t('แตะเพื่อแก้ไข')}</span>
+          </div>
+          {/* รายการยาวได้ไม่จำกัด จึงให้เลื่อนในกรอบตัวเองแทนที่จะดันการ์ดยาวลงไปเรื่อยๆ */}
+          <div className="st-sess">
+            {g.items.map((s) => (
+              <button type="button" key={s.id} onClick={() => onEdit(s.id)} title={t('แก้ไขรายการนี้')}>
+                <span className="d">{thDate(s.date)}</span>
+                <TypePill type={s.type} />
+                <span className="k">{fmt(n(s.kwh), 2)} kWh</span>
+                <span className="c">{money0(sTotal(s))}</span>
+                <Icon name="edit" />
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 /** รวมพลังงาน/ค่าใช้จ่ายเป็นรายวัน สำหรับกราฟช่วงสั้น */
@@ -54,6 +111,8 @@ export default function DashboardPage() {
   } = useStore();
   const [detail, setDetail] = useState(null);
   const [grain, setGrain] = useState('day');
+  // ชื่อสถานีที่กางรายละเอียดอยู่ (null = ไม่ได้กางอันไหน)
+  const [openStation, setOpenStation] = useState(null);
   const router = useRouter();
 
   const sum = useMemo(() => summarize(periodSessions), [periodSessions]);
@@ -269,20 +328,17 @@ export default function DashboardPage() {
             {stations.length ? (
               <div className="station-list">
                 {stations.slice(0, 5).map((s, i) => (
-                  <div className="station-row" key={s.name}>
-                    <span className="station-pin" style={{ background: STATION_COLORS[i % STATION_COLORS.length] }}>
-                      {i + 1}
-                    </span>
-                    <div className="body">
-                      <div className="t1">{s.name}</div>
-                      <div className="t2">{s.count} ครั้ง · {fmt1(s.kwh)} kWh · {money0(s.cost)}</div>
-                      <div className="t3">
-                        <Icon name="bolt" viewBox="0 0 32 32" style={{ fill: 'currentColor', stroke: 'none' }} />
-                        {s.ac ? `AC ${s.ac}` : ''}{s.ac && s.dc ? ' · ' : ''}{s.dc ? `DC ${s.dc}` : ''}
-                        {s.kwh > 0 ? ` · เฉลี่ย ${fmt(s.cost / s.kwh, 2)} ฿/kWh` : ''}
-                      </div>
-                    </div>
-                  </div>
+                  <StationRow
+                    key={s.name}
+                    station={s}
+                    index={i}
+                    color={STATION_COLORS[i % STATION_COLORS.length]}
+                    open={openStation === s.name}
+                    // กดอันที่กางอยู่ = ปิด · กดอันอื่น = ย้ายไปกางอันนั้น
+                    // เปิดได้ทีละอันเพราะการ์ดนี้กว้างครึ่งเดียว ถ้ากางพร้อมกันหลายอันจะยาวเกินไป
+                    onToggle={() => setOpenStation((cur) => (cur === s.name ? null : s.name))}
+                    onEdit={(id) => { setEditingId(id); router.push('/add'); }}
+                  />
                 ))}
               </div>
             ) : (
