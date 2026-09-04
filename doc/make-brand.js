@@ -379,12 +379,24 @@ if (require.main === module) {
   const xf = xBoundsOf(wordSheet, boxB, [bandWord, bandTag], wordBg, 70);
 
   /** ทำพื้นให้โปร่งใสตามความสว่าง — ใช้แทน flood fill เพราะตัวอักษรมีช่องปิดข้างใน (o, e) */
-  function keyOutBackground(img, bg) {
-    const bgLum = bg[0] * 0.299 + bg[1] * 0.587 + bg[2] * 0.114;
+  function keyOutBackground(img, bg, near = 30, far = 75) {
     for (let i = 0; i < img.w * img.h; i++) {
       const d = i * 4;
-      const lum = img.data[d] * 0.299 + img.data[d + 1] * 0.587 + img.data[d + 2] * 0.114;
-      img.data[d + 3] = Math.round(255 * Math.min(1, Math.max(0, (bgLum - lum) / (bgLum * 0.55))));
+      const dist = Math.hypot(img.data[d] - bg[0], img.data[d + 1] - bg[1], img.data[d + 2] - bg[2]);
+      /**
+       * วัดจาก "ระยะห่างของสี" จากพื้นหลัง ไม่ใช่ความสว่าง
+       *
+       * เกณฑ์ความสว่างใช้ไม่ได้เพราะมันแปลว่า "อะไรที่สว่างคือพื้นหลัง"
+       * ตัว EV ไล่เฉดฟ้าไปเขียว ปลายเขียวสว่างเกือบเท่าพื้น จึงโดนทำให้โปร่งไปด้วย
+       * ระยะห่างของสีแยกได้ถูก เพราะเขียวสดห่างจากพื้นขาวมากแม้จะสว่างพอกัน
+       *
+       * near = ระยะที่ยังถือว่าเป็นพื้นหลัง เผื่อไว้กลบไล่เฉดจางๆ ในไฟล์ต้นฉบับ
+       *        ถ้าไม่เผื่อ พื้นเปล่าจะเหลือ alpha นิดหน่อยทั่วทั้งภาพ
+       *        วางบนพื้นเข้มแล้วเห็นเป็นแผ่นสี่เหลี่ยมจางๆ ไม่กลืนกับพื้นหลัง
+       * far  = ระยะที่ถือว่าเป็นเนื้อภาพเต็มตัว ระหว่างสองค่านี้คือขอบที่ anti-alias ไว้
+       */
+      const a = (dist - near) / (far - near);
+      img.data[d + 3] = Math.round(255 * Math.min(1, Math.max(0, a)));
     }
     return img;
   }
