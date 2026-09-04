@@ -22,6 +22,10 @@
      ซึ่งต่ำกว่าเกณฑ์มาก จะให้ผ่านด้วยตัวขาวต้องทำเขียวเข้มจนเสียสีแบรนด์ */
   --on-accent:#0a2e14;
   --on-danger:#ffffff;
+  /* ปุ่มลอย "แชทกับ AI" — น้ำเงินเข้มพอให้ตัวขาวอ่านได้ 8.6:1
+     ใช้ --dc ตรงๆ ไม่ได้ ตัวขาวบนนั้นได้แค่ 3.1:1 */
+  --fab-chat-bg:#1d4ed8;
+  --fab-chat-fg:#ffffff;
   --accent-hover:#16a34a;
   --accent-soft:#dcfce7;
   --accent-text:#15803d;
@@ -76,6 +80,9 @@
   --accent-hover:#22c55e;
   --on-accent:#06230f;
   --on-danger:#3a0a0a;
+  /* โหมดมืดกลับด้าน: พื้นน้ำเงินสว่าง ตัวอักษรน้ำเงินเข้มเกือบดำ */
+  --fab-chat-bg:#60a5fa;
+  --fab-chat-fg:#06203f;
   --accent-soft:#14321f;
   --accent-text:#86efac;
 
@@ -257,8 +264,9 @@ a{color:inherit;text-decoration:none}
 .fab:hover{transform:translateY(-1px);filter:brightness(1.05)}
 .fab:active{transform:translateY(0)}
 .fab svg{width:21px;height:21px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.fab-quick{bottom:82px;background:var(--surface);color:var(--text);border:1px solid var(--border-strong)}
-.fab-chat{bottom:22px;background:var(--accent);color:var(--on-accent)}
+/* บันทึกด่วนเป็นงานหลักของแอป จึงใช้สีเน้น · แชทเป็นตัวช่วย จึงใช้สีรองที่ยังเด่นแต่ไม่แย่งกัน */
+.fab-quick{bottom:82px;background:var(--accent);color:var(--on-accent)}
+.fab-chat{bottom:22px;background:var(--fab-chat-bg);color:var(--fab-chat-fg)}
 
 /* โปรไฟล์บนแถบบน */
 .tb-profile{display:flex;align-items:center;gap:8px;padding:5px 10px 5px 5px;border-radius:99px;border:1px solid var(--border-strong);background:var(--surface);cursor:pointer;font-size:13.5px;color:inherit}
@@ -539,7 +547,7 @@ table.compact{min-width:0}
 }
 .chat-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex:none}
 .chat-head .ic{width:32px;height:32px;border-radius:9px;background:var(--accent-soft);color:var(--accent-text);display:grid;place-items:center;flex:none}
-.chat-head .ic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
+.chat-head .ic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .chat-head .t{flex:1;min-width:0}
 .chat-head b{font-size:14.5px;display:block;line-height:1.25}
 .chat-head span{font-size:11.5px;color:var(--faint)}
