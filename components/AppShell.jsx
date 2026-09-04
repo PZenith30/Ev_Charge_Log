@@ -270,9 +270,10 @@ export default function AppShell({ children }) {
         ))}
       </nav>
 
-      {/* ปุ่มลอยสองอัน วางเรียงกันมุมขวาล่าง — บันทึกด่วนอยู่บน ผู้ช่วย AI อยู่ล่าง
-          ทั้งคู่มีป้ายกำกับ ไม่ใช่ไอคอนเปล่า เพราะไอคอนอย่างเดียวเดาหน้าที่ไม่ออก */}
-      <button type="button" className="fab fab-quick" onClick={() => setQuickOpen(true)}>
+      {/* ปุ่มกลมสองอัน วางเรียงกันมุมขวาล่าง — บันทึกด่วนอยู่บน ผู้ช่วย AI อยู่ล่าง
+          ข้อความใน span ถูกซ่อนจากสายตาด้วย CSS แต่ยังอยู่ให้โปรแกรมอ่านหน้าจออ่าน
+          ส่วนคนที่มองเห็นใช้ tooltip จาก title */}
+      <button type="button" className="fab fab-quick" onClick={() => setQuickOpen(true)} title={t('บันทึกด่วน')}>
         <Icon name="plus" />
         <span>{t('บันทึกด่วน')}</span>
       </button>

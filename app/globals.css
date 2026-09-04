@@ -252,20 +252,21 @@ a{color:inherit;text-decoration:none}
 .views{padding:22px 26px 44px;flex:1}
 .tabbar{display:none}
 /* ---- ปุ่มลอยมุมขวาล่าง ----
-   สองอันเรียงกัน: บันทึกด่วนอยู่บน ผู้ช่วย AI อยู่ล่าง
-   มีป้ายกำกับตลอด ไม่ใช่ไอคอนเปล่า เพราะไอคอนอย่างเดียวเดาหน้าที่ไม่ออก
-   บนจอแคบย่อเหลือไอคอนกลม เพราะป้ายจะกินที่จนบังเนื้อหา */
+   ปุ่มกลมสองอันเรียงกัน: บันทึกด่วนอยู่บน ผู้ช่วย AI อยู่ล่าง
+   ป้ายกำกับยังอยู่ในโค้ดแต่ซ่อนไว้ให้โปรแกรมอ่านหน้าจออ่านได้
+   ส่วนคนที่มองเห็นใช้ tooltip จาก title แทน */
 .fab{
-  position:fixed;right:20px;z-index:70;display:inline-flex;align-items:center;gap:9px;
-  height:48px;padding:0 18px 0 15px;border:0;border-radius:99px;cursor:pointer;
-  font-size:14px;font-weight:600;font-family:inherit;
+  position:fixed;right:20px;z-index:70;display:grid;place-items:center;
+  width:56px;height:56px;padding:0;border:0;border-radius:99px;cursor:pointer;
   box-shadow:var(--shadow-lg);transition:transform .13s,filter .13s
 }
-.fab:hover{transform:translateY(-1px);filter:brightness(1.05)}
+.fab:hover{transform:translateY(-2px);filter:brightness(1.06)}
 .fab:active{transform:translateY(0)}
-.fab svg{width:21px;height:21px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.fab svg{width:25px;height:25px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* ซ่อนจากสายตาแต่ยังอยู่ในผังที่โปรแกรมอ่านหน้าจอไล่อ่าน */
+.fab span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 /* บันทึกด่วนเป็นงานหลักของแอป จึงใช้สีเน้น · แชทเป็นตัวช่วย จึงใช้สีรองที่ยังเด่นแต่ไม่แย่งกัน */
-.fab-quick{bottom:82px;background:var(--accent);color:var(--on-accent)}
+.fab-quick{bottom:90px;background:var(--accent);color:var(--on-accent)}
 .fab-chat{bottom:22px;background:var(--fab-chat-bg);color:var(--fab-chat-fg)}
 
 /* โปรไฟล์บนแถบบน */
@@ -593,12 +594,10 @@ table.compact{min-width:0}
 .chat-share input{width:auto;accent-color:var(--accent)}
 
 @media@media (max-width:900px){
-  /* จอแคบย่อปุ่มลอยเหลือไอคอนกลม ป้ายกำกับกินที่จนบังเนื้อหา
-     และต้องยกสูงขึ้นให้พ้นแถบเมนูล่าง */
-  .fab{right:16px;width:48px;height:48px;padding:0;justify-content:center;gap:0}
-  .fab span{display:none}
+  /* จอแคบย่อปุ่มลงเล็กน้อยและยกให้พ้นแถบเมนูล่าง */
+  .fab{right:16px;width:50px;height:50px}
   .fab-chat{bottom:calc(78px + env(safe-area-inset-bottom))}
-  .fab-quick{bottom:calc(134px + env(safe-area-inset-bottom))}
+  .fab-quick{bottom:calc(138px + env(safe-area-inset-bottom))}
   .chat-panel{inset:0;width:auto;max-width:none;height:auto;border-radius:0;border:0}
 }
 
@@ -649,12 +648,6 @@ table.compact{min-width:0}
   }
   .tabbar a svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
   .tabbar a.active{color:var(--accent)}
-  .fab{
-    display:grid;place-items:center;position:fixed;right:16px;bottom:calc(78px + env(safe-area-inset-bottom));
-    width:52px;height:52px;border-radius:99px;background:var(--accent);color:var(--on-accent);border:0;z-index:55;
-    box-shadow:0 6px 18px rgba(15,159,110,.42);cursor:pointer
-  }
-  .fab svg{width:25px;height:25px;stroke:currentColor;fill:none;stroke-width:2.1;stroke-linecap:round}
   .modal{padding:0;align-items:flex-end}
   .modal-card{max-width:none;border-radius:16px 16px 0 0;max-height:92dvh}
   .modal-foot{border-radius:0}
