@@ -1,6 +1,7 @@
 'use client';
 /** ชิ้นส่วนที่ใช้ร่วมกันระหว่างแดชบอร์ดกับหน้าประวัติ — แถวรายการชาร์จ, รายละเอียด, แถบแจ้งเตือน */
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ALERT_TYPES } from '@/lib/data';
 import { fmt, fmt0, fmt1, fmtDist, fmtDuration, money0, money, thDate, n, isNum } from '@/lib/format';
 import { sBahtKm, sDashReading, sDist, sEff, sEff100, sKwh100, sPricePerKwh, sSoc, sTotal } from '@/lib/calc';
@@ -77,6 +78,51 @@ export function BudgetBanner({ over, budget, avg }) {
         <div className="t1">{t('ค่าใช้จ่ายอยู่ในงบประมาณ')}</div>
         <div className="t2">เฉลี่ย {money0(avg)} / เดือน · งบ {money0(budget)}</div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * แถบเตือนว่ามีรายการที่จดไว้ก่อนชาร์จแล้วยังไม่ได้กลับมาเติมพลังงาน
+ *
+ * วางบนสุดของแดชบอร์ดคู่กับแถบแจ้งเตือนอื่น เพราะเป็นหน้าแรกที่เปิดเจอ
+ * ป้ายเล็กๆ ในตารางประวัติอย่างเดียวมองข้ามได้ง่ายเกินไป
+ * ปุ่มพาไปหน้าประวัติที่กรองไว้ให้แล้ว จะได้ไม่ต้องไปหาเองว่ารายการไหน
+ */
+export function IncompleteBanner({ items }) {
+  const { setHistoryPreset, setEditingId, t } = useStore();
+  const router = useRouter();
+  if (!items.length) return null;
+
+  const one = items.length === 1 ? items[0] : null;
+
+  return (
+    <div className="alert warn">
+      <Icon name="clock" />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="t1">{t('มี {n} รายการที่ยังกรอกไม่ครบ', { n: items.length })}</div>
+        <div className="t2">
+          {one
+            ? `${thDate(one.date, 'long')}${one.station ? ` · ${one.station}` : ''} — ${t('ยังไม่ได้กรอกพลังงานที่ชาร์จ')}`
+            : t('จดไว้ก่อนชาร์จแล้วยังไม่ได้เติมพลังงานที่ชาร์จได้จริง')}
+        </div>
+      </div>
+      {/* มีรายการเดียวก็พาไปแก้ตรงนั้นเลย ไม่ต้องผ่านหน้าประวัติให้เสียจังหวะ */}
+      <button
+        type="button"
+        className="btn btn-sm"
+        onClick={() => {
+          if (one) {
+            setEditingId(one.id);
+            router.push('/add');
+          } else {
+            setHistoryPreset('incomplete');
+            router.push('/history');
+          }
+        }}
+      >
+        <Icon name="edit" />{one ? t('ไปกรอกต่อ') : t('ดูรายการที่ค้าง')}
+      </button>
     </div>
   );
 }

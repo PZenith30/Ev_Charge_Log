@@ -1,6 +1,6 @@
 'use client';
 /** ประวัติการชาร์จ — ค้นหา กรอง เรียงลำดับ ดูรายละเอียด แก้ไข และส่งออก CSV */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/components/store';
@@ -13,7 +13,7 @@ import { fmt, fmt0, fmt1, fmtDist, isNum, money0, n, thDate, todayISO } from '@/
 import { download, sessionsToCsv } from '@/lib/exporters';
 import { rangeText } from '@/lib/period';
 
-const EMPTY_FILTERS = { q: '', type: '', cmin: '', cmax: '', sort: 'date-desc' };
+const EMPTY_FILTERS = { q: '', type: '', cmin: '', cmax: '', sort: 'date-desc', only: '' };
 
 const SORTERS = {
   'date-desc': (a, b) => (b.date + (b.time || '')).localeCompare(a.date + (a.time || '')),
@@ -27,14 +27,32 @@ export default function HistoryPage() {
   // periodSessions = รายการในช่วงเวลาที่เลือกบนแถบบน ใช้เป็นข้อมูลตั้งต้นของหน้านี้
   // ส่วน sessions (ทั้งหมด) ใช้แค่แยกว่า "ไม่มีข้อมูลเลย" กับ "มีข้อมูลแต่ถูกกรองออกหมด"
   // ซึ่งเป็นสองสถานะที่ต้องบอกผู้ใช้คนละแบบ
-  const { sessions, periodSessions, carName, setEditingId, toast, t, period, range } = useStore();
+  const {
+    sessions, periodSessions, carName, setEditingId, toast, t, period, range,
+    setPeriod, historyPreset, setHistoryPreset, incompleteCount,
+  } = useStore();
   const [f, setF] = useState(EMPTY_FILTERS);
   const [detail, setDetail] = useState(null);
   const router = useRouter();
   const set = (k, v) => setF((prev) => ({ ...prev, [k]: v }));
 
+  /**
+   * มาจากปุ่ม "ดูรายการที่ค้าง" บนแดชบอร์ด — ตั้งตัวกรองให้แล้วล้างค่าที่ส่งมาทิ้ง
+   *
+   * ต้องรีเซ็ตช่วงเวลาเป็น "ทั้งหมด" ด้วย เพราะแถบเตือนนับจากรายการทั้งหมด
+   * แต่หน้านี้แสดงเฉพาะช่วงที่เลือกไว้ ถ้าไม่รีเซ็ต กดตามแถบเตือนมาแล้วอาจเจอหน้าว่าง
+   * การเปลี่ยนนี้เห็นได้ที่แถบบน ไม่ได้เปลี่ยนอะไรอยู่เบื้องหลัง
+   */
+  useEffect(() => {
+    if (historyPreset !== 'incomplete') return;
+    setF({ ...EMPTY_FILTERS, only: 'incomplete' });
+    setPeriod('all');
+    setHistoryPreset(null);
+  }, [historyPreset, setPeriod, setHistoryPreset]);
+
   const list = useMemo(() => {
     let out = periodSessions;
+    if (f.only === 'incomplete') out = out.filter((s) => !isSessionComplete(s));
     const q = f.q.trim().toLowerCase();
     if (q) {
       out = out.filter((s) =>
@@ -74,6 +92,17 @@ export default function HistoryPage() {
               <option value="">{t('ทั้งหมด')}</option>
               <option value="AC">AC</option>
               <option value="DC">DC</option>
+            </select>
+          </Field>
+          {/* ทางลัดหารายการที่ต้องกลับมากรอกต่อ — จำนวนติดไว้ในตัวเลือกเลย จะได้รู้ว่ามีกี่รายการ */}
+          <Field label={t('สถานะการกรอก')}>
+            <select value={f.only} onChange={(e) => set('only', e.target.value)}>
+              <option value="">{t('ทั้งหมด')}</option>
+              <option value="incomplete">
+                {incompleteCount > 0
+                  ? t('เฉพาะที่ยังไม่ครบ ({n})', { n: incompleteCount })
+                  : t('เฉพาะที่ยังไม่ครบ')}
+              </option>
             </select>
           </Field>
           <Field label={t('ค่าใช้จ่ายต่ำสุด')}>
@@ -136,18 +165,24 @@ export default function HistoryPage() {
                   const bk = sBahtKm(s);
                   const pk = sPricePerKwh(s);
                   const soc = sSoc(s);
+                  // รายการที่จดไว้ก่อนชาร์จแล้วยังไม่ได้กลับมาเติมพลังงาน
+                  // ย้อมทั้งแถวด้วย ไม่ใช่แค่ป้ายเล็กๆ ไม่งั้นมันดูเหมือนการชาร์จ 0 kWh ธรรมดา
+                  const todo = !isSessionComplete(s);
                   return (
-                    <tr key={s.id} style={{ cursor: 'pointer' }} onClick={() => setDetail(s)}>
+                    <tr
+                      key={s.id}
+                      className={todo ? 'row-incomplete' : undefined}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => setDetail(s)}
+                    >
                       <td>{thDate(s.date)} {s.time ? <span className="faint">{s.time}</span> : null}</td>
                       <td><TypePill type={s.type} /></td>
                       <td>
                         {s.station || '—'}
                         {s.images?.length ? <span className="faint" title={t('มีรูปแนบ')}> 🖼</span> : null}
-                        {/* รายการที่จดไว้ก่อนชาร์จแล้วยังไม่ได้กลับมาเติมพลังงาน
-                            ถ้าไม่ติดป้าย มันจะดูเหมือนการชาร์จ 0 kWh ธรรมดาจนหาไม่เจอ */}
-                        {isSessionComplete(s) ? null : (
+                        {todo ? (
                           <span className="pill pill-warn" style={{ marginLeft: 6 }}>{t('ยังไม่ครบ')}</span>
-                        )}
+                        ) : null}
                       </td>
                       <td className="num">{fmt(n(s.kwh), 2)}</td>
                       <td className="num">{pk !== null ? fmt(pk, 2) : '—'}</td>

@@ -12,6 +12,7 @@ import { DEFAULT_SETTINGS, THEME_CACHE_KEY, VIEW_ALL_KEY, emptyState } from '@/l
 import * as db from '@/lib/db';
 import { setStorageUser, imgDel, gcImages } from '@/lib/storage';
 import { avgMonthlySpend, dueList, sortDesc } from '@/lib/calc';
+import { isSessionComplete } from '@/lib/validate';
 import { filterByRange, previousRange, resolveRange } from '@/lib/period';
 import { displayNameOf, savedNameOf, uuid } from '@/lib/format';
 import { readLegacy } from '@/lib/legacy';
@@ -65,6 +66,9 @@ export function StoreProvider({ children }) {
   const [editingId, setEditingId] = useState(null);
   // ค่าที่กรอกค้างไว้ตอนสลับจาก Quick Add ไปฟอร์มเต็ม (หรือจากแถบเมนูเข้า Quick Add)
   const [quickDraft, setQuickDraft] = useState(null);
+  // ตัวกรองที่หน้าประวัติต้องตั้งให้ทันทีที่เปิด — ส่งต่อจากปุ่มบนแถบเตือนของแดชบอร์ด
+  // ใช้แบบใช้ครั้งเดียวแล้วล้างทิ้ง เหมือน quickDraft ไม่ใช่ค่าที่ค้างอยู่ถาวร
+  const [historyPreset, setHistoryPreset] = useState(null);
   // หน้าต่างเปลี่ยนรหัสผ่าน — เปิดได้ทั้งจากเมนูโปรไฟล์และหน้าบัญชี
   const [pwOpen, setPwOpen] = useState(false);
   // แผงผู้ช่วย AI — เปิดจากปุ่มลอยหรือเมนูโปรไฟล์
@@ -464,6 +468,16 @@ export function StoreProvider({ children }) {
     return c ? c.name : '—';
   }, [data.cars]);
 
+  /**
+   * รายการที่จดไว้ก่อนชาร์จแล้วยังไม่ได้กลับมาเติมพลังงาน
+   *
+   * นับจาก sessions ทั้งหมดของรถที่เลือก ไม่ผูกกับช่วงเวลาบนแถบบนโดยตั้งใจ
+   * เพราะนี่คือ "งานค้าง" ที่ต้องกลับมาทำ ไม่ใช่ตัวเลขสรุปของช่วงที่กำลังดูอยู่
+   * ถ้าผูกกับช่วงเวลา พอเลือกดูเดือนนี้ รายการค้างของเดือนก่อนจะหายไปเงียบๆ
+   */
+  const incomplete = useMemo(() => sessions.filter((s) => !isSessionComplete(s)), [sessions]);
+  const incompleteCount = incomplete.length;
+
   const due = useMemo(() => dueList(alerts, data.settings.advanceDays), [alerts, data.settings.advanceDays]);
   const budgetOver = useMemo(() => {
     const b = Number(data.settings.budget) || 0;
@@ -483,6 +497,8 @@ export function StoreProvider({ children }) {
     pwOpen, setPwOpen,
     chatOpen, setChatOpen,
     nameOpen, setNameOpen,
+    historyPreset, setHistoryPreset,
+    incomplete, incompleteCount,
     displayName, savedName, saveDisplayName,
     editingId, setEditingId,
     dark, toggleTheme, setSettings, setActiveCar,

@@ -6,13 +6,14 @@ import { useRouter } from 'next/navigation';
 import { useStore } from '@/components/store';
 import { Stat, EmptyState, Trend, TypePill } from '@/components/ui';
 import { BarChart, DonutChart, LineChart, Sparkline } from '@/components/Charts';
-import { AlertBanner, BudgetBanner, SessionDetail } from '@/components/SessionViews';
+import { AlertBanner, BudgetBanner, IncompleteBanner, SessionDetail } from '@/components/SessionViews';
 import CarPhoto from '@/components/CarPhoto';
 import Wordmark from '@/components/Wordmark';
 import Icon from '@/components/Icon';
 import {
   groupStations, monthlyTotals, sDist, sEff, sKwh100, sPricePerKwh, sTotal, summarize,
 } from '@/lib/calc';
+import { isSessionComplete } from '@/lib/validate';
 import { comparisonLabel, pctChange } from '@/lib/period';
 import { fmt, fmt0, fmt1, fmtDist, isNum, money, money0, n, thDate, thMonth, thMonthLong } from '@/lib/format';
 
@@ -107,7 +108,7 @@ function dailyTotals(list) {
 export default function DashboardPage() {
   const {
     sessions, costs, periodSessions, periodCosts, prevSessions, prevCosts,
-    period, activeCar, due, budgetOver, setEditingId, t
+    period, activeCar, due, budgetOver, setEditingId, incomplete, t
   } = useStore();
   const [detail, setDetail] = useState(null);
   const [grain, setGrain] = useState('day');
@@ -196,8 +197,10 @@ export default function DashboardPage() {
         <Wordmark height={40} />
       </div>
 
-      {budgetOver || activeDue.length ? (
+      {/* งานค้างขึ้นก่อนเรื่องอื่น เพราะเป็นสิ่งเดียวในนี้ที่ผู้ใช้ต้องลงมือทำต่อจริงๆ */}
+      {incomplete.length || budgetOver || activeDue.length ? (
         <div className="stack" style={{ marginBottom: 16 }}>
+          <IncompleteBanner items={incomplete} />
           {budgetOver ? <BudgetBanner over budget={budgetOver.budget} avg={budgetOver.avg} /> : null}
           {activeDue.map((a) => <AlertBanner key={a.id} item={a} />)}
         </div>
@@ -416,9 +419,20 @@ export default function DashboardPage() {
               </thead>
               <tbody>
                 {periodSessions.slice(0, 6).map((s) => (
-                  <tr key={s.id} style={{ cursor: 'pointer' }} onClick={() => setDetail(s)}>
+                  <tr
+                    key={s.id}
+                    // ใช้เครื่องหมายชุดเดียวกับหน้าประวัติ จะได้จำได้ว่าสีนี้แปลว่าอะไร
+                    className={isSessionComplete(s) ? undefined : 'row-incomplete'}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setDetail(s)}
+                  >
                     <td>{thDate(s.date)}</td>
-                    <td>{s.station || '—'}</td>
+                    <td>
+                      {s.station || '—'}
+                      {isSessionComplete(s) ? null : (
+                        <span className="pill pill-warn" style={{ marginLeft: 6 }}>{t('ยังไม่ครบ')}</span>
+                      )}
+                    </td>
                     <td><TypePill type={s.type} /></td>
                     <td className="num">{isNum(s.socBefore) ? `${fmt0(n(s.socBefore))}%` : '—'}</td>
                     <td className="num">{isNum(s.socAfter) ? `${fmt0(n(s.socAfter))}%` : '—'}</td>

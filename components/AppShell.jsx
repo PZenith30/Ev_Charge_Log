@@ -94,7 +94,8 @@ export default function AppShell({ children }) {
   const {
     phase, user, dataLoading, loadError, reload,
     cars, settings, viewAllCars, setActiveCar, activeCar, sessions,
-    dark, toggleTheme, alertCount, quickOpen, setQuickOpen, pwOpen, setPwOpen, nameOpen, setNameOpen, t,
+    dark, toggleTheme, alertCount, incompleteCount,
+    quickOpen, setQuickOpen, pwOpen, setPwOpen, nameOpen, setNameOpen, t,
   } = useStore();
   const pathname = usePathname();
 
@@ -169,7 +170,12 @@ export default function AppShell({ children }) {
               >
                 <Icon name={item.icon} />
                 <span className="nav-label">{t(item.label)}</span>
+                {/* ป้ายตัวเลขสองแบบ ใช้สีต่างกันเพื่อไม่ให้สับสนว่าเป็นเรื่องเดียวกัน
+                    แดง = ถึงกำหนดต้องทำแล้ว · เหลือง = งานค้างที่ยังไม่เร่ง */}
                 {item.href === '/alerts' && alertCount > 0 ? <span className="badge">{alertCount}</span> : null}
+                {item.href === '/history' && incompleteCount > 0 ? (
+                  <span className="badge warn" title={t('มีรายการที่ยังกรอกไม่ครบ')}>{incompleteCount}</span>
+                ) : null}
               </Link>
             </div>
           ))}
@@ -265,7 +271,11 @@ export default function AppShell({ children }) {
       <nav className="tabbar">
         {tabs.map((item) => (
           <Link key={item.href} href={item.href} className={isActive(pathname, item.href) ? 'active' : ''}>
-            <Icon name={item.icon} />
+            {/* บนมือถือไม่มีแถบข้าง ป้ายงานค้างจึงต้องมาอยู่ตรงนี้ ไม่งั้นมองไม่เห็นเลย */}
+            <span className="ic">
+              <Icon name={item.icon} />
+              {item.href === '/history' && incompleteCount > 0 ? <i className="dot warn" /> : null}
+            </span>
             {item.short}
           </Link>
         ))}

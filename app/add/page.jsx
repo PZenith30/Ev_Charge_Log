@@ -242,11 +242,19 @@ export default function AddPage() {
     <form className="card" style={{ maxWidth: 920 }} onSubmit={submit} noValidate>
       {editing ? (
         <div className="form-sec" style={{ paddingBottom: 0, borderBottom: 0 }}>
-          <div className="alert warn">
-            <Icon name="edit" />
+          {/* เปิดรายการที่ค้างมาแก้ ต้องบอกตั้งแต่บนสุดว่าขาดอะไร ไม่ใช่ให้เลื่อนไปเจอเอง
+              ส่วนรายการที่กรอกครบแล้ว แค่เตือนว่ากำลังบันทึกทับของเดิมก็พอ */}
+          <div className={`alert ${complete ? 'warn' : 'danger'}`}>
+            <Icon name={complete ? 'edit' : 'clock'} />
             <div style={{ flex: 1 }}>
-              <div className="t1">{t('กำลังแก้ไขรายการเดิม')}</div>
-              <div className="t2">บันทึกทับรายการวันที่ {form.date}</div>
+              <div className="t1">
+                {complete ? t('กำลังแก้ไขรายการเดิม') : t('รายการนี้ยังกรอกไม่ครบ')}
+              </div>
+              <div className="t2">
+                {complete
+                  ? `บันทึกทับรายการวันที่ ${form.date}`
+                  : t('ขาดพลังงานที่ชาร์จ (kWh) · กรอกแล้วกดบันทึกเพื่อให้รายการสมบูรณ์')}
+              </div>
             </div>
             <button type="button" className="btn btn-sm" onClick={resetForm}>{t('เพิ่มรายการใหม่แทน')}</button>
           </div>
@@ -436,7 +444,7 @@ export default function AddPage() {
       {/* อธิบายสถานะ "ยังไม่ครบ" ตรงจุดที่จะกดบันทึกพอดี ไม่ต้องเลื่อนกลับไปอ่านข้างบน */}
       {!complete ? (
         <div className="form-sec" style={{ paddingTop: 0, borderBottom: 0 }}>
-          <div className="alert">
+          <div className="alert warn">
             <Icon name="clock" />
             <div style={{ flex: 1 }}>
               <div className="t1">{t('ยังไม่ได้กรอกพลังงานที่ชาร์จ')}</div>
