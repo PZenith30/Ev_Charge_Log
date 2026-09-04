@@ -215,7 +215,10 @@ export default function AppShell({ children }) {
             </select>
           ) : null}
 
-          <DateRangePicker />
+          {/* แสดงตัวเลือกช่วงเวลาเฉพาะหน้าที่ใช้จริง
+              หน้ารายงานมีตัวเลือกเดือน/ปีของตัวเองอยู่แล้ว ถ้ามีอีกอันข้างบนจะกลายเป็นสองที่
+              ส่วนหน้าอื่นอย่างบันทึก/สถานี/บัญชี ตัวเลือกนี้กดแล้วไม่มีอะไรเปลี่ยน */}
+          {current.period ? <DateRangePicker /> : null}
 
           <Link href="/alerts" className="btn btn-icon" title={t('แจ้งเตือน')} style={{ position: 'relative' }}>
             <Icon name="bell" />
