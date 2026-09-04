@@ -138,7 +138,7 @@ export function SessionDetail({ session: s, onClose, onEdit }) {
           <Row k="ประเภท">{s.type === 'DC' ? 'DC (ชาร์จเร็ว)' : 'AC (ชาร์จปกติ)'}</Row>
           <Row k="สถานี / สถานที่">{s.station || '—'}</Row>
           <Row k="เวลาที่ใช้ในการชาร์จ">{fmtDuration(Number(s.durationSec))}</Row>
-          <Row k="เลขไมล์ก่อน → หลัง">
+          <Row k="เลขไมล์ครั้งก่อน → ปัจจุบัน">
             {isNum(s.odoBefore) && isNum(s.odoAfter)
               ? `${fmtDist(n(s.odoBefore))} → ${fmtDist(n(s.odoAfter))} km`
               : '—'}

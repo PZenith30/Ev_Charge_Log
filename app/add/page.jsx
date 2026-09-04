@@ -84,7 +84,7 @@ export default function AddPage() {
         socBefore: d.socBefore ?? '',
         socAfter: d.socAfter ?? '',
       });
-      // d.odo คือเลขไมล์ "หลังชาร์จ" ส่วนเลขไมล์ก่อนชาร์จยังให้ระบบเติมจากครั้งก่อนตามเดิม
+      // d.odo คือเลขไมล์ "ปัจจุบัน" ส่วนเลขไมล์ครั้งก่อนยังให้ระบบเติมจากการชาร์จครั้งก่อนตามเดิม
       setOdoTouched(false);
       if (quickDraft) {
         setQuickDraft(null);
@@ -105,7 +105,7 @@ export default function AddPage() {
     setSettings({ dashEffUnit: next });
   }
 
-  /* เติมเลขไมล์ก่อนชาร์จให้อัตโนมัติจากการชาร์จครั้งก่อนของรถคันนั้น */
+  /* เติมเลขไมล์ครั้งก่อนให้อัตโนมัติจากการชาร์จครั้งก่อนของรถคันนั้น */
   const prevOdo = useMemo(
     () => (form.carId ? lastOdo(data.sessions.filter((s) => s.id !== editingId), cars, form.carId) : null),
     [data.sessions, cars, form.carId, editingId]
@@ -307,14 +307,14 @@ export default function AddPage() {
         <h4>{t('ข้อมูลรถ · ระยะทางและแบตเตอรี่')}</h4>
         <div className="form-grid">
           <Field
-            label={t('เลขไมล์ก่อนชาร์จ (km)')}
+            label={t('เลขไมล์ครั้งก่อน (km)')}
             error={errFor('odoBefore')}
             help={!editing && prevOdo !== null ? `เติมอัตโนมัติจากครั้งก่อน (${fmtDist(prevOdo)} km)` : null}
           >
             <input type="number" min="0" step="any" inputMode="decimal" value={form.odoBefore}
               onChange={(e) => { setOdoTouched(true); set('odoBefore', e.target.value); }} />
           </Field>
-          <Field label={t('เลขไมล์หลังชาร์จ (km)')} error={errFor('odoAfter')}>
+          <Field label={t('เลขไมล์ปัจจุบัน (km)')} error={errFor('odoAfter')}>
             <input type="number" min="0" step="any" inputMode="decimal"
               value={form.odoAfter} onChange={(e) => set('odoAfter', e.target.value)} />
           </Field>
