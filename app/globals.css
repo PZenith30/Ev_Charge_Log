@@ -233,34 +233,6 @@ a{color:inherit;text-decoration:none}
 .sb-bar{height:6px;border-radius:99px;background:var(--sidebar-border);overflow:hidden}
 .sb-bar > span{display:block;height:100%;border-radius:99px;background:var(--accent);transition:width .3s}
 
-/* Quick Add ในแถบเมนู */
-.sb-field{
-  display:flex;align-items:center;gap:8px;background:var(--sidebar-surface);
-  border:1px solid var(--sidebar-border);border-radius:var(--r-sm);padding:7px 11px;margin-bottom:8px
-}
-.sb-field label{font-size:12px;color:var(--sidebar-muted);flex:none}
-.sb-field input{
-  flex:1;min-width:0;border:0;background:none;padding:0;text-align:right;
-  font-size:13px;color:#fff;outline:0;box-shadow:none
-}
-.sb-field input:focus{border:0;box-shadow:none}
-.sb-field input::placeholder{color:var(--sidebar-muted)}
-  width:100%;padding:9px;border:0;border-radius:var(--r-sm);background:var(--accent);color:var(--on-accent);
-  font-size:13.5px;font-weight:600;cursor:pointer;margin-top:2px;transition:background .13s
-}
-
-/* สวิตช์ Dark Mode ท้ายแถบเมนู */
-  border-top:1px solid var(--sidebar-border);padding:14px 20px;
-  display:flex;align-items:center;gap:10px;cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;
-  width:100%;color:var(--sidebar-muted);font-size:13px
-}
-  margin-left:auto;width:40px;height:22px;border-radius:99px;background:var(--sidebar-border);
-  position:relative;transition:background .18s;flex:none
-}
-  content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:99px;
-  background:#fff;transition:transform .18s
-}
-
 .main{margin-left:236px;min-height:100dvh;display:flex;flex-direction:column}
 .topbar{
   position:sticky;top:0;z-index:30;background:var(--bg);
