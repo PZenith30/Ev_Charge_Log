@@ -7,27 +7,19 @@ import { BarChart, DonutChart } from '@/components/Charts';
 import CostModal from '@/components/CostModal';
 import Icon from '@/components/Icon';
 import { COST_CATS } from '@/lib/data';
-import { monthlyTotals, summarize, sYear } from '@/lib/calc';
-import { money, money0, n, shortNum, thDate, thMonth, thMonthLong, thYear, todayISO } from '@/lib/format';
+import { monthlyTotals, summarize } from '@/lib/calc';
+import { rangeText } from '@/lib/period';
+import { money, money0, n, shortNum, thDate, thMonth, thMonthLong, todayISO } from '@/lib/format';
 import { costsToCsv, download } from '@/lib/exporters';
 
 export default function CostsPage() {
-  const { costs, sessions, carName, toast, t } = useStore();
-  const [year, setYear] = useState('');
+  // ใช้ periodCosts/periodSessions — ช่วงเวลามาจากตัวเลือกบนแถบบนที่เดียว
+  // เดิมหน้านี้มีตัวเลือกปีของตัวเอง ซึ่งซ้ำซ้อนและทำให้ตัวเลขไม่ตรงกับหน้าอื่น
+  const { periodCosts, periodSessions, carName, toast, t, period, range } = useStore();
   const [editing, setEditing] = useState(undefined); // undefined = ปิด, null = เพิ่มใหม่, object = แก้ไข
 
-  const years = useMemo(
-    () => Array.from(new Set(costs.map((c) => (c.date || '').slice(0, 4)).filter(Boolean))).sort().reverse(),
-    [costs]
-  );
-  const list = useMemo(
-    () => (year ? costs.filter((c) => (c.date || '').startsWith(year)) : costs),
-    [costs, year]
-  );
-  const sessionList = useMemo(
-    () => (year ? sessions.filter((s) => sYear(s) === year) : sessions),
-    [sessions, year]
-  );
+  const list = periodCosts;
+  const sessionList = periodSessions;
 
   const byCat = useMemo(() => {
     const m = {};
@@ -55,7 +47,7 @@ export default function CostsPage() {
       <div className="stats">
         <Stat icon="wallet" label={t('ต้นทุนอื่นรวม')} value={money0(total)} detail={`${list.length} รายการ`} />
         <Stat icon="bolt" label={t('ค่าชาร์จรวม')} value={money0(chargeTotal)}
-          detail={year ? `ปี ${thYear(year)}` : 'ทั้งหมด'} />
+          detail={rangeText(period.key, range)} />
         <Stat icon="coin" label={t('ต้นทุนรวมทั้งหมด')} value={money0(total + chargeTotal)} detail="ค่าชาร์จ + ต้นทุนอื่น" />
         <Stat icon="car" label={t('ค่าไฟ / บำรุงรักษา')}
           value={`${money0(byCat.electric)} / ${money0(byCat.maintenance)}`}
@@ -68,11 +60,6 @@ export default function CostsPage() {
             {t('ต้นทุนรถทั้งหมด')}
             <span className="hint">{t('ค่าไฟ · บำรุงรักษา · ประกันภัย · ภาษี · อื่นๆ')}</span>
           </h3>
-          <select value={year} onChange={(e) => setYear(e.target.value)}
-            style={{ width: 'auto', fontSize: 13.5, padding: '6px 30px 6px 10px' }}>
-            <option value="">{t('ทุกปี')}</option>
-            {years.map((y) => <option key={y} value={y}>ปี {thYear(y)}</option>)}
-          </select>
           <button type="button" className="btn btn-sm" onClick={exportCsv}>
             <Icon name="download" />CSV
           </button>

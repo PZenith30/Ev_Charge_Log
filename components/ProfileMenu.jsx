@@ -8,7 +8,7 @@ import { useStore } from './store';
 
 export default function ProfileMenu({ onChangePassword }) {
   const {
-    user, dark, toggleTheme, logout, alertCount, confirm, setQuickOpen, setChatOpen, t,
+    user, logout, alertCount, confirm, setQuickOpen, setChatOpen, t,
   } = useStore();
   const [open, setOpen] = useState(false);
   const ref = useDismiss(open, useCallback(() => setOpen(false), []));
@@ -75,10 +75,6 @@ export default function ProfileMenu({ onChangePassword }) {
 
           <button type="button" className="menu-item" role="menuitem" onClick={run(onChangePassword)}>
             <Icon name="settings" />{t('เปลี่ยนรหัสผ่าน')}
-          </button>
-          <button type="button" className="menu-item" role="menuitem" onClick={run(toggleTheme)}>
-            <Icon name={dark ? 'sun' : 'moon'} />
-            {dark ? t('สลับเป็นโหมดสว่าง') : t('สลับเป็นโหมดมืด')}
           </button>
           {/* ไม่ปิดเมนูหลังกด เพราะผู้ใช้ควรเห็นเมนูเปลี่ยนภาษาทันทีว่ากดถูกตัวแล้ว */}
           <div className="menu-lang">

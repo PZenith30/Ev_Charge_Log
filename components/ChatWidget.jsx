@@ -190,8 +190,10 @@ export default function ChatWidget() {
 
   if (!chatOpen) {
     return (
-      <button type="button" className="chat-fab" onClick={() => setChatOpen(true)} title={t('ถามผู้ช่วย AI')}>
+      // ไอคอนเปล่าเดาไม่ออกว่าเป็นแชท จึงมีป้ายกำกับติดไว้ตลอด
+      <button type="button" className="fab fab-chat" onClick={() => setChatOpen(true)} title={t('ถามผู้ช่วย AI')}>
         <Icon name="chat" />
+        <span>{t('แชทกับ AI')}</span>
       </button>
     );
   }

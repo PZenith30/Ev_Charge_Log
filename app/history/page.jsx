@@ -10,8 +10,9 @@ import Icon from '@/components/Icon';
 import { sBahtKm, sDist, sEff, sPricePerKwh, sSoc, sTotal, summarize } from '@/lib/calc';
 import { fmt, fmt0, fmt1, fmtDist, isNum, money0, n, thDate, todayISO } from '@/lib/format';
 import { download, sessionsToCsv } from '@/lib/exporters';
+import { rangeText } from '@/lib/period';
 
-const EMPTY_FILTERS = { q: '', from: '', to: '', type: '', cmin: '', cmax: '', sort: 'date-desc' };
+const EMPTY_FILTERS = { q: '', type: '', cmin: '', cmax: '', sort: 'date-desc' };
 
 const SORTERS = {
   'date-desc': (a, b) => (b.date + (b.time || '')).localeCompare(a.date + (a.time || '')),
@@ -22,14 +23,15 @@ const SORTERS = {
 };
 
 export default function HistoryPage() {
-  const { sessions, carName, setEditingId, toast, t } = useStore();
+  // ใช้ periodSessions ไม่ใช่ sessions — ช่วงเวลามาจากตัวเลือกบนแถบบนที่เดียว
+  const { periodSessions, carName, setEditingId, toast, t, period, range } = useStore();
   const [f, setF] = useState(EMPTY_FILTERS);
   const [detail, setDetail] = useState(null);
   const router = useRouter();
   const set = (k, v) => setF((prev) => ({ ...prev, [k]: v }));
 
   const list = useMemo(() => {
-    let out = sessions;
+    let out = periodSessions;
     const q = f.q.trim().toLowerCase();
     if (q) {
       out = out.filter((s) =>
@@ -37,13 +39,11 @@ export default function HistoryPage() {
           .filter(Boolean).join(' ').toLowerCase().includes(q)
       );
     }
-    if (f.from) out = out.filter((s) => s.date >= f.from);
-    if (f.to) out = out.filter((s) => s.date <= f.to);
     if (f.type) out = out.filter((s) => (s.type || 'AC') === f.type);
     if (isNum(f.cmin)) out = out.filter((s) => sTotal(s) >= Number(f.cmin));
     if (isNum(f.cmax)) out = out.filter((s) => sTotal(s) <= Number(f.cmax));
     return out.slice().sort(SORTERS[f.sort]);
-  }, [sessions, f]);
+  }, [periodSessions, f]);
 
   const sum = useMemo(() => summarize(list), [list]);
 
@@ -65,12 +65,6 @@ export default function HistoryPage() {
           <Field label={t('ค้นหา')} style={{ gridColumn: 'span 2' }}>
             <input type="text" placeholder={t('สถานี, หมายเหตุ, วันที่…')} spellCheck={false}
               value={f.q} onChange={(e) => set('q', e.target.value)} />
-          </Field>
-          <Field label={t('ตั้งแต่วันที่')}>
-            <input type="date" value={f.from} onChange={(e) => set('from', e.target.value)} />
-          </Field>
-          <Field label={t('ถึงวันที่')}>
-            <input type="date" value={f.to} onChange={(e) => set('to', e.target.value)} />
           </Field>
           <Field label={t('ประเภท')}>
             <select value={f.type} onChange={(e) => set('type', e.target.value)}>
@@ -100,8 +94,9 @@ export default function HistoryPage() {
 
         <div className="card-head">
           <h3>
-            {fmt0(list.length)} รายการ
+            {fmt0(list.length)} {t('รายการ')}
             <span className="hint">
+              {t('ช่วง{range} — เปลี่ยนได้ที่แถบด้านบน', { range: rangeText(period.key, range) })} · 
               {fmt1(sum.kwh)} kWh · {money0(sum.cost)} · {fmtDist(sum.dist)} km
             </span>
           </h3>

@@ -15,7 +15,6 @@ import ChatWidget from './ChatWidget';
 import PWA from './PWA';
 import DateRangePicker from './DateRangePicker';
 import ProfileMenu from './ProfileMenu';
-import SidebarQuickAdd from './SidebarQuickAdd';
 import { ConfirmDialog, Lightbox, Toasts } from './ui';
 import { useStore } from './store';
 
@@ -192,18 +191,6 @@ export default function AppShell({ children }) {
           </div>
         ) : null}
 
-        <SidebarQuickAdd />
-
-        <button
-          type="button"
-          className={`sb-theme${dark ? ' on' : ''}`}
-          onClick={toggleTheme}
-          aria-pressed={dark}
-        >
-          <Icon name="moon" />
-          Dark Mode
-          <span className="sw" />
-        </button>
       </aside>
 
       <main className="main">
@@ -235,7 +222,7 @@ export default function AppShell({ children }) {
             {alertCount > 0 ? (
               <span
                 style={{
-                  position: 'absolute', top: -3, right: -3, background: 'var(--danger)', color: '#fff',
+                  position: 'absolute', top: -3, right: -3, background: 'var(--danger)', color: 'var(--on-danger)',
                   fontSize: 9.5, fontWeight: 700, borderRadius: 99, padding: '0 4px', minWidth: 15,
                 }}
               >
@@ -244,7 +231,7 @@ export default function AppShell({ children }) {
             ) : null}
           </Link>
 
-          <button type="button" className="btn btn-icon hide-mobile" onClick={toggleTheme} title={t('สลับธีม')}>
+          <button type="button" className="btn btn-icon" onClick={toggleTheme} title={t('สลับธีม')}>
             <Icon name={dark ? 'sun' : 'moon'} />
           </button>
 
@@ -280,8 +267,11 @@ export default function AppShell({ children }) {
         ))}
       </nav>
 
-      <button type="button" className="fab" onClick={() => setQuickOpen(true)} title="Quick Add">
+      {/* ปุ่มลอยสองอัน วางเรียงกันมุมขวาล่าง — บันทึกด่วนอยู่บน ผู้ช่วย AI อยู่ล่าง
+          ทั้งคู่มีป้ายกำกับ ไม่ใช่ไอคอนเปล่า เพราะไอคอนอย่างเดียวเดาหน้าที่ไม่ออก */}
+      <button type="button" className="fab fab-quick" onClick={() => setQuickOpen(true)}>
         <Icon name="plus" />
+        <span>{t('บันทึกด่วน')}</span>
       </button>
 
       <ChatWidget />
