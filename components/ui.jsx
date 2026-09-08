@@ -204,6 +204,26 @@ export function PasswordInput({ value, onChange, autoComplete, placeholder = '�
   );
 }
 
+/**
+ * เครื่องหมายบอกว่ารายการนี้มีรูปแนบ
+ *
+ * ใช้ไอคอนเส้นชุดเดียวกับที่อื่นในแอป ไม่ใช่อิโมจิ
+ * เพราะอิโมจิวาดด้วยฟอนต์ของระบบ หน้าตาจึงต่างกันไปในแต่ละเครื่อง
+ * ขนาดไม่ตรงกับตัวอักษรรอบข้าง และไม่เปลี่ยนสีตามธีม
+ *
+ * บอกจำนวนเฉพาะตอนมีมากกว่าหนึ่งรูป — มีรูปเดียวแค่ไอคอนก็สื่อครบแล้ว
+ */
+export function PhotoMark({ count }) {
+  const { t } = useStore();
+  if (!count) return null;
+  return (
+    <span className="photo-mark" title={t('มีรูปแนบ')}>
+      <Icon name="image" />
+      {count > 1 ? count : null}
+    </span>
+  );
+}
+
 export function TypePill({ type }) {
   const t = type === 'DC' ? 'DC' : 'AC';
   return <span className={`pill pill-${t}`}>{t}</span>;

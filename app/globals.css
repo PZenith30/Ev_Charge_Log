@@ -545,6 +545,11 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 .live .v{font-size:16px;font-weight:640;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ============================ Pills, tables, lists ============================ */
+/* เครื่องหมายรูปแนบ — เส้นบางสีจาง อยู่ระดับเดียวกับข้อความรอบข้าง ไม่แย่งสายตา
+   ตัวเลขใช้ขนาดเล็กกว่าข้อความหลักเล็กน้อย เพราะเป็นข้อมูลประกอบ ไม่ใช่ตัวเลขที่ต้องอ่าน */
+.photo-mark{display:inline-flex;align-items:center;gap:3px;margin-left:6px;vertical-align:-2px;color:var(--faint);font-size:11px;font-weight:650}
+.photo-mark svg{width:13.5px;height:13.5px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
 .pill{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:650;letter-spacing:.01em}
 .pill-AC{background:var(--ac-soft);color:var(--ac-text)}
 .pill-DC{background:var(--dc-soft);color:var(--dc-text)}

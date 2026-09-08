@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/components/store';
-import { EmptyState, Field, TypePill } from '@/components/ui';
+import { EmptyState, Field, PhotoMark, TypePill } from '@/components/ui';
 import { SessionDetail } from '@/components/SessionViews';
 import Icon from '@/components/Icon';
 import { sBahtKm, sDist, sEff, sPricePerKwh, sSoc, sTotal, summarize } from '@/lib/calc';
@@ -179,7 +179,7 @@ export default function HistoryPage() {
                       <td><TypePill type={s.type} /></td>
                       <td>
                         {s.station || '—'}
-                        {s.images?.length ? <span className="faint" title={t('มีรูปแนบ')}> 🖼</span> : null}
+                        <PhotoMark count={s.images?.length} />
                         {todo ? (
                           <span className="pill pill-warn" style={{ marginLeft: 6 }}>{t('ยังไม่ครบ')}</span>
                         ) : null}

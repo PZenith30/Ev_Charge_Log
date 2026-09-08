@@ -2,7 +2,7 @@
 /** ต้นทุนรถทั้งหมด — ค่าไฟ บำรุงรักษา ประกันภัย ภาษี และค่าใช้จ่ายอื่นๆ */
 import { useMemo, useState } from 'react';
 import { useStore } from '@/components/store';
-import { EmptyState, Stat } from '@/components/ui';
+import { EmptyState, PhotoMark, Stat } from '@/components/ui';
 import { BarChart, DonutChart } from '@/components/Charts';
 import CostModal from '@/components/CostModal';
 import Icon from '@/components/Icon';
@@ -81,7 +81,7 @@ export default function CostsPage() {
                   <div className="t2">
                     {thDate(c.date, 'long')}
                     {c.carId ? ` · ${carName(c.carId)}` : ''}
-                    {c.images?.length ? ` · 🖼 ${c.images.length}` : ''}
+                    <PhotoMark count={c.images?.length} />
                   </div>
                 </div>
                 <div className="r"><div className="a">{money0(n(c.amount))}</div></div>
