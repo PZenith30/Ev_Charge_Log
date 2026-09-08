@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useStore } from '@/components/store';
 import { Stat, EmptyState, Trend, TypePill } from '@/components/ui';
 import { BarChart, DonutChart, LineChart, Sparkline } from '@/components/Charts';
-import { AlertBanner, BudgetBanner, IncompleteBanner, SessionDetail } from '@/components/SessionViews';
+import { AlertBanner, BudgetBanner, BudgetTypeBanner, IncompleteBanner, SessionDetail } from '@/components/SessionViews';
 import CarPhoto from '@/components/CarPhoto';
 import Wordmark from '@/components/Wordmark';
 import Icon from '@/components/Icon';
@@ -108,7 +108,7 @@ function dailyTotals(list) {
 export default function DashboardPage() {
   const {
     sessions, costs, periodSessions, periodCosts, prevSessions, prevCosts,
-    period, activeCar, due, budgetOver, setEditingId, incomplete, t
+    period, activeCar, due, budget, budgetOver, setEditingId, incomplete, t
   } = useStore();
   const [detail, setDetail] = useState(null);
   const [grain, setGrain] = useState('day');
@@ -153,6 +153,7 @@ export default function DashboardPage() {
   );
 
   const activeDue = due.filter((a) => a.level !== 'ok').slice(0, 3);
+  const overBudgetRows = budget.rows.filter((r) => r.over);
   const latestSoc = periodSessions.find((s) => isNum(s.socAfter))
     ?? sessions.find((s) => isNum(s.socAfter));
   const soc = latestSoc ? Number(latestSoc.socAfter) : null;
@@ -198,9 +199,11 @@ export default function DashboardPage() {
       </div>
 
       {/* งานค้างขึ้นก่อนเรื่องอื่น เพราะเป็นสิ่งเดียวในนี้ที่ผู้ใช้ต้องลงมือทำต่อจริงๆ */}
-      {incomplete.length || budgetOver || activeDue.length ? (
+      {incomplete.length || overBudgetRows.length || budgetOver || activeDue.length ? (
         <div className="stack" style={{ marginBottom: 16 }}>
           <IncompleteBanner items={incomplete} />
+          {/* ชนิดที่เกินงบขึ้นก่อนงบรวม เพราะบอกได้ตรงกว่าว่าเงินบานที่ตรงไหน */}
+          {overBudgetRows.map((r) => <BudgetTypeBanner key={r.key} row={r} />)}
           {budgetOver ? <BudgetBanner over budget={budgetOver.budget} avg={budgetOver.avg} /> : null}
           {activeDue.map((a) => <AlertBanner key={a.id} item={a} />)}
         </div>

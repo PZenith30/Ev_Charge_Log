@@ -590,6 +590,31 @@ table.compact{min-width:0}
 .row-item .r .a{font-size:14.5px;font-weight:650}
 .row-item .r .b{font-size:11.5px;color:var(--faint);margin-top:2px}
 
+/* ============================ งบประมาณแยกตามชนิด ============================ */
+.budget-rows{display:flex;flex-direction:column;gap:14px}
+/**
+ * แถวละชนิด — ไอคอน | ชื่อ+ยอดที่ใช้จริง | ช่องกรอกงบ  แล้วแถบความคืบหน้าคร่อมสองคอลัมน์ขวา
+ * ใช้ grid ไม่ใช่ flex เพราะแถบต้องเริ่มตรงกับชื่อพอดี ไม่ใช่ชิดขอบซ้ายสุด
+ */
+.budget-row{display:grid;grid-template-columns:30px minmax(0,1fr) 110px;gap:7px 11px;align-items:center}
+.budget-row .ic{display:grid;place-items:center}
+.budget-row .ic svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.budget-row .nm{min-width:0}
+.budget-row .nm b{display:block;font-size:14px;font-weight:600}
+.budget-row .nm span{display:block;font-size:11.5px;color:var(--faint);margin-top:1px}
+.budget-row input{text-align:right}
+.budget-row.over .nm span{color:var(--danger-text)}
+/* แถบเริ่มที่คอลัมน์ที่สอง จะได้ตรงกับชื่อด้านบน ไม่ใช่ตรงกับไอคอน */
+.budget-row .meter{grid-column:2 / -1;height:5px;border-radius:99px;background:var(--surface-3);overflow:hidden}
+.budget-row .meter > span{display:block;height:100%;border-radius:99px;transition:width .2s}
+
+@media (max-width:520px){
+  /* จอแคบ ช่องกรอกลงมาอยู่ใต้ชื่อแทนที่จะเบียดกันข้างๆ */
+  .budget-row{grid-template-columns:30px minmax(0,1fr)}
+  .budget-row input{grid-column:2 / -1}
+  .budget-row .meter{grid-column:2 / -1}
+}
+
 .filters{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));padding:14px 18px;border-bottom:1px solid var(--border);background:var(--surface-2)}
 .filters .field > label{font-size:11px}
 

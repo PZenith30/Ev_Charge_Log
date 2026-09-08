@@ -11,7 +11,8 @@ import { supabase, isSupabaseConfigured, authErrorText } from '@/lib/supabase';
 import { DEFAULT_SETTINGS, THEME_CACHE_KEY, VIEW_ALL_KEY, emptyState } from '@/lib/defaults';
 import * as db from '@/lib/db';
 import { setStorageUser, imgDel, gcImages } from '@/lib/storage';
-import { avgMonthlySpend, dueList, sortDesc } from '@/lib/calc';
+import { budgetStatus, dueList, monthlyAvgByType, sortDesc } from '@/lib/calc';
+import { BUDGET_TYPES } from '@/lib/data';
 import { isSessionComplete } from '@/lib/validate';
 import { filterByRange, previousRange, resolveRange } from '@/lib/period';
 import { displayNameOf, savedNameOf, uuid } from '@/lib/format';
@@ -479,13 +480,16 @@ export function StoreProvider({ children }) {
   const incompleteCount = incomplete.length;
 
   const due = useMemo(() => dueList(alerts, data.settings.advanceDays), [alerts, data.settings.advanceDays]);
-  const budgetOver = useMemo(() => {
-    const b = Number(data.settings.budget) || 0;
-    if (b <= 0) return null;
-    const avg = avgMonthlySpend(sessions, costs);
-    return avg > b ? { budget: b, avg } : null;
-  }, [data.settings.budget, sessions, costs]);
-  const alertCount = due.filter((a) => a.level !== 'ok').length + (budgetOver ? 1 : 0);
+  /* ---------------- งบประมาณต่อเดือน ---------------- */
+  const avgByType = useMemo(() => monthlyAvgByType(sessions, costs), [sessions, costs]);
+  const budget = useMemo(
+    () => budgetStatus(BUDGET_TYPES, data.settings.budgets, data.settings.budget, avgByType),
+    [data.settings.budgets, data.settings.budget, avgByType]
+  );
+  /** งบรวมที่เกิน — คงรูปเดิมไว้ให้แถบเตือนบนแดชบอร์ดใช้ต่อได้โดยไม่ต้องแก้ */
+  const budgetOver = budget.total?.over ? budget.total : null;
+  // ทุกชนิดที่เกินงบนับเป็นหนึ่งเรื่องที่ต้องดู เท่ากับรายการเตือนที่ถึงกำหนด
+  const alertCount = due.filter((a) => a.level !== 'ok').length + budget.overCount;
 
   const value = {
     phase, user, data, dataLoading, loadError, reload,
@@ -511,7 +515,7 @@ export function StoreProvider({ children }) {
     legacyFound, setLegacyFound,
     cars: data.cars, settings: data.settings,
     sessions, costs, alerts, activeCar, showAllCars, viewAllCars, carName,
-    due, budgetOver, alertCount,
+    due, budget, budgetOver, avgByType, alertCount,
     period, setPeriod, range, prevRange,
     periodSessions, periodCosts, prevSessions, prevCosts,
   };

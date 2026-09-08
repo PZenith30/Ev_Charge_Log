@@ -83,7 +83,8 @@ create table if not exists public.settings (
   theme         text default 'auto',      -- auto | light | dark
   price_ac      numeric default 4.5,
   price_dc      numeric default 7.5,
-  budget        numeric default 0,        -- งบต่อเดือน (0 = ไม่ตั้ง)
+  budget        numeric default 0,        -- งบรวมต่อเดือน (0 = ไม่ตั้ง)
+  budgets       jsonb not null default '{}'::jsonb,  -- งบแยกชนิด { charge, accessory, insurance, maintenance, tax }
   advance_days  integer default 30,
   active_car    uuid references public.cars (id) on delete set null,
   dash_eff_unit text default 'km/kWh',

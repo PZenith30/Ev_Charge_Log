@@ -56,6 +56,22 @@ export function AlertBanner({ item }) {
   );
 }
 
+/** ชนิดค่าใช้จ่ายหนึ่งชนิดที่ใช้เกินงบของตัวเอง */
+export function BudgetTypeBanner({ row }) {
+  const { t } = useStore();
+  return (
+    <div className="alert warn">
+      <Icon name={row.icon} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="t1">{t('{name} เกินงบที่ตั้งไว้', { name: t(row.label) })}</div>
+        <div className="t2">
+          เฉลี่ย {money0(row.avg)} / เดือน · งบ {money0(row.budget)} · เกิน {money0(row.avg - row.budget)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function BudgetBanner({ over, budget, avg }) {
   const { t } = useStore();
   if (over) {
@@ -63,7 +79,7 @@ export function BudgetBanner({ over, budget, avg }) {
       <div className="alert danger">
         <Icon name="alert" />
         <div>
-          <div className="t1">{t('ค่าใช้จ่ายเฉลี่ยต่อเดือนเกินงบประมาณ')}</div>
+          <div className="t1">{t('ค่าใช้จ่ายรวมเฉลี่ยต่อเดือนเกินงบประมาณ')}</div>
           <div className="t2">
             เฉลี่ย {money0(avg)} / เดือน · งบที่ตั้งไว้ {money0(budget)} · เกิน {money0(avg - budget)}
           </div>
@@ -75,7 +91,7 @@ export function BudgetBanner({ over, budget, avg }) {
     <div className="alert">
       <Icon name="check" style={{ color: 'var(--accent)' }} />
       <div>
-        <div className="t1">{t('ค่าใช้จ่ายอยู่ในงบประมาณ')}</div>
+        <div className="t1">{t('ค่าใช้จ่ายรวมอยู่ในงบประมาณ')}</div>
         <div className="t2">เฉลี่ย {money0(avg)} / เดือน · งบ {money0(budget)}</div>
       </div>
     </div>
