@@ -1,5 +1,5 @@
 'use client';
-/** ปุ่มโปรไฟล์บนแถบบน — กดแล้วมีเมนูลัด เปลี่ยนรหัสผ่าน สลับธีม สลับภาษา และออกจากระบบ */
+/** ปุ่มโปรไฟล์บนแถบบน — เรื่องบัญชีล้วนๆ: บัญชีและรถ ตั้งชื่อผู้ใช้ เปลี่ยนรหัสผ่าน ภาษา ออกจากระบบ */
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from './Icon';
@@ -7,9 +7,7 @@ import { LangToggle, useDismiss } from './ui';
 import { useStore } from './store';
 
 export default function ProfileMenu({ onChangePassword }) {
-  const {
-    user, displayName, logout, alertCount, confirm, setQuickOpen, setChatOpen, setNameOpen, t,
-  } = useStore();
+  const { user, displayName, logout, confirm, setNameOpen, t } = useStore();
   const [open, setOpen] = useState(false);
   const ref = useDismiss(open, useCallback(() => setOpen(false), []));
   const router = useRouter();
@@ -52,25 +50,11 @@ export default function ProfileMenu({ onChangePassword }) {
             <span>{user?.email}</span>
           </div>
 
-          <div className="menu-label">{t('เมนูลัด')}</div>
-          <button type="button" className="menu-item" role="menuitem" onClick={run(() => setChatOpen(true))}>
-            <Icon name="sparkle" />{t('ถามผู้ช่วย AI')}
-          </button>
-          <button type="button" className="menu-item" role="menuitem" onClick={run(() => setQuickOpen(true))}>
-            <Icon name="plus" />{t('บันทึกการชาร์จด่วน')}
-          </button>
-          <button type="button" className="menu-item" role="menuitem" onClick={go('/stations')}>
-            <Icon name="map-pin" />{t('สถานีชาร์จใกล้ฉัน')}
-          </button>
+          {/* เมนูนี้เหลือเฉพาะเรื่องบัญชี ทางลัดไปหน้าอื่นถูกถอดออกแล้ว
+              เพราะทุกหน้าที่เคยอยู่ในนี้ไปถึงได้จากแถบเมนูซ้ายและแถบแท็บล่างอยู่แล้ว
+              ส่วนบันทึกด่วนกับผู้ช่วย AI มีปุ่มลอยของตัวเองที่มุมขวาล่างทุกหน้า */}
           <button type="button" className="menu-item" role="menuitem" onClick={go('/account')}>
             <Icon name="car" />{t('บัญชีและรถของฉัน')}
-          </button>
-          <button type="button" className="menu-item" role="menuitem" onClick={go('/alerts')}>
-            <Icon name="bell" />{t('แจ้งเตือน')}
-            {alertCount > 0 ? <span className="badge">{alertCount}</span> : null}
-          </button>
-          <button type="button" className="menu-item" role="menuitem" onClick={go('/report')}>
-            <Icon name="file" />{t('รายงาน')}
           </button>
 
           <div className="menu-sep" />
