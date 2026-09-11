@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ALERT_TYPES } from '@/lib/data';
 import { fmt, fmt0, fmt1, fmtDist, fmtDuration, money0, money, thDate, n, isNum } from '@/lib/format';
-import { sBahtKm, sDashReading, sDist, sEff, sEff100, sKwh100, sPricePerKwh, sSoc, sTotal } from '@/lib/calc';
+import { sBahtKm, sDashReading, sDist, sEff, sEff100, sKwh100, sPricePerKwh, sRangeGain, sSoc, sTotal } from '@/lib/calc';
 import { imgMany } from '@/lib/storage';
 import Icon from './Icon';
 import { Modal } from './ui';
@@ -164,6 +164,7 @@ export function SessionDetail({ session: s, onClose, onEdit }) {
 
   const dist = sDist(s);
   const soc = sSoc(s);
+  const rangeGain = sRangeGain(s);
   const dash = sDashReading(s);
 
   return (
@@ -205,9 +206,15 @@ export function SessionDetail({ session: s, onClose, onEdit }) {
               ? `${fmtDist(n(s.odoBefore))} → ${fmtDist(n(s.odoAfter))} km`
               : '—'}
           </Row>
-          <Row k="ระยะทางที่วิ่งได้">{dist !== null ? `${fmtDist(dist)} km` : '—'}</Row>
+          <Row k="ระยะทางที่ขับมา">{dist !== null ? `${fmtDist(dist)} km` : '—'}</Row>
           <Row k="SOC ก่อน → หลัง">
             {soc !== null ? `${n(s.socBefore)}% → ${n(s.socAfter)}% (+${soc}%)` : '—'}
+          </Row>
+          {/* ระยะทางที่รถบอกว่าวิ่งได้อีก — คนละอย่างกับระยะทางที่ขับมาจริงด้านบน */}
+          <Row k="ระยะทางที่วิ่งได้ ก่อน → หลัง">
+            {isNum(s.rangeBefore) && isNum(s.rangeAfter)
+              ? `${fmtDist(n(s.rangeBefore))} → ${fmtDist(n(s.rangeAfter))} km (${rangeGain > 0 ? '+' : ''}${fmtDist(rangeGain)})`
+              : '—'}
           </Row>
         </dl>
 

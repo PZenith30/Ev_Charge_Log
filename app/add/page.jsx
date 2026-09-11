@@ -8,14 +8,14 @@ import { EmptyState, Field, TypeToggle } from '@/components/ui';
 import ImageUploader from '@/components/ImageUploader';
 import Icon from '@/components/Icon';
 import { fmt, fmt0, fmtDist, isNum, limitDecimals, money, n, nOrNull, splitDuration, todayISO } from '@/lib/format';
-import { lastOdo, sBahtKm, sDist, sEff, sEff100, sSoc, sTotal } from '@/lib/calc';
+import { lastOdo, sBahtKm, sDist, sEff, sEff100, sRangeGain, sSoc, sTotal } from '@/lib/calc';
 import { fieldErrors, isSessionComplete, missingFields } from '@/lib/validate';
 import { DASH_DECIMALS, DASH_UNITS, DEFAULT_DASH_UNIT } from '@/lib/data';
 
 const blank = () => ({
   carId: '', date: todayISO(), type: 'AC', station: '',
   durH: '', durM: '', durS: '',
-  odoBefore: '', odoAfter: '', socBefore: '', socAfter: '', dashEff: '',
+  odoBefore: '', odoAfter: '', socBefore: '', socAfter: '', rangeBefore: '', rangeAfter: '', dashEff: '',
   kwh: '', price: '', fee: '', discount: '', total: '', note: '', images: [],
 });
 
@@ -53,6 +53,8 @@ export default function AddPage() {
         odoAfter: editing.odoAfter ?? '',
         socBefore: editing.socBefore ?? '',
         socAfter: editing.socAfter ?? '',
+        rangeBefore: editing.rangeBefore ?? '',
+        rangeAfter: editing.rangeAfter ?? '',
         dashEff: isNum(editing.dashEff)
           ? String(Number(DASH_UNITS[unit].fromBase(Number(editing.dashEff)).toFixed(DASH_DECIMALS)))
           : '',
@@ -140,9 +142,12 @@ export default function AddPage() {
     odoAfter: nOrNull(form.odoAfter),
     socBefore: nOrNull(form.socBefore),
     socAfter: nOrNull(form.socAfter),
+    rangeBefore: nOrNull(form.rangeBefore),
+    rangeAfter: nOrNull(form.rangeAfter),
   };
   const dist = sDist(draft);
   const socGain = sSoc(draft);
+  const rangeGain = sRangeGain(draft);
   const total = sTotal(draft);
   const eff = sEff(draft);
   const eff100 = sEff100(draft);
@@ -183,6 +188,8 @@ export default function AddPage() {
       odoAfter: nOrNull(form.odoAfter),
       socBefore: nOrNull(form.socBefore),
       socAfter: nOrNull(form.socAfter),
+      rangeBefore: nOrNull(form.rangeBefore),
+      rangeAfter: nOrNull(form.rangeAfter),
       // เก็บเป็น km/kWh เสมอ แล้วจำหน่วยที่กรอกไว้เพื่อแสดงกลับให้ตรงกับที่ผู้ใช้อ่านจากหน้าปัด
       dashEff: isNum(form.dashEff) ? DASH_UNITS[dashUnit].toBase(Number(form.dashEff)) : null,
       dashEffUnit: dashUnit,
@@ -228,7 +235,7 @@ export default function AddPage() {
   }
 
   const liveItems = [
-    ['ระยะทางที่วิ่งได้', dist !== null ? `${fmtDist(dist)} km` : '—'],
+    ['ระยะทางที่ขับมา', dist !== null ? `${fmtDist(dist)} km` : '—'],
     ['SOC ที่เพิ่มขึ้น', socGain !== null ? `+${socGain}%` : '—'],
     ['ค่าใช้จ่ายรวม', money(total)],
     ['Efficiency', eff !== null ? `${fmt(eff, 2)} km/kWh` : '—'],
@@ -326,19 +333,48 @@ export default function AddPage() {
             <input type="number" min="0" step="any" inputMode="decimal"
               value={form.odoAfter} onChange={(e) => set('odoAfter', e.target.value)} />
           </Field>
-          <Field label={t('ระยะทางที่วิ่งได้ (km)')}>
+          {/* ระยะทางที่ "ขับมา" คำนวณจากเลขไมล์ — คนละอย่างกับระยะทางที่รถบอกว่า "วิ่งได้อีก" ข้างล่าง
+              เดิมสองอันนี้ใช้ชื่อเดียวกัน เลยต้องแยกชื่อให้ชัดตอนเพิ่มช่องใหม่ */}
+          <Field label={t('ระยะทางที่ขับมา (km)')} help={t('คำนวณจากเลขไมล์')}>
             <input type="text" className="calc" readOnly value={dist !== null ? fmtDist(dist) : '—'} />
           </Field>
+
+          {/* จับคู่ SOC กับระยะทางที่รถแสดงไว้แถวเดียวกัน จะได้กรอกทั้งสองค่าจากหน้าจอเดียวกันรวดเดียว */}
           <Field label={t('SOC ก่อนชาร์จ (%)')} error={errFor('socBefore')}>
             <input type="number" min="0" max="100" step="any" inputMode="decimal"
               value={form.socBefore} onChange={(e) => set('socBefore', e.target.value)} />
           </Field>
+          <Field
+            label={t('ระยะทางที่วิ่งได้ ก่อนชาร์จ (km)')}
+            help={t('ตัวเลขที่รถหรือแอปบอกว่าวิ่งได้อีกกี่กิโลเมตร')}
+            error={errFor('rangeBefore')}
+          >
+            <input type="number" min="0" step="any" inputMode="decimal"
+              value={form.rangeBefore} onChange={(e) => set('rangeBefore', e.target.value)} />
+          </Field>
+
           <Field label={t('SOC หลังชาร์จ (%)')} error={errFor('socAfter')}>
             <input type="number" min="0" max="100" step="any" inputMode="decimal"
               value={form.socAfter} onChange={(e) => set('socAfter', e.target.value)} />
           </Field>
+          <Field
+            label={t('ระยะทางที่วิ่งได้ หลังชาร์จ (km)')}
+            help={t('ตัวเลขที่รถหรือแอปบอกว่าวิ่งได้อีกกี่กิโลเมตร')}
+            error={errFor('rangeAfter')}
+          >
+            <input type="number" min="0" step="any" inputMode="decimal"
+              value={form.rangeAfter} onChange={(e) => set('rangeAfter', e.target.value)} />
+          </Field>
+
           <Field label={t('SOC ที่เพิ่มขึ้น (%)')}>
             <input type="text" className="calc" readOnly value={socGain !== null ? `+${socGain}` : '—'} />
+          </Field>
+          {/* ค่าติดลบเป็นไปได้จริง ถ้ารถคำนวณระยะทางใหม่แล้วมองโลกในแง่ร้ายลง จึงไม่หนีบให้เป็นบวก */}
+          <Field label={t('ระยะทางที่วิ่งได้เพิ่มขึ้น (km)')}>
+            <input
+              type="text" className="calc" readOnly
+              value={rangeGain !== null ? `${rangeGain > 0 ? '+' : ''}${fmtDist(rangeGain)}` : '—'}
+            />
           </Field>
           <Field
             label={t('อัตราสิ้นเปลืองจากหน้าปัด')}

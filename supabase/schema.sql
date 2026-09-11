@@ -39,6 +39,8 @@ create table if not exists public.charge_sessions (
   odo_after     numeric,
   soc_before    numeric,
   soc_after     numeric,
+  range_before  numeric,                    -- ระยะทางที่วิ่งได้ที่รถแสดง ก่อนชาร์จ (km)
+  range_after   numeric,                    -- ระยะทางที่วิ่งได้ที่รถแสดง หลังชาร์จ (km)
   kwh           numeric not null default 0,
   price         numeric,                    -- ราคา/kWh ที่กรอก
   fee           numeric,                    -- ค่าปรับ (ชื่อคอลัมน์คงเดิมจากรุ่นก่อนที่เรียกว่าค่าบริการเพิ่มเติม)
