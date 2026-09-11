@@ -206,12 +206,12 @@ export function SessionDetail({ session: s, onClose, onEdit }) {
               ? `${fmtDist(n(s.odoBefore))} → ${fmtDist(n(s.odoAfter))} km`
               : '—'}
           </Row>
-          <Row k="ระยะทางที่ขับมา">{dist !== null ? `${fmtDist(dist)} km` : '—'}</Row>
+          <Row k="ระยะทางที่วิ่งได้">{dist !== null ? `${fmtDist(dist)} km` : '—'}</Row>
           <Row k="SOC ก่อน → หลัง">
             {soc !== null ? `${n(s.socBefore)}% → ${n(s.socAfter)}% (+${soc}%)` : '—'}
           </Row>
-          {/* ระยะทางที่รถบอกว่าวิ่งได้อีก — คนละอย่างกับระยะทางที่ขับมาจริงด้านบน */}
-          <Row k="ระยะทางที่วิ่งได้ ก่อน → หลัง">
+          {/* ตัวเลขที่รถแสดงว่าวิ่งได้อีกไกลแค่ไหน — คนละอย่างกับระยะทางที่วิ่งได้จริงด้านบน */}
+          <Row k="ระยะทางก่อน → หลังชาร์จ">
             {isNum(s.rangeBefore) && isNum(s.rangeAfter)
               ? `${fmtDist(n(s.rangeBefore))} → ${fmtDist(n(s.rangeAfter))} km (${rangeGain > 0 ? '+' : ''}${fmtDist(rangeGain)})`
               : '—'}

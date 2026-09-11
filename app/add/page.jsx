@@ -235,7 +235,7 @@ export default function AddPage() {
   }
 
   const liveItems = [
-    ['ระยะทางที่ขับมา', dist !== null ? `${fmtDist(dist)} km` : '—'],
+    ['ระยะทางที่วิ่งได้', dist !== null ? `${fmtDist(dist)} km` : '—'],
     ['SOC ที่เพิ่มขึ้น', socGain !== null ? `+${socGain}%` : '—'],
     ['ค่าใช้จ่ายรวม', money(total)],
     ['Efficiency', eff !== null ? `${fmt(eff, 2)} km/kWh` : '—'],
@@ -333,19 +333,24 @@ export default function AddPage() {
             <input type="number" min="0" step="any" inputMode="decimal"
               value={form.odoAfter} onChange={(e) => set('odoAfter', e.target.value)} />
           </Field>
-          {/* ระยะทางที่ "ขับมา" คำนวณจากเลขไมล์ — คนละอย่างกับระยะทางที่รถบอกว่า "วิ่งได้อีก" ข้างล่าง
-              เดิมสองอันนี้ใช้ชื่อเดียวกัน เลยต้องแยกชื่อให้ชัดตอนเพิ่มช่องใหม่ */}
-          <Field label={t('ระยะทางที่ขับมา (km)')} help={t('คำนวณจากเลขไมล์')}>
+          {/* ผลลัพธ์ของสองช่องบน ให้กินเต็มแถวเพื่อปิดแถวนี้ให้จบ
+              คู่ SOC กับระยะทางข้างล่างจะได้เรียงตรงกันเป็นแถวๆ ไม่เหลื่อมกัน */}
+          <Field
+            label={t('ระยะทางที่วิ่งได้ (km)')}
+            help={t('คำนวณจากเลขไมล์')}
+            style={{ gridColumn: '1 / -1' }}
+          >
             <input type="text" className="calc" readOnly value={dist !== null ? fmtDist(dist) : '—'} />
           </Field>
 
-          {/* จับคู่ SOC กับระยะทางที่รถแสดงไว้แถวเดียวกัน จะได้กรอกทั้งสองค่าจากหน้าจอเดียวกันรวดเดียว */}
+          {/* จับคู่ SOC กับระยะทางไว้แถวเดียวกัน ทั้งสองค่าอ่านจากหน้าจอเดียวกันของรถ
+              กรอกรวดเดียวจบ ไม่ต้องสลับไปมา */}
           <Field label={t('SOC ก่อนชาร์จ (%)')} error={errFor('socBefore')}>
             <input type="number" min="0" max="100" step="any" inputMode="decimal"
               value={form.socBefore} onChange={(e) => set('socBefore', e.target.value)} />
           </Field>
           <Field
-            label={t('ระยะทางที่วิ่งได้ ก่อนชาร์จ (km)')}
+            label={t('ระยะทางก่อนชาร์จ (km)')}
             help={t('ตัวเลขที่รถหรือแอปบอกว่าวิ่งได้อีกกี่กิโลเมตร')}
             error={errFor('rangeBefore')}
           >
@@ -358,7 +363,7 @@ export default function AddPage() {
               value={form.socAfter} onChange={(e) => set('socAfter', e.target.value)} />
           </Field>
           <Field
-            label={t('ระยะทางที่วิ่งได้ หลังชาร์จ (km)')}
+            label={t('ระยะทางหลังชาร์จ (km)')}
             help={t('ตัวเลขที่รถหรือแอปบอกว่าวิ่งได้อีกกี่กิโลเมตร')}
             error={errFor('rangeAfter')}
           >
@@ -370,7 +375,7 @@ export default function AddPage() {
             <input type="text" className="calc" readOnly value={socGain !== null ? `+${socGain}` : '—'} />
           </Field>
           {/* ค่าติดลบเป็นไปได้จริง ถ้ารถคำนวณระยะทางใหม่แล้วมองโลกในแง่ร้ายลง จึงไม่หนีบให้เป็นบวก */}
-          <Field label={t('ระยะทางที่วิ่งได้เพิ่มขึ้น (km)')}>
+          <Field label={t('ระยะทางที่เพิ่มขึ้น (km)')}>
             <input
               type="text" className="calc" readOnly
               value={rangeGain !== null ? `${rangeGain > 0 ? '+' : ''}${fmtDist(rangeGain)}` : '—'}
