@@ -131,11 +131,30 @@ export function StoreProvider({ children }) {
     setViewAllCars(readLocal(VIEW_ALL_KEY) === '1');
 
     let alive = true;
-    supabase.auth.getSession().then(({ data: { session } }) => {
+
+    /**
+     * กันหน้าค้างขาว — ถ้า getSession ไม่ตอบใน 10 วินาที ให้ไปหน้าล็อกอินไปก่อน
+     *
+     * เคยเจอ phase ค้างที่ 'loading' แล้วหน้าจอว่างเปล่าโดยไม่มีอะไรบอก
+     * ถ้าเครือข่ายหรือ Supabase ไม่ตอบ อย่างน้อยผู้ใช้ควรเห็นหน้าล็อกอินให้กดลองเองได้
+     * ไม่ใช่นั่งมองจอขาว (ถ้ามี session ใน localStorage จริง onAuthStateChange
+     * จะยิงตามมาทีหลังแล้วพาเข้าหน้าหลักเองอยู่ดี)
+     */
+    const timer = setTimeout(() => {
       if (!alive) return;
-      setUser(session?.user ?? null);
-      setPhase(session?.user ? 'ready' : 'anon');
-    });
+      setPhase((prev) => (prev === 'loading' ? 'anon' : prev));
+    }, 10000);
+
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (!alive) return;
+        setUser(session?.user ?? null);
+        setPhase(session?.user ? 'ready' : 'anon');
+      })
+      // ถ้าเรียกไม่สำเร็จก็ต้องไม่ค้างที่ 'loading' เหมือนกัน
+      .catch(() => {
+        if (alive) setPhase('anon');
+      });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
@@ -143,6 +162,7 @@ export function StoreProvider({ children }) {
     });
     return () => {
       alive = false;
+      clearTimeout(timer);
       sub?.subscription?.unsubscribe();
     };
   }, []);

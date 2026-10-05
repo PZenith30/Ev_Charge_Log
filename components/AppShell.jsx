@@ -108,11 +108,23 @@ export default function AppShell({ children }) {
     );
   }
 
+  /**
+   * ยังไม่รู้ว่าล็อกอินอยู่หรือยัง
+   *
+   * เดิมตรงนี้คืน <div> เปล่า ซึ่งขึ้นเป็นหน้าขาวล้วนที่ไม่บอกอะไรเลย
+   * แยกไม่ออกว่า "กำลังโหลด" หรือ "พังไปแล้ว" — ตอนนี้บอกไปตรงๆ ว่ากำลังรออะไร
+   */
   if (phase === 'loading') {
     return (
       <>
         <IconSprite />
-        <div style={{ minHeight: '100dvh' }} />
+        <div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', padding: 24 }}>
+          <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icon-192.png" alt="KiloEV" width={44} height={44} style={{ opacity: 0.7 }} />
+            <div style={{ marginTop: 12 }}>{t('กำลังตรวจสถานะการเข้าสู่ระบบ…')}</div>
+          </div>
+        </div>
       </>
     );
   }
